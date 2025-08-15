@@ -1,11 +1,11 @@
 #' @export
-saemvs <- function(data, model, init, tuning_algo, hyperparam, nb_workers = 4) {
+saemvs <- function(data, model, init, tuning_algo, hyperparam) {
   ebic_dim <- dim(data@v)[2] - 1 # p
 
   # compile_model(model@model_func)
 
   # Plan de parallélisation
-  future::plan(future::multisession, workers = nb_workers)
+  future::plan(future::multisession, workers = tuning_algo@nb_workers)
 
   nu0_list <- tuning_algo@nu0_grid
 
@@ -19,7 +19,7 @@ saemvs <- function(data, model, init, tuning_algo, hyperparam, nb_workers = 4) {
       fh <- fullHyperC(nu0, hyperparam)
       saemvs_one_map_run(data, model, init, tuning_algo, fh)
     },
-    .options = furrr::furrr_options(seed = 12345)
+    .options = furrr::furrr_options(seed = tuning_algo@seed)
   )
 
   support <- lapply(
@@ -51,7 +51,7 @@ saemvs <- function(data, model, init, tuning_algo, hyperparam, nb_workers = 4) {
         k, support, data, model, init, tuning_algo, hyperparam, ebic_dim
       )
     },
-    .options = furrr::furrr_options(seed = 12345)
+    .options = furrr::furrr_options(seed = tuning_algo@seed)
   )
 
 

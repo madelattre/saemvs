@@ -21,7 +21,7 @@ setMethod(
     # else create init object with the default method
     check_init(init, data, model)
     init <- prepare_init(init, model)
-    check_hyper(hyperparam, model)
+    check_hyper(hyperparam, model, tuning_algo)
     hyperparam <- prepare_hyper(hyperparam, data, model)
     config <- make_config(data, model, tuning_algo, init, hyperparam)
     state <- init_state(config)

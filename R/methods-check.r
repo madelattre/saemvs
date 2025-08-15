@@ -130,7 +130,7 @@ setMethod(
 
 setGeneric(
   "check_hyper",
-  function(hyper, model) {
+  function(hyper, model, tuning) {
     standardGeneric("check_hyper")
   }
 )
@@ -138,8 +138,8 @@ setGeneric(
 
 setMethod(
   "check_hyper",
-  signature(hyper = "hyperC", model = "modelC"),
-  function(hyper, model) {
+  signature(hyper = "hyperC", model = "modelC", tuning = "tuningC"),
+  function(hyper, model, tuning) {
     nbs <- length(model@index_select)
 
     if (nbs == 0) { # mle
@@ -176,6 +176,17 @@ setMethod(
           nbs, "columns and ", nbs, " rows."
         ))
       }
+    }
+
+    # Check that all nu0 values are smaller than nu1
+
+    if ((!is.null(tuning@nu0_grid)) && (!all(tuning@nu0_grid < hyper@nu1))) {
+      stop(
+        paste0(
+          "All spike parameter values in 'nu0_grid' must be smaller than ",
+          "slab hyperparameter 'nu1'."
+        )
+      )
     }
   }
 )

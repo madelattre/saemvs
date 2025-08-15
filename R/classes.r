@@ -347,7 +347,9 @@ setClass( # ne contient pas les paramètres initiaux
     tau = "numeric",
     kappa_mh = "numeric",
     nu0_grid = "numericORNULL",
-    nb_is = "numeric"
+    nb_is = "numeric",
+    seed = "numeric",
+    nb_workers = "numeric"
   ),
   prototype = list(
     niter = integer(500),
@@ -358,7 +360,9 @@ setClass( # ne contient pas les paramètres initiaux
     # tau = 0.98,
     kappa_mh = 1.5,
     nu0_grid = NULL,
-    nb_is = 10000
+    nb_is = 10000,
+    seed = 220916,
+    nb_workers = 4
   ),
   validity = function(object) {
     if (object@kappa_mh <= 0) {
@@ -403,6 +407,36 @@ setClass( # ne contient pas les paramètres initiaux
       )
     )
 
+    check_positive_integer_slot(
+      object@nb_is,
+      paste0(
+        "The number of iterations of Importance Sampling 'nb_is'",
+        " for log-likelihood estimation "
+      )
+    )
+
+    if (!is.integer(object@seed)) {
+      return(
+        paste0("'seed' must be an integer value.")
+      )
+    }
+
+    check_positive_integer_slot(
+      object@nb_workers,
+      paste0(
+        "The number of workers 'nb_workers' for parallel processing",
+        " of SAEMVS on 'nu0_grid' "
+      )
+    )
+
+
+    if (!all(object@nu0_grid > 0)) {
+      return(
+        paste0(
+          "All the spike parameter values in 'nu0_grid' must be positive."
+        )
+      )
+    }
 
     TRUE
   }
@@ -416,11 +450,15 @@ tuningC <- function(
     kernel_mh = "random_walk",
     kappa_mh = 1.5,
     nu0_grid = NULL,
-    nb_is = 10000) {
+    nb_is = 10000,
+    seed = 220916,
+    nb_workers = 4) {
   new("tuningC",
     niter = as.integer(niter), nburnin = as.integer(nburnin),
     step = c(rep(1, nburnin - 1), 1 / ((1:(niter - nburnin + 1))^(2 / 3))),
     niter_mh = as.integer(niter_mh), kernel_mh = kernel_mh,
-    tau = 0.98, kappa_mh = kappa_mh, nu0_grid = nu0_grid, nb_is = nb_is
+    tau = 0.98, kappa_mh = kappa_mh, nu0_grid = sort(nu0_grid),
+    nb_is = as.integer(nb_is), seed = as.integer(seed),
+    nb_workers = as.integer(nb_workers)
   )
 }
