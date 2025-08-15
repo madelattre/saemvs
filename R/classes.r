@@ -336,7 +336,7 @@ fullHyperC <- function(nu0 = NULL, hc) {
 ## -- Tuning parameters
 
 #' @exportClass tuningC
-setClass( # ne contient pas les paramètres initiaux
+setClass( # ne contient pas les paramètres initiaux ; nu0_grid est obligatoire
   "tuningC",
   slots = list(
     niter = "numeric",
@@ -449,7 +449,7 @@ tuningC <- function(
     niter_mh = 5,
     kernel_mh = "random_walk",
     kappa_mh = 1.5,
-    nu0_grid = NULL,
+    nu0_grid,
     nb_is = 10000,
     seed = 220916,
     nb_workers = 4) {
@@ -462,3 +462,32 @@ tuningC <- function(
     nb_workers = as.integer(nb_workers)
   )
 }
+
+
+## -- Results
+
+#' @exportClass resSAEMVS
+setClass(
+  "resSAEMVS",
+  slots = list(
+    pen = "character",
+    crit_values = "numeric",
+    thresholds = "list",
+    beta = "list",
+    support = "list",
+    map_to_unique_support = "numeric",
+    nu0_grid = "numeric"
+  ),
+  prototype = list(
+    pen = character(0),
+    crit_values = numeric(0),
+    thresholds = list(),
+    beta = list(),
+    support = list(),
+    map_to_unique_support = numeric(0),
+    nu0_grid = numeric(0)
+  ),
+  validity = function(object) {
+    TRUE
+  }
+)

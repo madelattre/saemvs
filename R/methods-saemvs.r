@@ -60,6 +60,16 @@ setMethod(
     # recherche des supports uniques
     support_hashes <- sapply(support, digest::digest)
     unique_support <- which(!duplicated(support_hashes) == TRUE)
+    hash_to_compact_index <- setNames(
+      seq_along(unique_support),
+      support_hashes[unique_support]
+    )
+
+
+    map_to_unique_support <- unname(sapply(
+      support_hashes,
+      function(h) hash_to_compact_index[[h]]
+    ))
 
     # Lancer les calculs en parallèle
     ebic_res <- furrr::future_map(
@@ -81,8 +91,25 @@ setMethod(
       thresholds = thresholds,
       beta = beta_map,
       support = support,
-      unique_support = unique_support
+      unique_support = unique_support,
+      nu0_grid = tuning_algo@nu0_grid,
+      index_select = model@index_select,
+      map_to_unique_support = map_to_unique_support,
+      pen = pen
     )
+
+    res <- new(
+      "resSAEMVS",
+      pen = pen,
+      crit_values = ebic,
+      thresholds = thresholds,
+      beta = beta_map,
+      support = support,
+      map_to_unique_support = map_to_unique_support,
+      nu0_grid = tuning_algo@nu0_grid
+    )
+
+    return(res)
   }
 )
 
@@ -147,9 +174,7 @@ setMethod(
     tuning_algo = "tuningC", hyperparam = "fullHyperC",
     pen = "character"
   ),
-  saemvs_one_ebic_run <- function(
-      k, support, data, model, init, tuning_algo, hyperparam, pen) {
-
+  saemvs_one_ebic_run <- function(k, support, data, model, init, tuning_algo, hyperparam, pen) {
     p <- dim(data@v)[2]
 
     nb_phi_s <- length(model@index_select)
