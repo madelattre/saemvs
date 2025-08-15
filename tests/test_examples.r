@@ -31,8 +31,9 @@ source("tests/prepare_test_examples.r")
 # grille qui permet d'obtenir des supports différents sur l'exemple en petite dimension
 
 
-saemvs_res <- saemvs(dat, model, init, tuning_algo, hyperparam, "e-BIC")
+saemvs_res <- saemvs(dat, model, init, tuning_algo, hyperparam, "BIC")
 
+which.min(saemvs_res$ebic)
 
 state <- run_saem(dat, model, init, tuning_algo, full_hyperparam)
 

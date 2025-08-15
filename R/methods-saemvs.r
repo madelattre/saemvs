@@ -14,9 +14,15 @@ setMethod(
     tuning_algo = "tuningC", hyperparam = "hyperC",
     pen = "character"
   ),
-  # pen = c("e-BIC", "BIC")
   function(data, model, init, tuning_algo, hyperparam, pen) {
-    # ebic_dim <- dim(data@v)[2] - 1 # p
+    if (!pen %in% c("e-BIC", "BIC")) {
+      stop(
+        paste0(
+          "Criterion ", pen, " is not supported. ",
+          "'pen' must be either 'e-BIC' or 'BIC'."
+        )
+      )
+    }
 
     # Plan de parallélisation
     future::plan(future::multisession, workers = tuning_algo@nb_workers)
@@ -143,7 +149,8 @@ setMethod(
   ),
   saemvs_one_ebic_run <- function(
       k, support, data, model, init, tuning_algo, hyperparam, pen) {
-    # Ajout d'un message d'erreur pour les valeurs de pen non prises en charge
+
+    p <- dim(data@v)[2]
 
     nb_phi_s <- length(model@index_select)
     n <- length(data@y_list)
@@ -221,14 +228,8 @@ setMethod(
       sigma2 = mle$sigma2[tuning_algo@niter + 1]
     )
 
-    if (pen == "e-BIC") {
-      ll <- loglik(new_data, new_model, tuning_algo, param, dim(data@v)[2] - 1)
-    } else {
-      ll <- loglik(new_data, new_model, tuning_algo, param, 0)
-    }
+    ll <- loglik(new_data, new_model, tuning_algo, param, pen, p)
 
-
-
-    return(ll$ebic)
+    return(ll)
   }
 )

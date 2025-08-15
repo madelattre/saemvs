@@ -1,6 +1,6 @@
 setGeneric(
   "loglik",
-  function(data, model, tuning_algo, param, ebic_dim) {
+  function(data, model, tuning_algo, param, pen, p) {
     standardGeneric("loglik")
   }
 )
@@ -10,16 +10,16 @@ setMethod(
   "loglik",
   signature(
     data = "dataC", model = "modelC",
-    tuning_algo = "tuningC", param = "list", ebic_dim = "numeric"
-  ), # ebic_dim devient pen = "character"
-  function(data, model, tuning_algo, param, ebic_dim) {
+    tuning_algo = "tuningC", param = "list", pen = "character",
+    p = "numeric"
+  ), 
+  function(data, model, tuning_algo, param, pen, p) {
     # check param en fonction du modèle?
 
     data <- prepare_data(data, model)
 
     nsim <- tuning_algo@nb_is
 
-    g <- model@model_func
     support <- model@covariate_support
     supp_index <- which(c(t(support)) == 1)
 
@@ -40,7 +40,7 @@ setMethod(
 
     log_lik_i <- function(i) {
       errs_i <- sum(apply(phi_samples[[i]], 1, function(x) {
-        exp(-sum((yi[[i]] - g(x, ti[[i]]))^2) / (2 * sigma2))
+        exp(-sum((yi[[i]] - g_vector_cpp(x, ti[[i]]))^2) / (2 * sigma2))
       }))
       mco_i <- sum(errs_i)
       value <- log((2 * pi * sigma2)^(-ni[i] / 2) * 1 / (nsim) * mco_i)
@@ -50,9 +50,16 @@ setMethod(
     loglike <- sum(sapply(seq_along(yi), log_lik_i))
 
     nb_beta <- length(supp_index)
-    ebic <- loglike + (nb_beta - model@q_phi) * log(n) +
-      2 * log(choose(ebic_dim * model@q_phi, nb_beta - model@q_phi))
 
-    return(list(loglik = loglike, ebic = ebic))
+    if (pen == "e-BIC") {
+      biclike <- -2 * loglike + (nb_beta - model@q_phi) * log(n) +
+        2 * log(choose(p * model@q_phi, nb_beta - model@q_phi))
+    } else if (pen == "BIC") {
+      biclike <- -2 * loglike + (nb_beta) * log(n)
+    } else {
+      biclike <- -2 * loglike
+    }
+
+    return(biclike)
   }
 )
