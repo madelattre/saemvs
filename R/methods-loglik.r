@@ -12,7 +12,7 @@ setMethod(
     data = "dataC", model = "modelC",
     tuning_algo = "tuningC", param = "list", pen = "character",
     p = "numeric"
-  ), 
+  ),
   function(data, model, tuning_algo, param, pen, p) {
     # check param en fonction du modèle?
 

@@ -1,5 +1,97 @@
 #' @export
 setGeneric(
+  "convergence_plot",
+  function(res_saem, component, sel_components) {
+    standardGeneric("convergence_plot")
+  }
+)
+
+#' @exportMethod convergence_plot
+setMethod(
+  "convergence_plot",
+  signature(
+    res_saem = "resSAEM", component = "character",
+    sel_components = "character"
+  ),
+  function(res_saem, component, sel_components) {
+    # component = c("beta_s", "beta_ns", "gamma_s", "gamma_ns", "sigma2")
+
+
+
+
+    if (component == "sigma2") {
+      df <- data.frame(
+        iteration = seq_along(res_saem@sigma2),
+        value = res_saem@sigma2
+      )
+
+      g <- ggplot2::ggplot(df, ggplot2::aes(x = iteration, y = value)) +
+        ggplot2::geom_line() +
+        ggplot2::geom_point() +
+        ggplot2::theme_bw() +
+        ggplot2::labs(
+          x = "Iteration", y = "Estimated value",
+          title = "Evolution of the selected matrix component"
+        )
+    } else if (component %in% c("beta_s", "beta_ns", "gamma_s", "gamma_ns")) {
+      switch(component,
+        beta_s = {
+          list_est <- res_saem@beta_s
+        },
+        beta_ns = {
+          list_est <- res_saem@beta_ns
+        },
+        gamma_s = {
+          list_est <- res_saem@gamma_s
+        },
+        gamma_ns = {
+          list_est <- res_saem@gamma_ns
+        },
+      )
+
+      df <- do.call(rbind, lapply(seq_along(list_est), function(iter) {
+        mat <- list_est[[iter]]
+        data.frame(
+          iteration = iter,
+          i = rep(seq_len(nrow(mat)), ncol(mat)),
+          j = rep(seq_len(ncol(mat)), each = nrow(mat)),
+          value = as.vector(mat)
+        )
+      }))
+
+
+      df$component <- paste0("(", df$i, ",", df$j, ")")
+      df <- subset(df, component %in% sel_components)
+
+
+
+      g <- ggplot2::ggplot(
+        df,
+        ggplot2::aes(x = iteration, y = value, color = component)
+      ) +
+        ggplot2::geom_line() +
+        ggplot2::facet_wrap(~component, scales = "free_y") +
+        # ggplot2::geom_point() +
+        ggplot2::theme_bw() +
+        ggplot2::labs(
+          x = "Iteration", y = "Estimated value",
+          title = paste("Evolution of each matrix component in ", component)
+        )
+    } else {
+      stop(
+        paste0(
+          "'component' must be 'beta_s', 'beta_ns', 'gamma_s', ",
+          "'gamma_ns' or 'sigma2'."
+        )
+      )
+    }
+
+    print(g)
+  }
+)
+
+#' @export
+setGeneric(
   "prepare_grid_plot",
   function(res_saemvs) standardGeneric("prepare_grid_plot")
 )

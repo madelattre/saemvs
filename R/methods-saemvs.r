@@ -113,6 +113,39 @@ setMethod(
   }
 )
 
+
+#' @export
+setGeneric(
+  "test_saemvs",
+  function(data, model, init, tuning_algo, hyperparam) {
+    standardGeneric("test_saemvs")
+  }
+)
+
+#' @exportMethod test_saemvs
+setMethod(
+  "test_saemvs",
+  signature(
+    data = "dataC", model = "modelC", init = "initC",
+    tuning_algo = "tuningC", hyperparam = "hyperC"
+  ),
+  function(data, model, init, tuning_algo, hyperparam) {
+    compile_model(model@model_func)
+    full_hyperparam <- fullHyperC(tuning_algo@nu0_grid[1], hyperparam)
+    state <- run_saem(data, model, init, tuning_algo, full_hyperparam)
+
+    res <- new(
+      "resSAEM",
+      beta_s = state$beta_hdim,
+      beta_ns = state$beta_ldim,
+      gamma_s = state$gamma_hdim,
+      gamma_ns = state$gamma_ldim,
+      sigma2 = state$sigma2
+    )
+    return(res)
+  }
+)
+
 ## -- Sub-methods called in the main saemvs method
 
 ## ---- Computation of the map at each point on the grid

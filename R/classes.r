@@ -1,6 +1,7 @@
 setClassUnion("matrixORNULL", c("matrix", "NULL"))
 setClassUnion("numericORNULL", c("numeric", "NULL"))
 setClassUnion("listORNULL", c("list", "NULL"))
+# setClassUnion("characterORNULL", c("character", "NULL"))
 
 ## -- Data
 
@@ -438,6 +439,8 @@ setClass( # ne contient pas les paramètres initiaux ; nu0_grid est obligatoire
       )
     }
 
+    # Ajouter que nu0_grid ne peut pas être vide
+
     TRUE
   }
 )
@@ -486,6 +489,29 @@ setClass(
     support = list(),
     map_to_unique_support = numeric(0),
     nu0_grid = numeric(0)
+  ),
+  validity = function(object) {
+    TRUE
+  }
+)
+
+
+#' @exportClass resSAEM
+setClass(
+  "resSAEM",
+  slots = list(
+    beta_s = "listORNULL",
+    beta_ns = "listORNULL",
+    gamma_s = "listORNULL",
+    gamma_ns = "listORNULL",
+    sigma2 = "numericORNULL"
+  ),
+  prototype = list(
+    beta_s = NULL,
+    beta_ns = NULL,
+    gamma_s = NULL,
+    gamma_ns = NULL,
+    sigma2 = NULL
   ),
   validity = function(object) {
     TRUE

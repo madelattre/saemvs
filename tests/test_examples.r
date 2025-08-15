@@ -12,21 +12,16 @@ source("tests/prepare_test_examples.r")
 
 # saem
 
-# g_cpp <- compile_model(model@model_func)
-# state <- run_saem(dat, model, init, tuning_algo, full_hyperparam)
+res_test <- test_saemvs(dat, model, init, tuning_algo, full_hyperparam)
+quartz()
+convergence_plot(res_test, "beta_s", sel_components = c("(1,1)", "(1,2)", "(4,2)"))
 
-# state$beta_hdim[[tuning_algo@niter + 1]]
-# state$gamma_hdim[[tuning_algo@niter + 1]]
-# state$beta_ldim[[tuning_algo@niter + 1]]
-# state$gamma_ldim[[tuning_algo@niter + 1]]
-# state$sigma2[tuning_algo@niter + 1]
 
-# # première étape de saemvs
-
-# res1 <- saemvs_one_map_run(dat, model, init, tuning_algo, full_hyperparam)
-
-# print(res1)
-
+state$beta_hdim[[tuning_algo@niter + 1]]
+state$gamma_hdim[[tuning_algo@niter + 1]]
+state$beta_ldim[[tuning_algo@niter + 1]]
+state$gamma_ldim[[tuning_algo@niter + 1]]
+state$sigma2[tuning_algo@niter + 1]
 
 # grille qui permet d'obtenir des supports différents sur l'exemple en petite dimension
 
@@ -42,7 +37,6 @@ which.min(saemvs_res$ebic)
 
 # quartz()
 
-state <- run_saem(dat, model, init, tuning_algo, full_hyperparam)
 
 
 # pose problème si trop d'itérations à cause de la variance nulle?
