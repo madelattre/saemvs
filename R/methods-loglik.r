@@ -11,7 +11,7 @@ setMethod(
   signature(
     data = "dataC", model = "modelC",
     tuning_algo = "tuningC", param = "list", ebic_dim = "numeric"
-  ),
+  ), # ebic_dim devient pen = "character"
   function(data, model, tuning_algo, param, ebic_dim) {
     # check param en fonction du modèle?
 
