@@ -195,6 +195,4 @@ switch(case_test,
 
 ##
 
-tuning_algo <- tuningC(nu0_grid = c(0.5, 0.002, 0.01), seed = -5
-
-)
+tuning_algo <- tuningC(nu0_grid = c(0.5, 0.002, 0.01), seed = -5)

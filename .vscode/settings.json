@@ -1,6 +1,8 @@
 {
     "conventionalCommits.scopes": [
         "tuningC",
-        "saemvs"
+        "saemvs",
+        "loglik",
+        "resSAEMVS"
     ]
 }

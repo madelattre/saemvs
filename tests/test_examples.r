@@ -31,9 +31,16 @@ source("tests/prepare_test_examples.r")
 # grille qui permet d'obtenir des supports différents sur l'exemple en petite dimension
 
 
-saemvs_res <- saemvs(dat, model, init, tuning_algo, hyperparam, "BIC")
+res <- saemvs(dat, model, init, tuning_algo, hyperparam, "BIC")
+
+plots <- prepare_grid_plot(res)
+plots$reg_plot[[1]]
+plots$reg_plot[[2]]
+plots$ebic_plot
 
 which.min(saemvs_res$ebic)
+
+# quartz()
 
 state <- run_saem(dat, model, init, tuning_algo, full_hyperparam)
 
