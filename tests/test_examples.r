@@ -26,14 +26,13 @@ state$sigma2[tuning_algo@niter + 1]
 # grille qui permet d'obtenir des supports différents sur l'exemple en petite dimension
 
 
-res <- saemvs(dat, model, init, tuning_algo, hyperparam, "BIC")
-
+res <- saemvs(dat, model, init, tuning_algo, hyperparam, "e-BIC")
+summary(res)
 plots <- prepare_grid_plot(res)
+# quartz()
 plots$reg_plot[[1]]
 plots$reg_plot[[2]]
 plots$ebic_plot
-
-which.min(saemvs_res$ebic)
 
 # quartz()
 

@@ -478,6 +478,7 @@ setClass(
     thresholds = "list",
     beta = "list",
     support = "list",
+    unique_support = "list",
     map_to_unique_support = "numeric",
     nu0_grid = "numeric"
   ),
@@ -487,6 +488,7 @@ setClass(
     thresholds = list(),
     beta = list(),
     support = list(),
+    unique_support = list(),
     map_to_unique_support = numeric(0),
     nu0_grid = numeric(0)
   ),

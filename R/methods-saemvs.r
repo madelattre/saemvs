@@ -86,17 +86,17 @@ setMethod(
 
     ebic <- unlist(ebic_res)
 
-    list(
-      ebic = ebic,
-      thresholds = thresholds,
-      beta = beta_map,
-      support = support,
-      unique_support = unique_support,
-      nu0_grid = tuning_algo@nu0_grid,
-      index_select = model@index_select,
-      map_to_unique_support = map_to_unique_support,
-      pen = pen
-    )
+    # list(
+    #   ebic = ebic,
+    #   thresholds = thresholds,
+    #   beta = beta_map,
+    #   support = support,
+    #   unique_support = unique_support,
+    #   nu0_grid = tuning_algo@nu0_grid,
+    #   index_select = model@index_select,
+    #   map_to_unique_support = map_to_unique_support,
+    #   pen = pen
+    # )
 
     res <- new(
       "resSAEMVS",
@@ -105,6 +105,7 @@ setMethod(
       thresholds = thresholds,
       beta = beta_map,
       support = support,
+      unique_support = support[unique_support],
       map_to_unique_support = map_to_unique_support,
       nu0_grid = tuning_algo@nu0_grid
     )
