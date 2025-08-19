@@ -34,6 +34,8 @@ setMethod(
       nu0_list,
       function(nu0) {
         # Important : le code C++ doit être dispo sur chaque worker
+        # perm <- c(model@index_select, model@index_fixed)
+        # compile_model(model@model_func, perm)
         compile_model(model@model_func)
 
         fh <- fullHyperC(nu0, hyperparam)
@@ -71,11 +73,14 @@ setMethod(
       function(h) hash_to_compact_index[[h]]
     ))
 
+
     # Lancer les calculs en parallèle
     ebic_res <- furrr::future_map(
       unique_support,
       function(k) {
         # Important : le code C++ doit être dispo sur chaque worker
+        # perm <- c(model@index_select, model@index_fixed)
+        # compile_model(model@model_func, perm)
         compile_model(model@model_func)
         saemvs_one_ebic_run(
           k, support, data, model, init, tuning_algo, hyperparam, pen
@@ -84,26 +89,24 @@ setMethod(
       .options = furrr::furrr_options(seed = tuning_algo@seed)
     )
 
-    ebic <- unlist(ebic_res)
+    ebic <- unlist(lapply(
+      seq_along(ebic_res),
+      function(x) ebic_res[[x]]$ll
+    ))
 
-    # list(
-    #   ebic = ebic,
-    #   thresholds = thresholds,
-    #   beta = beta_map,
-    #   support = support,
-    #   unique_support = unique_support,
-    #   nu0_grid = tuning_algo@nu0_grid,
-    #   index_select = model@index_select,
-    #   map_to_unique_support = map_to_unique_support,
-    #   pen = pen
-    # )
+    param <- lapply(
+      seq_along(ebic_res),
+      function(x) ebic_res[[x]]$param
+    )
+
+
 
     res <- new(
       "resSAEMVS",
       pen = pen,
       crit_values = ebic,
       thresholds = thresholds,
-      beta = beta_map,
+      param = param,
       support = support,
       unique_support = support[unique_support],
       map_to_unique_support = map_to_unique_support,
@@ -208,7 +211,8 @@ setMethod(
     tuning_algo = "tuningC", hyperparam = "fullHyperC",
     pen = "character"
   ),
-  saemvs_one_ebic_run <- function(k, support, data, model, init, tuning_algo, hyperparam, pen) {
+  saemvs_one_ebic_run <- function(k, support, data, model, init, tuning_algo,
+                                  hyperparam, pen) {
     p <- dim(data@v)[2]
 
     nb_phi_s <- length(model@index_select)
@@ -218,6 +222,8 @@ setMethod(
       nrow = nrow(support[[k]])
     )
 
+
+
     lines_with_ones <- which(rowSums(covariate_support) > 0)
 
     covariate_restricted_support <- covariate_support[lines_with_ones, ]
@@ -226,14 +232,12 @@ setMethod(
     v_restricted <- matrix(
       cbind(1, data@v)[, lines_with_ones],
       nrow = n
-    )
+    )[, -1] # -1 pour ne pas contenir l'intercept
 
     new_w <- matrix(
-      cbind(data@w, v_restricted)[, -1],
+      cbind(data@w, v_restricted),
       nrow = n
     )
-    # -1 pour ne pas contenir l'intercept (cf v_restricted)
-
 
     if (is.matrix(covariate_restricted_support)) {
       selected_support_matrix <- matrix(
@@ -263,10 +267,17 @@ setMethod(
     new_data <- dataC(y = data@y_list, t = data@t_list, w = new_w)
 
     new_beta_init <- merge_init_beta(
-      init@beta_hdim, init@beta_ldim, lines_with_ones, data@w
+      init@beta_hdim, init@beta_ldim, lines_with_ones
     )
 
-    new_gamma_init <- as.matrix(Matrix::bdiag(init@gamma_hdim, init@gamma_ldim))
+    if (is.null(init@gamma_ldim)) {
+      new_gamma_init <- init@gamma_hdim
+    } else {
+      new_gamma_init <- as.matrix(Matrix::bdiag(
+        init@gamma_hdim,
+        init@gamma_ldim
+      ))
+    }
 
     new_init <- initC(
       beta_ns = new_beta_init,
@@ -281,6 +292,9 @@ setMethod(
       new_data, new_model, new_init, tuning_algo, new_full_hyperparam
     )
 
+
+
+
     param <- list(
       beta   = mle$beta_ldim[[tuning_algo@niter + 1]],
       gamma  = mle$gamma_ldim[[tuning_algo@niter + 1]],
@@ -289,6 +303,6 @@ setMethod(
 
     ll <- loglik(new_data, new_model, tuning_algo, param, pen, p)
 
-    return(ll)
+    return(list(ll = ll, param = param))
   }
 )
