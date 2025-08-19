@@ -102,17 +102,24 @@ merge_support <- function(
 }
 
 
-merge_init_beta <- function(beta_hdim, beta_ldim, lines_with_ones, w) {
+merge_init_beta <- function(beta_hdim, beta_ldim, lines_with_ones) {
+  # a-t-on vraiment besoin de w
   nb_phi_s <- dim(beta_hdim)[2]
-  nb_phi_ns <- dim(beta_ldim)[2]
+
+  if (is.null(beta_ldim)) {
+    nb_phi_ns <- 0
+  } else {
+    nb_phi_ns <- dim(beta_ldim)[2]
+  }
+
 
   intercepts <- matrix(
     c(beta_hdim[1, ], beta_ldim[1, ]),
     nrow = 1
   )
 
-  if (!is.null(w)) {
-    top_s <- matrix(0, ncol = nb_phi_s, nrow = nrow(w))
+  if (!is.null(beta_ldim) && (nrow(beta_ldim) > 1)) { ## replace w by beta_ldim
+    top_s <- matrix(0, ncol = nb_phi_s, nrow = dim(beta_ldim)[1] - 1)
     top <- cbind(top_s, beta_ldim[-1, ])
   } else {
     top <- NULL
