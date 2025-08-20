@@ -24,6 +24,15 @@ setMethod(
       )
     }
 
+    if (is.null(model@index_select) || (length(model@index_select) == 0)) {
+      stop(
+        paste0(
+          "'index_select' must contain at least one parameter index",
+          " for variable selection."
+        )
+      )
+    }
+
     # Plan de parallélisation
     future::plan(future::multisession, workers = tuning_algo@nb_workers)
 
