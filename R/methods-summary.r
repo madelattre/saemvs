@@ -45,9 +45,9 @@ setMethod(
 
     all_select_var_unique <- unique(all_select_var)
 
-    beta_est <- res@param[[selected_model]]$beta
+    beta_est <- res@est_mle[[selected_model]]$beta
     nb_phi <- dim(beta_est)[2]
-    gamma_est <- res@param[[selected_model]]$gamma
+    gamma_est <- res@est_mle[[selected_model]]$gamma
 
     colnames(beta_est) <- paste0("\u03C6", 1:nb_phi)
     n <- nrow(beta_est)

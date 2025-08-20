@@ -60,10 +60,10 @@ setMethod(
       function(x) map_results[[x]]$threshold
     )
 
-    # beta_map <- lapply(
-    #   seq_along(map_results),
-    #   function(x) map_results[[x]]$beta
-    # )
+    beta_map <- lapply(
+      seq_along(map_results),
+      function(x) map_results[[x]]$beta
+    )
 
     # recherche des supports uniques
     support_hashes <- sapply(support, digest::digest)
@@ -98,7 +98,7 @@ setMethod(
       function(x) ebic_res[[x]]$ll
     ))
 
-    param <- lapply(
+    est_mle <- lapply(
       seq_along(ebic_res),
       function(x) ebic_res[[x]]$param
     )
@@ -108,7 +108,8 @@ setMethod(
       pen = pen,
       crit_values = ebic,
       thresholds = thresholds,
-      param = param,
+      beta_map = beta_map,
+      est_mle = est_mle,
       support = support,
       unique_support = support[unique_support],
       map_to_unique_support = map_to_unique_support,

@@ -105,7 +105,7 @@ setMethod(
   function(res_saemvs) {
     ebic <- res_saemvs@crit_values
     threshold <- simplify2array(res_saemvs@thresholds)
-    beta <- simplify2array(res_saemvs@beta)
+    beta <- simplify2array(res_saemvs@beta_map)
     support <- res_saemvs@support
     map_to_unique_support <- res_saemvs@map_to_unique_support
     nu0_grid <- res_saemvs@nu0_grid
