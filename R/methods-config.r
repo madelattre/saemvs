@@ -241,3 +241,138 @@ setMethod(
     ))
   }
 )
+
+## -- Prepare data, model and initialization from map to mle
+
+setGeneric(
+  "from_map_to_mle_data",
+  function(data, cand_support) {
+    standardGeneric("from_map_to_mle_data")
+  }
+)
+
+setMethod(
+  "from_map_to_mle_data",
+  signature(
+    data = "dataC", cand_support = "matrix"
+  ),
+  function(data, cand_support) {
+    n <- length(data@y_list)
+
+    lines_with_ones <- which(rowSums(cand_support) > 0)
+
+    v_restricted <- matrix(
+      cbind(1, data@v)[, lines_with_ones],
+      nrow = n
+    )[, -1] # -1 pour ne pas contenir l'intercept
+
+    new_w <- matrix(
+      cbind(data@w, v_restricted),
+      nrow = n
+    )
+
+    new_data <- dataC(y = data@y_list, t = data@t_list, w = new_w)
+
+    return(new_data)
+  }
+)
+
+setGeneric(
+  "from_map_to_mle_model",
+  function(model, cand_support) {
+    standardGeneric("from_map_to_mle_model")
+  }
+)
+
+setMethod(
+  "from_map_to_mle_model",
+  signature(
+    model = "modelC", cand_support = "matrix"
+  ),
+  function(model, cand_support) {
+    # Ici il faut tenir compte des indices des phi_s et des phi_ns
+
+    all_phi_index <- seq(1, model@q_phi)
+    index_unselect <- setdiff(all_phi_index, model@index_select)
+    perm <- c(model@index_select, index_unselect)
+    inv_perm <- match(seq_along(perm), perm)
+
+    nb_phi_s <- length(model@index_select)
+
+    lines_with_ones <- which(rowSums(cand_support) > 0)
+
+    covariate_restricted_support <- cand_support[lines_with_ones, ]
+
+    if (is.matrix(covariate_restricted_support)) {
+      selected_support_matrix <- matrix(
+        covariate_restricted_support[-1, ],
+        ncol = nb_phi_s,
+        nrow = length(covariate_restricted_support[-1, ]) / nb_phi_s
+      )
+    } else {
+      selected_support_matrix <- NULL
+    }
+
+    new_covariate_support <- merge_support(
+      model@covariate_support,
+      selected_support_matrix,
+      data@w,
+      nb_phi_s,
+      model@q_phi - nb_phi_s
+    )
+
+    new_model <- modelC(
+      g = model@model_func,
+      nphi = model@q_phi,
+      phi_fixed = model@index_fixed,
+      support = new_covariate_support[, inv_perm]
+    )
+
+    return(new_model)
+  }
+)
+
+
+setGeneric(
+  "from_map_to_mle_init",
+  function(init, model, cand_support) {
+    standardGeneric("from_map_to_mle_init")
+  }
+)
+
+setMethod(
+  "from_map_to_mle_init",
+  signature(
+    init = "initC", model = "modelC", cand_support = "matrix"
+  ),
+  # Ici il faut tenir compte des indices des phi_s et des phi_ns
+  function(init, model, cand_support) {
+    all_phi_index <- seq(1, model@q_phi)
+    index_unselect <- setdiff(all_phi_index, model@index_select)
+    perm <- c(model@index_select, index_unselect)
+    inv_perm <- match(seq_along(perm), perm)
+
+    lines_with_ones <- which(rowSums(cand_support) > 0)
+
+    new_beta_init <- merge_init_beta(
+      init@beta_hdim, init@beta_ldim, lines_with_ones
+    )
+
+    if (is.null(init@gamma_ldim)) {
+      new_gamma_init <- init@gamma_hdim
+    } else {
+      new_gamma_init <- as.matrix(Matrix::bdiag(
+        init@gamma_hdim,
+        init@gamma_ldim
+      ))
+    }
+
+    new_init <- initC(
+      beta_ns = new_beta_init[, inv_perm],
+      gamma_ns = new_gamma_init[inv_perm, inv_perm],
+      sigma2 = init@sigma2
+    )
+
+    return(new_init)
+  }
+)

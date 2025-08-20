@@ -43,10 +43,7 @@ setMethod(
       nu0_list,
       function(nu0) {
         # Important : le code C++ doit être dispo sur chaque worker
-        # perm <- c(model@index_select, model@index_fixed)
-        # compile_model(model@model_func, perm)
         compile_model(model@model_func)
-
         fh <- fullHyperC(nu0, hyperparam)
         saemvs_one_map_run(data, model, init, tuning_algo, fh)
       },
@@ -63,10 +60,10 @@ setMethod(
       function(x) map_results[[x]]$threshold
     )
 
-    beta_map <- lapply(
-      seq_along(map_results),
-      function(x) map_results[[x]]$beta
-    )
+    # beta_map <- lapply(
+    #   seq_along(map_results),
+    #   function(x) map_results[[x]]$beta
+    # )
 
     # recherche des supports uniques
     support_hashes <- sapply(support, digest::digest)
@@ -88,8 +85,6 @@ setMethod(
       unique_support,
       function(k) {
         # Important : le code C++ doit être dispo sur chaque worker
-        # perm <- c(model@index_select, model@index_fixed)
-        # compile_model(model@model_func, perm)
         compile_model(model@model_func)
         saemvs_one_ebic_run(
           k, support, data, model, init, tuning_algo, hyperparam, pen
@@ -107,8 +102,6 @@ setMethod(
       seq_along(ebic_res),
       function(x) ebic_res[[x]]$param
     )
-
-
 
     res <- new(
       "resSAEMVS",
@@ -198,7 +191,6 @@ setMethod(
       support = support,
       beta = beta_map
     )
-    # On garde beta pour le plot mais les autres paramètres sont-ils utiles?
     return(res)
   }
 )
@@ -224,85 +216,21 @@ setMethod(
                                   hyperparam, pen) {
     p <- dim(data@v)[2]
 
-    nb_phi_s <- length(model@index_select)
-    n <- length(data@y_list)
-
-    covariate_support <- matrix(as.numeric(support[[k]]),
+    cand_support <- matrix(as.numeric(support[[k]]),
       nrow = nrow(support[[k]])
     )
 
-
-
-    lines_with_ones <- which(rowSums(covariate_support) > 0)
-
-    covariate_restricted_support <- covariate_support[lines_with_ones, ]
-    # contient l'intercept
-
-    v_restricted <- matrix(
-      cbind(1, data@v)[, lines_with_ones],
-      nrow = n
-    )[, -1] # -1 pour ne pas contenir l'intercept
-
-    new_w <- matrix(
-      cbind(data@w, v_restricted),
-      nrow = n
-    )
-
-    if (is.matrix(covariate_restricted_support)) {
-      selected_support_matrix <- matrix(
-        covariate_restricted_support[-1, ],
-        ncol = nb_phi_s,
-        nrow = length(covariate_restricted_support[-1, ]) / nb_phi_s
-      )
-    } else {
-      selected_support_matrix <- NULL
-    }
-
-    new_covariate_support <- merge_support(
-      model@covariate_support,
-      selected_support_matrix,
-      data@w,
-      nb_phi_s,
-      model@q_phi - nb_phi_s
-    )
-
-    new_model <- modelC(
-      g = model@model_func,
-      nphi = model@q_phi,
-      phi_fixed = model@index_fixed,
-      support = new_covariate_support
-    )
-
-    new_data <- dataC(y = data@y_list, t = data@t_list, w = new_w)
-
-    new_beta_init <- merge_init_beta(
-      init@beta_hdim, init@beta_ldim, lines_with_ones
-    )
-
-    if (is.null(init@gamma_ldim)) {
-      new_gamma_init <- init@gamma_hdim
-    } else {
-      new_gamma_init <- as.matrix(Matrix::bdiag(
-        init@gamma_hdim,
-        init@gamma_ldim
-      ))
-    }
-
-    new_init <- initC(
-      beta_ns = new_beta_init,
-      gamma_ns = new_gamma_init,
-      sigma2 = init@sigma2
-    )
-
+    # Faut-il gérer le cas particulier ou cand_support est vide ou NULL?
+    # Non si cand_support contient l'intercept, il n'est ni vide ni NULL
+    new_data <- from_map_to_mle_data(data, cand_support)
+    new_model <- from_map_to_mle_model(model, cand_support)
+    new_init <- from_map_to_mle_init(init, model, cand_support)
     new_hyperparam <- hyperC(NULL, NULL, NULL)
     new_full_hyperparam <- fullHyperC(NULL, new_hyperparam)
 
     mle <- run_saem(
       new_data, new_model, new_init, tuning_algo, new_full_hyperparam
     )
-
-
-
 
     param <- list(
       beta   = mle$beta_ldim[[tuning_algo@niter + 1]],
