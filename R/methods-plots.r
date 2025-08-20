@@ -61,6 +61,31 @@ setMethod(
 
 
       df$component <- paste0("(", df$i, ",", df$j, ")")
+
+      ## Check format of sel_components
+      valid_format <- grepl("^\\([0-9]+,[0-9]+\\)$", sel_components)
+      if (any(!valid_format)) {
+        stop("Some elements in 'sel_components' do not match the required format '(i,j)'.")
+      }
+
+      ## Check if components exist in the matrix
+      possible_components <- unique(df$component)
+      invalid <- setdiff(sel_components, possible_components)
+      if (length(invalid) > 0) {
+        stop(
+          paste(
+            "The following components do not exist in the matrix:",
+            paste(invalid, collapse = ", ")
+          )
+        )
+      }
+
+      ## Limit to 16 components
+      if (length(sel_components) > 16) {
+        sel_components <- sel_components[1:16]
+        warning("Only the first 16 components of 'sel_components' have been considered.")
+      }
+
       df <- subset(df, component %in% sel_components)
 
 
