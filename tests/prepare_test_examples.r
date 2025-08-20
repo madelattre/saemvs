@@ -4,24 +4,29 @@ data_mle <- dataC(y = y_list, t = times, w = v)
 
 # -- Prepare models
 
+# g <- function(phi, t) {
+#   phi[3] + phi[1] / (1 + exp(-(t - phi[2])))
+# }
+
 g <- function(phi, t) {
-  phi[3] + phi[1] / (1 + exp(-(t - phi[2])))
+  phi[2] + phi[1] / (1 + exp(-(t - phi[3])))
 }
 
 q_phi <- 3
 
 mod_map_full <- modelC(g = g, nphi = q_phi, phi_select = c(1, 2, 3))
 
+
 mod_map_part_notfixed <- modelC(
-  g = g, nphi = q_phi, phi_select = c(1, 2)
+  g = g, nphi = q_phi, phi_select = c(1, 3)
 )
 
 mod_map_part_fixed <- modelC(
-  g = g, nphi = q_phi, phi_select = c(1, 2), phi_fixed = c(3)
+  g = g, nphi = q_phi, phi_select = c(1, 3), phi_fixed = c(2)
 )
 
 mod_map_part_fixed_cov <- modelC(
-  g = g, nphi = q_phi, phi_select = c(1, 2), phi_fixed = c(3),
+  g = g, nphi = q_phi, phi_select = c(1, 3), phi_fixed = c(2),
   support = matrix(c(1, 1), ncol = 1)
 )
 
