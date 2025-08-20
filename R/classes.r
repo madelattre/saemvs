@@ -481,7 +481,8 @@ setClass(
     support = "list",
     unique_support = "list",
     map_to_unique_support = "numeric",
-    nu0_grid = "numeric"
+    nu0_grid = "numeric",
+    index_fixed = "numericORNULL"
   ),
   prototype = list(
     pen = character(0),
@@ -492,7 +493,8 @@ setClass(
     support = list(),
     unique_support = list(),
     map_to_unique_support = numeric(0),
-    nu0_grid = numeric(0)
+    nu0_grid = numeric(0),
+    index_fixed = numeric(0)
   ),
   validity = function(object) {
     TRUE

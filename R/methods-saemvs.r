@@ -113,7 +113,8 @@ setMethod(
       support = support,
       unique_support = support[unique_support],
       map_to_unique_support = map_to_unique_support,
-      nu0_grid = tuning_algo@nu0_grid
+      nu0_grid = tuning_algo@nu0_grid,
+      index_fixed = model@index_fixed
     )
 
     return(res)

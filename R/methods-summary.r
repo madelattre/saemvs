@@ -16,6 +16,9 @@ setMethod(
   function(res, dec = 3) {
     # Vérifier que res n'est pas vide
 
+
+    index_fixed <- res@index_fixed
+    
     selected_model <- which.min(res@crit_values)
 
     selected_support <- res@unique_support[[selected_model]]
@@ -80,7 +83,13 @@ setMethod(
     cat("\n")
     cat("---- Covariance matrix ----\n")
     cat("\n")
-    print(round(gamma_est, dec))
+
+    if (is.null(index_fixed) || (length(index_fixed) == 0)) {
+      print(round(gamma_est, dec))
+    } else {
+      print(round(zero_out_shrinked(gamma_est, index_fixed), dec))
+    }
+
     cat("\n")
   }
 )
