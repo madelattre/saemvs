@@ -39,16 +39,25 @@ setMethod(
     nu0_list <- tuning_algo@nu0_grid
 
     # Lancer les calculs en parallèle
-    map_results <- furrr::future_map(
-      nu0_list,
-      function(nu0) {
-        # Important : le code C++ doit être dispo sur chaque worker
-        compile_model(model@model_func)
-        fh <- fullHyperC(nu0, hyperparam)
-        saemvs_one_map_run(data, model, init, tuning_algo, fh)
-      },
-      .options = furrr::furrr_options(seed = tuning_algo@seed)
-    )
+
+    message("SAEMVS: step 1/2")
+    progressr::with_progress({
+      p <- progressr::progressor(along = nu0_list)
+
+      map_results <- furrr::future_map(
+        nu0_list,
+        function(nu0) {
+          # Important : le code C++ doit être dispo sur chaque worker
+          compile_model(model@model_func)
+          fh <- fullHyperC(nu0, hyperparam)
+          res <- saemvs_one_map_run(data, model, init, tuning_algo, fh)
+          p()
+          res
+        },
+        .options = furrr::furrr_options(seed = tuning_algo@seed)
+      )
+    })
+
 
     support <- lapply(
       seq_along(map_results),
@@ -81,17 +90,23 @@ setMethod(
 
 
     # Lancer les calculs en parallèle
-    ebic_res <- furrr::future_map(
-      unique_support,
-      function(k) {
-        # Important : le code C++ doit être dispo sur chaque worker
-        compile_model(model@model_func)
-        saemvs_one_ebic_run(
-          k, support, data, model, init, tuning_algo, hyperparam, pen
-        )
-      },
-      .options = furrr::furrr_options(seed = tuning_algo@seed)
-    )
+    message("SAEMVS: step 2/2")
+    progressr::with_progress({
+      p <- progressr::progressor(along = nu0_list)
+      ebic_res <- furrr::future_map(
+        unique_support,
+        function(k) {
+          # Important : le code C++ doit être dispo sur chaque worker
+          compile_model(model@model_func)
+          res <- saemvs_one_ebic_run(
+            k, support, data, model, init, tuning_algo, hyperparam, pen
+          )
+          p()
+          res
+        },
+        .options = furrr::furrr_options(seed = tuning_algo@seed)
+      )
+    })
 
     ebic <- unlist(lapply(
       seq_along(ebic_res),
