@@ -247,7 +247,7 @@ List metropolis_vector_cpp(
   # Compile et charge le code en mémoire
   Rcpp::sourceCpp(tmp_cpp, rebuild = TRUE, verbose = FALSE)
 
-  message("Compilation réussie : fonctions C++ chargées en mémoire")
+  # message("Compilation réussie : fonctions C++ chargées en mémoire")
   invisible(TRUE)
 }
 

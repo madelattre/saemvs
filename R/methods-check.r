@@ -142,19 +142,20 @@ setMethod(
   function(hyper, model, tuning) {
     nbs <- length(model@index_select)
 
-    if (nbs == 0) { # mle
-      if (!is.null(hyper@nu0) || !is.null(hyper@nu1) ||
-        !is.null(hyper@nsig) || !is.null(hyper@lsig) ||
-        !is.null(hyper@a) || !is.null(hyper@b) ||
-        !is.null(hyper@sigma2_mu) || !is.null(hyper@sgam) ||
-        !is.null(hyper@d)) {
-        warning(paste0(
-          "As no parameter is subject to selection,",
-          " no hyperparameter is required, so the ",
-          "hyperparameter slots will be set to NULL."
-        ))
-      }
-    } else { # map
+    # if (nbs == 0) { # mle
+    #   if (!is.null(hyper@nu0) || !is.null(hyper@nu1) ||
+    #     !is.null(hyper@nsig) || !is.null(hyper@lsig) ||
+    #     !is.null(hyper@a) || !is.null(hyper@b) ||
+    #     !is.null(hyper@sigma2_mu) || !is.null(hyper@sgam) ||
+    #     !is.null(hyper@d)) {
+    #     warning(paste0(
+    #       "As no parameter is subject to selection,",
+    #       " no hyperparameter is required, so the ",
+    #       "hyperparameter slots will be set to NULL."
+    #     ))
+    #   }
+    # }
+    if (nbs != 0) { # map
       if (!is.null(hyper@a) && (length(hyper@a) != nbs)) {
         stop(paste0(
           "As ", nbs, " parameters are subject to selection,",
