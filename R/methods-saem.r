@@ -16,14 +16,14 @@ setMethod(
     # Attention, l'ordre de ces étapes est important
 
     check_data(data, model)
-    data <- prepare_data(data, model)
+    data_alg <- prepare_data(data, model)
     # if not default_init check_init(init,data,model)
     # else create init object with the default method
-    check_init(init, data, model)
+    check_init(init, data_alg, model)
     init <- prepare_init(init, model)
     check_hyper(hyperparam, model, tuning_algo)
-    hyperparam <- prepare_hyper(hyperparam, data, model)
-    config <- make_config(data, model, tuning_algo, init, hyperparam)
+    hyperparam <- prepare_hyper(hyperparam, data_alg, model)
+    config <- make_config(data_alg, model, tuning_algo, init, hyperparam)
     state <- init_state(config)
     case <- get_case(config)
 
