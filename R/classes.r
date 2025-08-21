@@ -11,19 +11,19 @@ setClass(
     y_list = "list",
     t_list = "list",
     x_sel = "matrixORNULL",
-    x_forced = "matrixORNULL",
-    tx_x = "matrixORNULL",
-    kron_tx_x = "matrixORNULL",
-    x_forced_sel = "matrixORNULL"
+    x_forced = "matrixORNULL" #,
+    # tx_x = "matrixORNULL",
+    # kron_tx_x = "matrixORNULL",
+    # x_forced_sel = "matrixORNULL"
   ),
   prototype = list(
     y_list = list(),
     t_list = list(),
     x_sel = NULL,
-    x_forced = NULL,
-    tx_x = NULL,
-    kron_tx_x = NULL,
-    x_forced_sel = NULL
+    x_forced = NULL#,
+    # tx_x = NULL,
+    # kron_tx_x = NULL,
+    # x_forced_sel = NULL
   ),
   validity = function(object) {
     if (length(object@y_list) != length(object@t_list)) {
@@ -67,13 +67,33 @@ setClass(
 
 #' @export
 dataC <- function(
-    y, t, x_sel = NULL, x_forced = NULL, x_forced_sel = NULL,
-    tx_x = NULL, kron_tx_x = NULL) {
+    y, t, x_sel = NULL, x_forced = NULL, x_forced_sel = NULL) {
   new("dataC",
-    y_list = y, t_list = t, x_sel = x_sel, x_forced = x_forced,
-    x_forced_sel = x_forced_sel, tx_x = tx_x, kron_tx_x = kron_tx_x
+    y_list = y, t_list = t, x_sel = x_sel, x_forced = x_forced
   )
 }
+
+#' @exportClass dataAlgo
+setClass(
+  "dataAlgo",
+  slots = list( # On déclare ici les slots supplémentaires par rapport à dataC
+    x_phi_sel = "matrixORNULL",
+    x_phi_insel = "matrixORNULL",
+    tx_x_phi_sel = "matrixORNULL",
+    kron_tx_x_phi_sel = "matrixORNULL",
+    x_phi_insel_list = "listORNULL"
+  ),
+  prototype = list(
+    x_phi_sel = NULL,
+    x_phi_insel = NULL,
+    tx_x_phi_sel = NULL,
+    kron_tx_x_phi_sel = NULL,
+    x_phi_insel_list = NULL
+  ),
+  contains = "dataC"
+)
+
+
 
 ## -- Model
 
