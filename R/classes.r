@@ -1,7 +1,6 @@
 setClassUnion("matrixORNULL", c("matrix", "NULL"))
 setClassUnion("numericORNULL", c("numeric", "NULL"))
 setClassUnion("listORNULL", c("list", "NULL"))
-# setClassUnion("characterORNULL", c("character", "NULL"))
 
 ## -- Data
 
@@ -11,20 +10,20 @@ setClass(
   slots = list(
     y_list = "list",
     t_list = "list",
-    v = "matrixORNULL",
-    tv_v = "matrixORNULL",
-    kron_tv_v = "matrixORNULL",
-    w = "matrixORNULL",
-    x = "listORNULL"
+    x_sel = "matrixORNULL",
+    x_forced = "matrixORNULL",
+    tx_x = "matrixORNULL",
+    kron_tx_x = "matrixORNULL",
+    x_forced_sel = "matrixORNULL"
   ),
   prototype = list(
     y_list = list(),
     t_list = list(),
-    v = NULL,
-    tv_v = NULL,
-    kron_tv_v = NULL,
-    w = NULL,
-    x = list()
+    x_sel = NULL,
+    x_forced = NULL,
+    tx_x = NULL,
+    kron_tx_x = NULL,
+    x_forced_sel = NULL
   ),
   validity = function(object) {
     if (length(object@y_list) != length(object@t_list)) {
@@ -42,22 +41,22 @@ setClass(
 
     n <- length(object@y_list)
 
-    if (!is.null(object@v) && nrow(object@v) != n) {
+    if (!is.null(object@x_sel) && nrow(object@x_sel) != n) {
       return(
         paste0(
-          "The matrix 'v' must have exactly", n,
+          "The matrix 'x_sel' must have exactly", n,
           "rows, to match the", n, "individual sequences in 'y'.
-          Currently, 'v' has,", nrow(v), "rows."
+          Currently, 'x_sel' has,", nrow(object@x_sel), "rows."
         )
       )
     }
 
-    if (!is.null(object@w) && nrow(object@w) != n) {
+    if (!is.null(object@x_forced) && nrow(object@x_forced) != n) {
       return(
         paste0(
-          "The matrix 'w' must have exactly", n,
+          "The matrix 'x_forced' must have exactly", n,
           "rows, to match the", n, "individual sequences in 'y'.
-          Currently, 'w' has,", nrow(w), "rows."
+          Currently, 'x_forced' has,", nrow(object@x_forced), "rows."
         )
       )
     }
@@ -68,11 +67,11 @@ setClass(
 
 #' @export
 dataC <- function(
-    y, t,
-    v = NULL, w = NULL, tv_v = NULL, kron_tv_v = NULL, x = NULL) {
+    y, t, x_sel = NULL, x_forced = NULL, x_forced_sel = NULL,
+    tx_x = NULL, kron_tx_x = NULL) {
   new("dataC",
-    y_list = y, t_list = t, v = v, w = w, tv_v = tv_v,
-    kron_tv_v = kron_tv_v, x = x
+    y_list = y, t_list = t, x_sel = x_sel, x_forced = x_forced,
+    x_forced_sel = x_forced_sel, tx_x = tx_x, kron_tx_x = kron_tx_x
   )
 }
 
@@ -83,17 +82,17 @@ setClass(
   "modelC",
   slots = list(
     model_func = "function",
-    q_phi = "numeric",
-    index_select = "numericORNULL",
-    index_fixed = "numericORNULL",
-    covariate_support = "matrixORNULL" # ne doit pas contenir l'intercept
+    phi_dim = "numeric",
+    phi_sel_idx = "numericORNULL",
+    phi_fixed_idx = "numericORNULL",
+    x_forced_support = "matrixORNULL"
   ),
   prototype = list(
     model_func = function(phi, t) numeric(0),
-    q_phi = integer(0),
-    index_select = c(), # NULL?
-    index_fixed = c(), # NULL?
-    covariate_support = matrix(numeric(0), nrow = 0, ncol = 0) # NULL?
+    phi_dim = integer(0),
+    phi_sel_idx = c(),
+    phi_fixed_idx = c(),
+    x_forced_support = matrix(numeric(0), nrow = 0, ncol = 0)
   ),
   validity = function(object) {
     args <- names(formals(object@model_func))
@@ -102,57 +101,60 @@ setClass(
       return("The model function must have arguments 'phi' and 't'.")
     }
 
-    if (!(is.integer(object@q_phi) && length(object@q_phi) == 1 &&
-      object@q_phi >= 1)) {
-      return("q_phi must be a positive integer value.")
+    if (!(is.integer(object@phi_dim) && length(object@phi_dim) == 1 &&
+      object@phi_dim >= 1)) {
+      return("'phi_dim' must be a positive integer value.")
     }
 
-    if (!(is.integer(object@index_select) && all(object@index_select >= 1) &&
-      all(object@index_select <= object@q_phi))) {
-      return("index_select must be a vector of integer values between 1
-      and q_phi.")
+    if (!(is.integer(object@phi_sel_idx) && all(object@phi_sel_idx >= 1) &&
+      all(object@phi_sel_idx <= object@phi_dim))) {
+      return("'phi_sel_idx' must be a vector of integer values between 1
+      and 'phi_dim'.")
     }
 
-    if (!(is.integer(object@index_fixed) && all(object@index_fixed >= 1) &&
-      all(object@index_fixed <= object@q_phi))) {
-      return("index_fixed must be a vector of integer values between 1
-      and q_phi.")
+    if (!(is.integer(object@phi_fixed_idx) && all(object@phi_fixed_idx >= 1) &&
+      all(object@phi_fixed_idx <= object@phi_dim))) {
+      return("'phi_fixed_idx' must be a vector of integer values between 1
+      and 'phi_dim'.")
     }
 
-    if (length(intersect(object@index_select, object@index_fixed)) > 0) {
-      return("index_select and index_fixed must not have any elements in
+    if (length(intersect(object@phi_sel_idx, object@phi_fixed_idx)) > 0) {
+      return("'phi_sel_idx' and 'phi_fixed_idx' must not have any elements in
       common.")
     }
 
-    supp <- object@covariate_support
+    supp <- object@x_forced_support
+
     if (!is.null(supp)) {
       if (!is.matrix(supp)) {
-        return("covariate_support must be a matrix or NULL.")
+        return("'x_forced_support' must be a matrix or NULL.")
       }
       if (!all(dim(supp) == c(0, 0))) {
-        nrows_expected <- object@q_phi - length(object@index_select)
-        if (ncol(supp) != nrows_expected) {
-          return(sprintf("covariate_support must have %d rows
-          (q_phi - length(index_select)).", nrows_expected))
+        if (ncol(supp) != object@phi_dim) {
+          return(
+            paste0(
+              "'x_forced_support' must have ", object@phi_dim,
+              " columns: one for each component in 'phi'."
+            )
+          )
         }
-        if (!all(supp %in% c(0, 1))) {
-          return("covariate_support must contain only 0s and 1s.")
-        }
+        # On vérifie le nombre de lignes dans 'x_forced_support' en utilisant les information de l'objet data
       }
     }
-
     TRUE
   }
 )
 
 #' @export
 modelC <- function(
-    g, nphi, phi_select = c(), phi_fixed = c(), support = c()) {
+    g, phi_dim, phi_sel_idx = c(), phi_fixed_idx = c(),
+    x_forced_support = matrix(numeric(0), nrow = 0, ncol = 0)) {
   new("modelC",
-    model_func = g, q_phi = as.integer(nphi),
-    index_select = as.integer(phi_select),
-    index_fixed = as.integer(phi_fixed),
-    covariate_support = support
+    model_func = g,
+    phi_dim = as.integer(phi_dim),
+    phi_sel_idx = as.integer(phi_sel_idx),
+    phi_fixed_idx = as.integer(phi_fixed_idx),
+    x_forced_support = x_forced_support
   )
 }
 
@@ -163,64 +165,63 @@ modelC <- function(
 setClass(
   "initC",
   slots = list(
-    beta_hdim = "matrixORNULL",
-    gamma_hdim = "matrixORNULL",
-    beta_ldim = "matrixORNULL",
-    gamma_ldim = "matrixORNULL",
+    intercept = "numeric",
+    beta_forced = "matrixORNULL",
+    beta_sel = "matrixORNULL",
+    gamma = "matrix",
     sigma2 = "numeric",
     alpha = "numericORNULL"
   ),
   prototype = list(
-    beta_hdim = NULL,
-    gamma_hdim = NULL,
-    beta_ldim = NULL,
-    gamma_ldim = NULL,
-    sigma2 = 10,
+    intercept = numeric(0),
+    beta_forced = NULL,
+    beta_sel = NULL,
+    gamma = matrix(numeric(0), nrow = 0, ncol = 0),
+    sigma2 = numeric(0),
     alpha = NULL
   ),
   validity = function(object) {
-    if ((!is.null(object@beta_hdim)) && (!is.null(object@gamma_hdim))) {
-      if (ncol(object@gamma_hdim) != ncol(object@beta_hdim)) {
+    # Même nombre de composantes dans intercept que de colonnes dans beta_forced et beta_sel si ces deux derniers sont non nuls
+
+    if (!is.null(object@beta_sel)) {
+      if (ncol(object@beta_sel) != length(object@intercept)) {
         return(
           paste0(
-            "The initialization of matrices 'beta_s' and ",
-            "'gamma_s' must have the same number of columns."
+            "The number of colums in 'beta_sel' must be equal to ",
+            "the number of components in 'intercept'."
           )
         )
       }
     }
 
-    if ((!is.null(object@beta_ldim)) && (!is.null(object@gamma_ldim))) {
-      if (ncol(object@gamma_ldim) != ncol(object@beta_ldim)) {
+
+    if (!is.null(object@beta_forced)) {
+      if (ncol(object@beta_forced) != length(object@intercept)) {
         return(
           paste0(
-            "The initialization of matrices 'beta_ns' and ",
-            "'gamma_ns' must have the same number of columns."
+            "The number of colums in 'beta_forced' must be equal to ",
+            "the number of components in 'intercept'."
           )
         )
       }
     }
 
-    if (!is.null(object@gamma_hdim)) {
-      check_covariance(object@gamma_hdim, "The initial value for 'gamma_s' ")
-    }
-    if (!is.null(object@gamma_ldim)) {
-      check_covariance(object@gamma_ldim, "The initial value for 'gamma_ns' ")
+    if (!is.null(object@gamma)) {
+      check_covariance(object@gamma, "The initial value for 'gamma' ")
     }
 
-    check_positive_slot(object@sigma2, "The value for 'sigma2' ")
+    check_positive_slot(object@sigma2, "The initial value for 'sigma2' ")
 
-    if ((!is.null(object@beta_hdim)) && (!is.null(object@alpha))) {
-      if (ncol(object@beta_hdim) != length(object@alpha)) {
+    if ((!is.null(object@beta_sel)) && (!is.null(object@alpha))) {
+      if (ncol(object@beta_sel) != length(object@alpha)) {
         return(
           paste0(
-            "The number of elements in 'alpha' must be equal to the",
-            "number of columns in 'beta_s'."
+            "The number of elements in 'alpha' must be equal to the ",
+            "number of columns in 'beta_sel'."
           )
         )
       }
     }
-
 
     TRUE
   }
@@ -228,11 +229,14 @@ setClass(
 
 #' @export
 initC <- function(
-    beta_s = NULL, beta_ns = NULL, gamma_s = NULL,
-    gamma_ns = NULL, sigma2 = 10, alpha = NULL) {
+    intercept, beta_forced = NULL, beta_sel = NULL,
+    gamma, sigma2, alpha = NULL) {
   new("initC",
-    beta_hdim = beta_s, beta_ldim = beta_ns,
-    gamma_hdim = gamma_s, gamma_ldim = gamma_ns, sigma2 = sigma2,
+    intercept = intercept,
+    beta_forced = beta_forced,
+    beta_sel = beta_sel,
+    gamma = gamma,
+    sigma2 = sigma2,
     alpha = alpha
   )
 }
@@ -244,7 +248,6 @@ initC <- function(
 setClass(
   "hyperC",
   slots = list(
-    # nu0 = "numericORNULL",
     nu1 = "numericORNULL",
     nsig = "numericORNULL",
     lsig = "numericORNULL",
