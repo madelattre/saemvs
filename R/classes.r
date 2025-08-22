@@ -11,7 +11,7 @@ setClass(
     y_list = "list",
     t_list = "list",
     x_sel = "matrixORNULL",
-    x_forced = "matrixORNULL" #,
+    x_forced = "matrixORNULL" # ,
     # tx_x = "matrixORNULL",
     # kron_tx_x = "matrixORNULL",
     # x_forced_sel = "matrixORNULL"
@@ -20,7 +20,7 @@ setClass(
     y_list = list(),
     t_list = list(),
     x_sel = NULL,
-    x_forced = NULL#,
+    x_forced = NULL # ,
     # tx_x = NULL,
     # kron_tx_x = NULL,
     # x_forced_sel = NULL
@@ -67,7 +67,7 @@ setClass(
 
 #' @export
 dataC <- function(
-    y, t, x_sel = NULL, x_forced = NULL, x_forced_sel = NULL) {
+    y, t, x_sel = NULL, x_forced = NULL) {
   new("dataC",
     y_list = y, t_list = t, x_sel = x_sel, x_forced = x_forced
   )
@@ -77,6 +77,8 @@ dataC <- function(
 setClass(
   "dataAlgo",
   slots = list( # On déclare ici les slots supplémentaires par rapport à dataC
+    # Ce sont les slots qui vont être utilisés dans les algos
+    # (pas les autres déjà présents dans dataC)
     x_phi_sel = "matrixORNULL",
     x_phi_insel = "matrixORNULL",
     tx_x_phi_sel = "matrixORNULL",
@@ -261,6 +263,27 @@ initC <- function(
   )
 }
 
+#' @exportClass initC
+setClass(
+  "initAlgo",
+  slots = list(
+    beta_hdim = "matrixORNULL",
+    beta_ldim = "matrixORNULL",
+    gamma_hdim = "matrixORNULL",
+    gamma_ldim = "matrixORNULL",
+    sigma2 = "numeric",
+    alpha = "numericORNULL"
+  ),
+  prototype = list(
+    beta_hdim = NULL,
+    beta_ldim = NULL,
+    gamma_hdim = NULL,
+    gamma_ldim = NULL,
+    sigma2 = 10,
+    alpha = NULL
+  )
+  # Pas besoin de validity, je crée ces objets dans le code
+)
 
 ## -- Hyperparameters
 
