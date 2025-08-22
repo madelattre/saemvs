@@ -24,10 +24,10 @@ setMethod(
       )
     }
 
-    if (is.null(model@index_select) || (length(model@index_select) == 0)) {
+    if (is.null(model@phi_sel_idx) || (length(model@phi_sel_idx) == 0)) {
       stop(
         paste0(
-          "'index_select' must contain at least one parameter index",
+          "'phi_sel_idx' must contain at least one parameter index",
           " for variable selection."
         )
       )
@@ -118,6 +118,10 @@ setMethod(
       function(x) ebic_res[[x]]$param
     )
 
+    # ebic <- 0
+
+    # est_mle <- list()
+
     res <- new(
       "resSAEMVS",
       pen = pen,
@@ -129,7 +133,7 @@ setMethod(
       unique_support = support[unique_support],
       map_to_unique_support = map_to_unique_support,
       nu0_grid = tuning_algo@nu0_grid,
-      index_fixed = model@index_fixed
+      index_fixed = model@phi_fixed_idx
     )
 
     return(res)
@@ -188,9 +192,19 @@ setMethod(
   ),
   function(data, model, init, tuning_algo, hyperparam) {
     map <- run_saem(data, model, init, tuning_algo, hyperparam)
-    q <- length(model@index_select)
+    supp_forced_phi_sel <- extract_sub_support(
+      model@x_forced_support,
+      model@phi_sel_idx
+    )
+
+    q <- length(model@phi_sel_idx)
     niter <- tuning_algo@niter
-    p <- dim(data@v)[2]
+    if (empty_support(supp_forced_phi_sel) == TRUE) {
+      p <- dim(data@x_sel)[2]
+    } else {
+      p <- dim(data@x_sel)[2] + dim(supp_forced_phi_sel)[1]
+    }
+
     # et non -1, car les data sont transformées dans run_saem
     beta_map <- map$beta_hdim[[niter + 1]][-1, ]
     alpha_map <- map$alpha[[niter + 1]]
@@ -202,6 +216,10 @@ setMethod(
       rep(TRUE, q),
       abs(beta_map) >= threshold_matrix
     ) # Attention, ici, le support contient l'intercept
+
+    if (!empty_support(supp_forced_phi_sel)) {
+      support[2:(1 + dim(supp_forced_phi_sel)[1]), ] <- TRUE
+    }
 
     res <- list(
       threshold = threshold_matrix[1, ],
@@ -231,14 +249,27 @@ setMethod(
   ),
   saemvs_one_ebic_run <- function(k, support, data, model, init, tuning_algo,
                                   hyperparam, pen) {
-    p <- dim(data@v)[2]
+    p <- dim(data@x_sel)[2]
 
-    cand_support <- matrix(as.numeric(support[[k]]),
-      nrow = nrow(support[[k]])
+    supp_forced_phi_sel <- extract_sub_support(
+      model@x_forced_support,
+      model@phi_sel_idx
     )
 
-    # Faut-il gérer le cas particulier ou cand_support est vide ou NULL?
-    # Non si cand_support contient l'intercept, il n'est ni vide ni NULL
+    if (empty_support(supp_forced_phi_sel)) {
+      cand_support <- matrix(as.numeric(support[[k]]),
+        nrow = nrow(support[[k]])
+      )
+      # contient l'intercept et ne concerne que les phi_sel de la première étape
+    } else {
+      cand_support <- matrix(as.numeric(support[[k]]),
+        nrow = nrow(support[[k]])
+      )
+      idx_forced_phi_sel <- seq(1, dim(supp_forced_phi_sel)[1]) + 1
+      cand_support <- cand_support[-idx_forced_phi_sel, ]
+    }
+
+
     new_data <- from_map_to_mle_data(data, cand_support)
     new_model <- from_map_to_mle_model(model, cand_support)
     new_init <- from_map_to_mle_init(init, model, cand_support)
@@ -257,6 +288,7 @@ setMethod(
 
     ll <- loglik(new_data, new_model, tuning_algo, param, pen, p)
 
+    
     return(list(ll = ll, param = param))
   }
 )

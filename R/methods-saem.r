@@ -20,14 +20,13 @@ setMethod(
     # if not default_init check_init(init,data,model)
     # else create init object with the default method
     check_init(init, data_alg, model)
-    init <- prepare_init(init, model)
+    init_alg <- prepare_init(init, model)
     check_hyper(hyperparam, model, tuning_algo)
     hyperparam <- prepare_hyper(hyperparam, data_alg, model)
-    config <- make_config(data_alg, model, tuning_algo, init, hyperparam)
+    config <- make_config(data_alg, model, tuning_algo, init_alg, hyperparam)
     state <- init_state(config)
     case <- get_case(config)
 
-    # print(case)
     # Utiliser les bonnes implémentations des SA et M steps selon les cas
 
     switch(case,

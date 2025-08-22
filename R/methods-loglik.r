@@ -20,7 +20,7 @@ setMethod(
 
     nsim <- tuning_algo@nb_is
 
-    support <- model@covariate_support
+    support <- model@x_forced_support
     supp_index <- which(c(t(support)) == 1)
 
     yi <- data@y_list
@@ -29,7 +29,7 @@ setMethod(
     n <- length(yi)
     ni <- lengths(yi)
 
-    beta_x <- data@w %*% param$beta
+    beta_x <- data@x_phi_insel %*% param$beta
     beta_x_list <- split(beta_x, row(beta_x))
     gamma <- param$gamma
     sigma2 <- param$sigma2
@@ -52,8 +52,8 @@ setMethod(
     nb_beta <- length(supp_index)
 
     if (pen == "e-BIC") {
-      biclike <- -2 * loglike + (nb_beta - model@q_phi) * log(n) +
-        2 * log(choose(p * model@q_phi, nb_beta - model@q_phi))
+      biclike <- -2 * loglike + (nb_beta - model@phi_dim) * log(n) +
+        2 * log(choose(p * model@phi_dim, nb_beta - model@phi_dim))
     } else if (pen == "BIC") {
       biclike <- -2 * loglike + (nb_beta) * log(n)
     } else {
