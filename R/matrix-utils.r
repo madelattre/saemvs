@@ -68,35 +68,41 @@ zero_out_shrinked <- function(mat, indices) {
 }
 
 merge_support <- function(
-    fixed_support, selected_support, w,
-    nb_phi_s, nb_phi_ns) {
+    fixed_support, selected_support, # w,
+    nb_phi_s, nb_phi_ns, inv_perm) {
   # aucun des deux supports mergés ne doit contenir l'intercept
   # la fonction génère un support sans intercept
   # -> plus pratique pour appliquer saem dessus ensuite
 
-  if (!is.null(selected_support)) {
+  if (!empty_support(selected_support)) {
     nb_selec <- dim(selected_support)[1]
     v_supp <- cbind(
       selected_support, matrix(0, nrow = nb_selec, ncol = nb_phi_ns)
     )
+    v_supp <- v_supp[, inv_perm]
   } else {
     v_supp <- NULL
   }
 
-  dim_fixed <- dim(fixed_support)[1]
+  # dim_fixed <- dim(fixed_support)[1]
 
-  if (is.null(w)) {
-    w_supp <- NULL
+  # if (is.null(w)) {
+  #   w_supp <- NULL
+  # } else {
+  #   phis_w <- matrix(0, nrow = dim_fixed, ncol = nb_phi_s)
+  #   w_supp <- cbind(phis_w, fixed_support)
+  # }
+
+
+  if (!empty_support(fixed_support)) {
+    new_covariate_support <- rbind(
+      fixed_support,
+      v_supp
+    )
   } else {
-    phis_w <- matrix(0, nrow = dim_fixed, ncol = nb_phi_s)
-    w_supp <- cbind(phis_w, fixed_support)
+    new_covariate_support <- v_supp
   }
 
-
-  new_covariate_support <- rbind(
-    w_supp,
-    v_supp
-  )
 
   return(new_covariate_support)
 }
@@ -149,4 +155,35 @@ merge_init_beta <- function(beta_hdim, beta_ldim, lines_with_ones) {
   )
 
   return(final_beta_init)
+}
+
+
+empty_support <- function(support) {
+  if (is.null(support) || (length(support) == 0) || all(support == 0)) {
+    res <- TRUE
+  } else {
+    res <- FALSE
+  }
+  return(res)
+}
+
+extract_raws_with_ones <- function(mat) {
+  res <- which(apply(mat, 1, function(x) any(x == 1)))
+  return(res)
+}
+
+extract_sub_support <- function(support, idx) {
+  if (!empty_support(support)) {
+    if (is.null(idx) || (length(idx) == 0)) {
+      res <- NULL
+    } else if (all(support[, idx] == 0)) {
+      res <- NULL
+    } else {
+      res <- matrix(support[, idx], ncol = length(idx))
+    }
+  } else {
+    res <- NULL
+  }
+
+  return(res)
 }
