@@ -233,84 +233,90 @@ saemvsProcessedData <- function(x_phi_to_select = NULL,
 }
 
 
-## -- Model
-
-#' @exportClass modelC
+#' Class saemvsModel
+#'
+#' Represents a model for SAEMVS, including the model function and
+#' indexing information for variable selection on parameters phi.
+#'
+#' @slot model_func A function of form function(phi, t) returning predicted values.
+#' @slot phi_dim Integer: total number of phi parameters.
+#' @slot phi_to_select_idx Integer vector or NULL: indices of phi parameters
+#'   on which variable selection will be performed.
+#' @slot phi_fixed_idx Integer vector or NULL: indices of phi parameters
+#'   that are fixed (i.e. without random variability).
+#' @slot x_forced_support Numeric matrix or NULL: design matrix for covariates
+#'   that are forced in the model. Must have phi_dim columns.
+#'
+#' @exportClass saemvsModel
 setClass(
-  "modelC",
+  "saemvsModel",
   slots = list(
     model_func = "function",
     phi_dim = "numeric",
-    phi_sel_idx = "numericORNULL",
+    phi_to_select_idx = "numericORNULL",
     phi_fixed_idx = "numericORNULL",
     x_forced_support = "matrixORNULL"
   ),
   prototype = list(
     model_func = function(phi, t) numeric(0),
-    phi_dim = integer(0),
-    phi_sel_idx = c(),
-    phi_fixed_idx = c(),
+    phi_dim = as.integer(1),
+    phi_to_select_idx = integer(0),
+    phi_fixed_idx = integer(0),
     x_forced_support = matrix(numeric(0), nrow = 0, ncol = 0)
   ),
   validity = function(object) {
+    # Check model function arguments
     args <- names(formals(object@model_func))
-
     if (!all(c("phi", "t") %in% args)) {
       return("The model function must have arguments 'phi' and 't'.")
     }
 
-    if (!(is.integer(object@phi_dim) && length(object@phi_dim) == 1 &&
+    # Check phi_dim
+    if (!(is.numeric(object@phi_dim) && length(object@phi_dim) == 1 &&
       object@phi_dim >= 1)) {
-      return("'phi_dim' must be a positive integer value.")
+      return("'phi_dim' must be a positive integer of length 1.")
     }
 
-    if (!(is.integer(object@phi_sel_idx) && all(object@phi_sel_idx >= 1) &&
-      all(object@phi_sel_idx <= object@phi_dim))) {
-      return("'phi_sel_idx' must be a vector of integer values between 1
-      and 'phi_dim'.")
+    # Check indices
+    if (!(is.null(object@phi_to_select_idx) ||
+      all(object@phi_to_select_idx >= 1 & object@phi_to_select_idx <= object@phi_dim))) {
+      return("'phi_to_select_idx' must contain integers between 1 and 'phi_dim'.")
     }
 
-    if (!(is.integer(object@phi_fixed_idx) && all(object@phi_fixed_idx >= 1) &&
-      all(object@phi_fixed_idx <= object@phi_dim))) {
-      return("'phi_fixed_idx' must be a vector of integer values between 1
-      and 'phi_dim'.")
+    if (!(is.null(object@phi_fixed_idx) ||
+      all(object@phi_fixed_idx >= 1 & object@phi_fixed_idx <= object@phi_dim))) {
+      return("'phi_not_to_select_idx' must contain integers between 1 and 'phi_dim'.")
     }
 
-    if (length(intersect(object@phi_sel_idx, object@phi_fixed_idx)) > 0) {
-      return("'phi_sel_idx' and 'phi_fixed_idx' must not have any elements in
-      common.")
+    # No overlap
+    if (length(intersect(object@phi_to_select_idx, object@phi_fixed_idx)) > 0) {
+      return("'phi_to_select_idx' and 'phi_fixed_idx' must not overlap.")
     }
 
+    # x_forced_support
     supp <- object@x_forced_support
-
-    if (!is.null(supp)) {
+    if (!is_empty_support(supp)) {
       if (!is.matrix(supp)) {
         return("'x_forced_support' must be a matrix or NULL.")
       }
-      if (!all(dim(supp) == c(0, 0))) {
-        if (ncol(supp) != object@phi_dim) {
-          return(
-            paste0(
-              "'x_forced_support' must have ", object@phi_dim,
-              " columns: one for each component in 'phi'."
-            )
-          )
-        }
-        # On vérifie le nombre de lignes dans 'x_forced_support' en utilisant les information de l'objet data
+      if (ncol(supp) != object@phi_dim) {
+        return(paste0("'x_forced_support' must have ", object@phi_dim, " columns (one per phi)."))
       }
     }
+
     TRUE
   }
 )
 
+# Constructor
 #' @export
-modelC <- function(
-    g, phi_dim, phi_sel_idx = c(), phi_fixed_idx = c(),
+saemvsModel <- function(
+    g, phi_dim, phi_to_select_idx = c(), phi_fixed_idx = c(),
     x_forced_support = matrix(numeric(0), nrow = 0, ncol = 0)) {
-  new("modelC",
+  new("saemvsModel",
     model_func = g,
     phi_dim = as.integer(phi_dim),
-    phi_sel_idx = as.integer(phi_sel_idx),
+    phi_to_select_idx = as.integer(phi_to_select_idx),
     phi_fixed_idx = as.integer(phi_fixed_idx),
     x_forced_support = x_forced_support
   )

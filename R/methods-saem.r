@@ -8,7 +8,7 @@ setGeneric(
 setMethod(
   "run_saem",
   signature(
-    data = "saemvsData", model = "modelC", init = "initC",
+    data = "saemvsData", model = "saemvsModel", init = "initC",
     tuning_algo = "tuningC", hyperparam = "fullHyperC"
   ),
   function(data, model, init, tuning_algo, hyperparam) {

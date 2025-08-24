@@ -10,7 +10,7 @@ setGeneric(
 setMethod(
   "saemvs",
   signature(
-    data = "saemvsData", model = "modelC", init = "initC",
+    data = "saemvsData", model = "saemvsModel", init = "initC",
     tuning_algo = "tuningC", hyperparam = "hyperC",
     pen = "character"
   ),
@@ -24,10 +24,10 @@ setMethod(
       )
     }
 
-    if (is.null(model@phi_sel_idx) || (length(model@phi_sel_idx) == 0)) {
+    if (is.null(model@phi_to_select_idx) || (length(model@phi_to_select_idx) == 0)) {
       stop(
         paste0(
-          "'phi_sel_idx' must contain at least one parameter index",
+          "'phi_to_select_idx' must contain at least one parameter index",
           " for variable selection."
         )
       )
@@ -153,7 +153,7 @@ setGeneric(
 setMethod(
   "test_saemvs",
   signature(
-    data = "saemvsData", model = "modelC", init = "initC",
+    data = "saemvsData", model = "saemvsModel", init = "initC",
     tuning_algo = "tuningC", hyperparam = "hyperC"
   ),
   function(data, model, init, tuning_algo, hyperparam) {
@@ -187,17 +187,17 @@ setGeneric(
 setMethod(
   "saemvs_one_map_run",
   signature(
-    data = "saemvsData", model = "modelC", init = "initC",
+    data = "saemvsData", model = "saemvsModel", init = "initC",
     tuning_algo = "tuningC", hyperparam = "fullHyperC"
   ),
   function(data, model, init, tuning_algo, hyperparam) {
     map <- run_saem(data, model, init, tuning_algo, hyperparam)
     supp_forced_phi_sel <- extract_sub_support(
       model@x_forced_support,
-      model@phi_sel_idx
+      model@phi_to_select_idx
     )
 
-    q <- length(model@phi_sel_idx)
+    q <- length(model@phi_to_select_idx)
     niter <- tuning_algo@niter
     if (is_empty_support(supp_forced_phi_sel) == TRUE) {
       p <- dim(data@x_candidates)[2]
@@ -243,7 +243,7 @@ setMethod(
   "saemvs_one_ebic_run",
   signature(
     k = "numeric", support = "numeric",
-    data = "saemvsData", model = "modelC", init = "initC",
+    data = "saemvsData", model = "saemvsModel", init = "initC",
     tuning_algo = "tuningC", hyperparam = "fullHyperC",
     pen = "character"
   ),
@@ -253,7 +253,7 @@ setMethod(
 
     supp_forced_phi_sel <- extract_sub_support(
       model@x_forced_support,
-      model@phi_sel_idx
+      model@phi_to_select_idx
     )
 
     if (is_empty_support(supp_forced_phi_sel)) {

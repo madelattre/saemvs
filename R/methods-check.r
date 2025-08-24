@@ -9,12 +9,12 @@ setGeneric(
 
 setMethod(
   "check_data",
-  signature(data = "saemvsData", model = "modelC"),
+  signature(data = "saemvsData", model = "saemvsModel"),
   function(data, model) {
-    if (is.null(data@x_candidates) && (length(model@phi_sel_idx) > 0)) {
+    if (is.null(data@x_candidates) && (length(model@phi_to_select_idx) > 0)) {
       stop(
         paste0(
-          "Parameter selection is requested ('phi_sel_idx' is not empty), ",
+          "Parameter selection is requested ('phi_to_select_idx' is not empty), ",
           "but the covariate matrix 'x_candidates' is missing. Please provide ",
           "'x_candidates' with one row per sequence in 'y'."
         )
@@ -46,7 +46,7 @@ setGeneric(
 
 setMethod(
   "check_init",
-  signature(init = "initC", data = "saemvsData", model = "modelC"),
+  signature(init = "initC", data = "saemvsData", model = "saemvsModel"),
   function(init, data, model) {
     # A réécrire
   }
@@ -65,9 +65,9 @@ setGeneric(
 
 setMethod(
   "check_hyper",
-  signature(hyper = "hyperC", model = "modelC", tuning = "tuningC"),
+  signature(hyper = "hyperC", model = "saemvsModel", tuning = "tuningC"),
   function(hyper, model, tuning) {
-    nbs <- length(model@phi_sel_idx)
+    nbs <- length(model@phi_to_select_idx)
 
     if (nbs != 0) { # map
       if (!is.null(hyper@a) && (length(hyper@a) != nbs)) {

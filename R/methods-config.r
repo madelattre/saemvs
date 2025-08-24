@@ -10,11 +10,11 @@ setGeneric(
 
 setMethod(
   "prepare_data",
-  signature(data = "saemvsData", model = "modelC"),
+  signature(data = "saemvsData", model = "saemvsModel"),
   function(data, model) {
     n <- length(data@y_series)
 
-    phi_sel_idx <- model@phi_sel_idx
+    phi_sel_idx <- model@phi_to_select_idx
     x_forced_support <- model@x_forced_support
 
     # On remplit x_phi_sel
@@ -110,7 +110,7 @@ setGeneric(
 
 setMethod(
   "prepare_init",
-  signature(init = "initC", model = "modelC"),
+  signature(init = "initC", model = "saemvsModel"),
   function(init, model) {
     # A compléter, initialisation de beta_sel par défaut?
 
@@ -119,7 +119,7 @@ setMethod(
 
     # S'assurer qu'on ait bien des matrices partout
 
-    if (length(model@phi_sel_idx) == 0) {
+    if (length(model@phi_to_select_idx) == 0) {
       beta_hdim <- NULL
       gamma_hdim <- NULL
       alpha <- NULL
@@ -128,33 +128,33 @@ setMethod(
         xf_supp_phi_sel <- NULL
       } else {
         xf_supp_phi_sel <- matrix(
-          model@x_forced_support[, model@phi_sel_idx],
-          ncol = length(model@phi_sel_idx)
+          model@x_forced_support[, model@phi_to_select_idx],
+          ncol = length(model@phi_to_select_idx)
         )
       }
       if (is_empty_support(xf_supp_phi_sel) == TRUE) {
         beta_hdim <- rbind(
-          init@intercept[model@phi_sel_idx],
-          init@beta_sel[, model@phi_sel_idx]
+          init@intercept[model@phi_to_select_idx],
+          init@beta_sel[, model@phi_to_select_idx]
         )
       } else {
         raws_bf_phi_sel <- extract_rows_with_ones(xf_supp_phi_sel)
-        bf_phi_sel <- init@beta_forced[raws_bf_phi_sel, model@phi_sel_idx]
+        bf_phi_sel <- init@beta_forced[raws_bf_phi_sel, model@phi_to_select_idx]
         beta_hdim <- rbind(
-          init@intercept[model@phi_sel_idx],
+          init@intercept[model@phi_to_select_idx],
           bf_phi_sel,
-          init@beta_sel[, model@phi_sel_idx]
+          init@beta_sel[, model@phi_to_select_idx]
         )
       }
       gamma_hdim <- matrix(
-        init@gamma[model@phi_sel_idx, model@phi_sel_idx],
-        ncol = length(model@phi_sel_idx)
+        init@gamma[model@phi_to_select_idx, model@phi_to_select_idx],
+        ncol = length(model@phi_to_select_idx)
       )
 
-      alpha <- rep(0.5, length(model@phi_sel_idx))
+      alpha <- rep(0.5, length(model@phi_to_select_idx))
     }
 
-    phi_insel_idx <- setdiff(seq(1, model@phi_dim), model@phi_sel_idx)
+    phi_insel_idx <- setdiff(seq(1, model@phi_dim), model@phi_to_select_idx)
 
     if (length(phi_insel_idx) == 0) {
       beta_ldim <- NULL
@@ -215,9 +215,9 @@ setGeneric(
 
 setMethod(
   "prepare_hyper",
-  signature(hyper = "hyperC", data = "saemvsProcessedData", model = "modelC"),
+  signature(hyper = "hyperC", data = "saemvsProcessedData", model = "saemvsModel"),
   function(hyper, data, model) {
-    nbs <- length(model@phi_sel_idx)
+    nbs <- length(model@phi_to_select_idx)
 
     if (nbs == 0) { # mle
       hyper <- hyperC(NULL, NULL, NULL)
@@ -250,12 +250,12 @@ setGeneric(
 setMethod(
   "make_config",
   signature(
-    data = "saemvsProcessedData", model = "modelC", tuning_algo = "tuningC",
+    data = "saemvsProcessedData", model = "saemvsModel", tuning_algo = "tuningC",
     init = "initAlgo", hyperparam = "hyperC"
   ),
   function(data, model, tuning_algo, init, hyperparam) {
     q_phi <- model@phi_dim
-    index_select <- model@phi_sel_idx
+    index_select <- model@phi_to_select_idx
 
 
     if (length(index_select) == 0) {
@@ -286,7 +286,7 @@ setMethod(
     if (!is_empty_support(unselect_support)) {
       x_support_insel <- matrix(
         model@x_forced_support[, index_unselect],
-        ncol = model@phi_dim - length(model@phi_sel_idx)
+        ncol = model@phi_dim - length(model@phi_to_select_idx)
       )
     } else {
       x_support_insel <- NULL
@@ -391,17 +391,17 @@ setGeneric(
 setMethod(
   "from_map_to_mle_model",
   signature(
-    model = "modelC", cand_support = "matrix"
+    model = "saemvsModel", cand_support = "matrix"
   ),
   function(model, cand_support) {
     # Ici il faut tenir compte des indices des phi_s et des phi_ns
 
     all_phi_index <- seq(1, model@phi_dim)
-    index_unselect <- setdiff(all_phi_index, model@phi_sel_idx)
-    perm <- c(model@phi_sel_idx, index_unselect)
+    index_unselect <- setdiff(all_phi_index, model@phi_to_select_idx)
+    perm <- c(model@phi_to_select_idx, index_unselect)
     inv_perm <- match(seq_along(perm), perm)
 
-    nb_phi_s <- length(model@phi_sel_idx)
+    nb_phi_s <- length(model@phi_to_select_idx)
 
     lines_with_ones <- which(rowSums(cand_support) > 0)
 
@@ -426,7 +426,7 @@ setMethod(
       inv_perm
     )
 
-    new_model <- modelC(
+    new_model <- saemvsModel(
       g = model@model_func,
       phi_dim = model@phi_dim,
       phi_fixed_idx = model@phi_fixed_idx,
@@ -448,14 +448,11 @@ setGeneric(
 setMethod(
   "from_map_to_mle_init",
   signature(
-    init = "initC", model = "modelC", cand_support = "matrix"
+    init = "initC", model = "saemvsModel", cand_support = "matrix"
   ),
   # Ici il faut tenir compte des indices des phi_s et des phi_ns
   function(init, model, cand_support) {
-    # all_phi_index <- seq(1, model@phi_dim)
-    # index_unselect <- setdiff(all_phi_index, model@phi_sel_idx)
-    # perm <- c(model@phi_sel_idx, index_unselect)
-    # inv_perm <- match(seq_along(perm), perm)
+
 
     lines_with_ones <- which(rowSums(cand_support[-1, ]) > 0)
 

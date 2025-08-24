@@ -9,7 +9,7 @@ setGeneric(
 setMethod(
   "loglik",
   signature(
-    data = "saemvsData", model = "modelC",
+    data = "saemvsData", model = "saemvsModel",
     tuning_algo = "tuningC", param = "list", pen = "character",
     p = "numeric"
   ),
