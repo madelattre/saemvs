@@ -19,16 +19,16 @@ setMethod(
 
     # On remplit x_phi_sel
     if (length(phi_sel_idx) > 0) {
-      if (empty_support(x_forced_support) == TRUE) {
+      if (is_empty_support(x_forced_support) == TRUE) {
         x_phi_sel <- cbind(1, data@x_sel)
       } else {
-        if (empty_support(x_forced_support[, phi_sel_idx]) == TRUE) {
+        if (is_empty_support(x_forced_support[, phi_sel_idx]) == TRUE) {
           x_phi_sel <- cbind(1, data@x_sel)
         } else {
           xf_supp_phi_sel <-
             matrix(x_forced_support[, phi_sel_idx], ncol = length(phi_sel_idx))
           x_sel_forced_idx <-
-            extract_raws_with_ones(xf_supp_phi_sel)
+            extract_rows_with_ones(xf_supp_phi_sel)
           x_phi_sel <- cbind(1, data@x_forced[, x_sel_forced_idx], data@x_sel)
         }
       }
@@ -51,16 +51,16 @@ setMethod(
 
     # On remplit x_phi_insel
     phi_insel_idx <- setdiff(seq(1, model@phi_dim), phi_sel_idx)
-    if (empty_support(x_forced_support) == TRUE) {
+    if (is_empty_support(x_forced_support) == TRUE) {
       x_phi_insel <- matrix(1, nrow = n)
-    } else if (empty_support(x_forced_support[, phi_insel_idx]) == TRUE) {
+    } else if (is_empty_support(x_forced_support[, phi_insel_idx]) == TRUE) {
       x_phi_insel <- matrix(1, nrow = n)
     } else {
       xf_supp_phi_insel <- matrix(x_forced_support[, phi_insel_idx],
         ncol = model@phi_dim - length(phi_sel_idx)
       )
       x_insel_forced_idx <-
-        extract_raws_with_ones(xf_supp_phi_insel)
+        extract_rows_with_ones(xf_supp_phi_insel)
       x_phi_insel <- cbind(1, data@x_forced[, x_insel_forced_idx])
     }
 
@@ -73,7 +73,7 @@ setMethod(
         }
       )
     } else {
-      x_phi_insel_list <- from_v_to_x(
+      x_phi_insel_list <- expand_to_list(
         x_phi_insel,
         rbind(1, xf_supp_phi_insel), # besoin de l'intercept
         model@phi_dim - length(phi_sel_idx)
@@ -121,7 +121,7 @@ setMethod(
       gamma_hdim <- NULL
       alpha <- NULL
     } else {
-      if (empty_support(model@x_forced_support) == TRUE) {
+      if (is_empty_support(model@x_forced_support) == TRUE) {
         xf_supp_phi_sel <- NULL
       } else {
         xf_supp_phi_sel <- matrix(
@@ -129,13 +129,13 @@ setMethod(
           ncol = length(model@phi_sel_idx)
         )
       }
-      if (empty_support(xf_supp_phi_sel) == TRUE) {
+      if (is_empty_support(xf_supp_phi_sel) == TRUE) {
         beta_hdim <- rbind(
           init@intercept[model@phi_sel_idx],
           init@beta_sel[, model@phi_sel_idx]
         )
       } else {
-        raws_bf_phi_sel <- extract_raws_with_ones(xf_supp_phi_sel)
+        raws_bf_phi_sel <- extract_rows_with_ones(xf_supp_phi_sel)
         bf_phi_sel <- init@beta_forced[raws_bf_phi_sel, model@phi_sel_idx]
         beta_hdim <- rbind(
           init@intercept[model@phi_sel_idx],
@@ -157,7 +157,7 @@ setMethod(
       beta_ldim <- NULL
       gamma_ldim <- NULL
     } else {
-      if (empty_support(model@x_forced_support) == TRUE) {
+      if (is_empty_support(model@x_forced_support) == TRUE) {
         xf_supp_phi_insel <- NULL
       } else {
         xf_supp_phi_insel <- matrix(
@@ -165,12 +165,12 @@ setMethod(
           ncol = length(phi_insel_idx)
         )
       }
-      if (empty_support(xf_supp_phi_insel) == TRUE) {
+      if (is_empty_support(xf_supp_phi_insel) == TRUE) {
         beta_ldim <- matrix(init@intercept[phi_insel_idx],
           ncol = length(phi_insel_idx)
         )
       } else {
-        raws_bf_phi_insel <- extract_raws_with_ones(xf_supp_phi_insel)
+        raws_bf_phi_insel <- extract_rows_with_ones(xf_supp_phi_insel)
         bf_phi_insel <- matrix(
           init@beta_forced[raws_bf_phi_insel, phi_insel_idx],
           ncol = length(phi_insel_idx)
@@ -253,7 +253,7 @@ setMethod(
   function(data, model, tuning_algo, init, hyperparam) {
     q_phi <- model@phi_dim
     index_select <- model@phi_sel_idx
-    
+
 
     if (length(index_select) == 0) {
       method <- "mle"
@@ -265,7 +265,7 @@ setMethod(
       method <- "map"
       q_hdim <- length(index_select)
       q_ldim <- q_phi - length(index_select)
-      index_unselect <- setdiff(seq(1,q_phi),index_select)
+      index_unselect <- setdiff(seq(1, q_phi), index_select)
       nu0 <- hyperparam@nu0
       nu1 <- hyperparam@nu1
       nsig <- hyperparam@nsig # nu_sigma
@@ -277,10 +277,10 @@ setMethod(
       d <- hyperparam@d # qu'est-ce que d?
     }
 
-    unselect_support <- 
-    extract_sub_support(model@x_forced_support, index_unselect)
+    unselect_support <-
+      extract_sub_support(model@x_forced_support, index_unselect)
 
-    if (!empty_support(unselect_support)) {
+    if (!is_empty_support(unselect_support)) {
       x_support_insel <- matrix(
         model@x_forced_support[, index_unselect],
         ncol = model@phi_dim - length(model@phi_sel_idx)

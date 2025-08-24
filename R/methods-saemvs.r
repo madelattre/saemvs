@@ -199,7 +199,7 @@ setMethod(
 
     q <- length(model@phi_sel_idx)
     niter <- tuning_algo@niter
-    if (empty_support(supp_forced_phi_sel) == TRUE) {
+    if (is_empty_support(supp_forced_phi_sel) == TRUE) {
       p <- dim(data@x_sel)[2]
     } else {
       p <- dim(data@x_sel)[2] + dim(supp_forced_phi_sel)[1]
@@ -217,7 +217,7 @@ setMethod(
       abs(beta_map) >= threshold_matrix
     ) # Attention, ici, le support contient l'intercept
 
-    if (!empty_support(supp_forced_phi_sel)) {
+    if (!is_empty_support(supp_forced_phi_sel)) {
       support[2:(1 + dim(supp_forced_phi_sel)[1]), ] <- TRUE
     }
 
@@ -256,7 +256,7 @@ setMethod(
       model@phi_sel_idx
     )
 
-    if (empty_support(supp_forced_phi_sel)) {
+    if (is_empty_support(supp_forced_phi_sel)) {
       cand_support <- matrix(as.numeric(support[[k]]),
         nrow = nrow(support[[k]])
       )
@@ -288,7 +288,7 @@ setMethod(
 
     ll <- loglik(new_data, new_model, tuning_algo, param, pen, p)
 
-    
+
     return(list(ll = ll, param = param))
   }
 )
