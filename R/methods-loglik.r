@@ -9,7 +9,7 @@ setGeneric(
 setMethod(
   "loglik",
   signature(
-    data = "dataC", model = "modelC",
+    data = "saemvsData", model = "modelC",
     tuning_algo = "tuningC", param = "list", pen = "character",
     p = "numeric"
   ),
@@ -23,13 +23,13 @@ setMethod(
     support <- model@x_forced_support
     supp_index <- which(c(t(support)) == 1)
 
-    yi <- data@y_list
-    ti <- data@t_list
+    yi <- data@y_series
+    ti <- data@t_series
 
     n <- length(yi)
     ni <- lengths(yi)
 
-    beta_x <- data@x_phi_insel %*% param$beta
+    beta_x <- data@x_phi_not_to_select %*% param$beta
     beta_x_list <- split(beta_x, row(beta_x))
     gamma <- param$gamma
     sigma2 <- param$sigma2

@@ -10,7 +10,7 @@ setGeneric(
 setMethod(
   "saemvs",
   signature(
-    data = "dataC", model = "modelC", init = "initC",
+    data = "saemvsData", model = "modelC", init = "initC",
     tuning_algo = "tuningC", hyperparam = "hyperC",
     pen = "character"
   ),
@@ -153,7 +153,7 @@ setGeneric(
 setMethod(
   "test_saemvs",
   signature(
-    data = "dataC", model = "modelC", init = "initC",
+    data = "saemvsData", model = "modelC", init = "initC",
     tuning_algo = "tuningC", hyperparam = "hyperC"
   ),
   function(data, model, init, tuning_algo, hyperparam) {
@@ -187,7 +187,7 @@ setGeneric(
 setMethod(
   "saemvs_one_map_run",
   signature(
-    data = "dataC", model = "modelC", init = "initC",
+    data = "saemvsData", model = "modelC", init = "initC",
     tuning_algo = "tuningC", hyperparam = "fullHyperC"
   ),
   function(data, model, init, tuning_algo, hyperparam) {
@@ -200,9 +200,9 @@ setMethod(
     q <- length(model@phi_sel_idx)
     niter <- tuning_algo@niter
     if (is_empty_support(supp_forced_phi_sel) == TRUE) {
-      p <- dim(data@x_sel)[2]
+      p <- dim(data@x_candidates)[2]
     } else {
-      p <- dim(data@x_sel)[2] + dim(supp_forced_phi_sel)[1]
+      p <- dim(data@x_candidates)[2] + dim(supp_forced_phi_sel)[1]
     }
 
     # et non -1, car les data sont transformées dans run_saem
@@ -243,13 +243,13 @@ setMethod(
   "saemvs_one_ebic_run",
   signature(
     k = "numeric", support = "numeric",
-    data = "dataC", model = "modelC", init = "initC",
+    data = "saemvsData", model = "modelC", init = "initC",
     tuning_algo = "tuningC", hyperparam = "fullHyperC",
     pen = "character"
   ),
   saemvs_one_ebic_run <- function(k, support, data, model, init, tuning_algo,
                                   hyperparam, pen) {
-    p <- dim(data@x_sel)[2]
+    p <- dim(data@x_candidates)[2]
 
     supp_forced_phi_sel <- extract_sub_support(
       model@x_forced_support,

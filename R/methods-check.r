@@ -9,14 +9,14 @@ setGeneric(
 
 setMethod(
   "check_data",
-  signature(data = "dataC", model = "modelC"),
+  signature(data = "saemvsData", model = "modelC"),
   function(data, model) {
-    if (is.null(data@x_sel) && (length(model@phi_sel_idx) > 0)) {
+    if (is.null(data@x_candidates) && (length(model@phi_sel_idx) > 0)) {
       stop(
         paste0(
           "Parameter selection is requested ('phi_sel_idx' is not empty), ",
-          "but the covariate matrix 'x_sel' is missing. Please provide ",
-          "'x_sel' with one row per sequence in 'y'."
+          "but the covariate matrix 'x_candidates' is missing. Please provide ",
+          "'x_candidates' with one row per sequence in 'y'."
         )
       )
     }
@@ -46,7 +46,7 @@ setGeneric(
 
 setMethod(
   "check_init",
-  signature(init = "initC", data = "dataC", model = "modelC"),
+  signature(init = "initC", data = "saemvsData", model = "modelC"),
   function(init, data, model) {
     # A réécrire
   }
@@ -77,13 +77,14 @@ setMethod(
         ))
       }
 
-      if (!is.null(hyper@b) && (length(hyper@a) != nbs)) {
+      if (!is.null(hyper@b) && (length(hyper@b) != nbs)) {
         stop(paste0(
           "As ", nbs, " parameters are subject to selection,",
           "hyperparameter 'b' must contain ", nbs, " components."
         ))
       }
 
+      # Check !is.null(hyper@sgam) pour éviter les erreurs si vide?
       if ((dim(hyper@sgam)[1] != nbs) || (dim(hyper@sgam)[2] != nbs)) {
         stop(paste0(
           "As ", nbs, " parameters are subject to selection,",
@@ -96,6 +97,7 @@ setMethod(
     # Check that all nu0 values are smaller than nu1
 
     if ((!is.null(tuning@nu0_grid)) && (!all(tuning@nu0_grid < hyper@nu1))) {
+      # Vérifier que tuning@nu0_grid n'est pas vide? (length(tuning@nu_grid)>0)
       stop(
         paste0(
           "All spike parameter values in 'nu0_grid' must be smaller than ",

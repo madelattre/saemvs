@@ -3,6 +3,7 @@
         "tuningC",
         "saemvs",
         "loglik",
-        "resSAEMVS"
+        "resSAEMVS",
+        "dataC"
     ]
 }

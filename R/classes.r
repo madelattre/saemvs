@@ -2,99 +2,235 @@ setClassUnion("matrixORNULL", c("matrix", "NULL"))
 setClassUnion("numericORNULL", c("numeric", "NULL"))
 setClassUnion("listORNULL", c("list", "NULL"))
 
-## -- Data
-
-#' @exportClass dataC
+#' Class saemvsData
+#'
+#' A class to store user-provided data for the SAEMVS algorithm.
+#' This is the main entry point for users: responses, time indices,
+#' candidate covariates for selection, and forced covariates.
+#'
+#' @slot y_series list of numeric vectors. Each element contains observed responses for one individual.
+#' @slot t_series list of numeric vectors. Each element contains corresponding time indices.
+#' @slot x_candidates matrix or NULL. Optional matrix of candidate covariates (rows = individuals, columns = covariates).
+#' @slot x_forced matrix or NULL. Optional matrix of forced covariates (rows = individuals, columns = covariates).
+#'
+#' @section Validity:
+#' \itemize{
+#'   \item \code{y_series} and \code{t_series} must have the same length.
+#'   \item Each element of \code{y_series} and \code{t_series} must be numeric vectors of the same length.
+#'   \item If provided, \code{x_candidates} and \code{x_forced} must each have as many rows as the length of \code{y_series}.
+#'   \item All matrices must be numeric.
+#' }
+#'
+#' @return An object of class \code{saemvsData}.
+#' @exportClass saemvsData
+#'
+#' @examples
+#' y <- list(rnorm(10), rnorm(8))
+#' t <- list(1:10, 1:8)
+#' d <- saemvsData(y, t)
 setClass(
-  "dataC",
+  "saemvsData",
   slots = list(
-    y_list = "list",
-    t_list = "list",
-    x_sel = "matrixORNULL",
-    x_forced = "matrixORNULL" # ,
-    # tx_x = "matrixORNULL",
-    # kron_tx_x = "matrixORNULL",
-    # x_forced_sel = "matrixORNULL"
+    y_series     = "list",
+    t_series     = "list",
+    x_candidates = "matrixORNULL",
+    x_forced     = "matrixORNULL"
   ),
   prototype = list(
-    y_list = list(),
-    t_list = list(),
-    x_sel = NULL,
-    x_forced = NULL # ,
-    # tx_x = NULL,
-    # kron_tx_x = NULL,
-    # x_forced_sel = NULL
+    y_series     = list(),
+    t_series     = list(),
+    x_candidates = NULL,
+    x_forced     = NULL
   ),
   validity = function(object) {
-    if (length(object@y_list) != length(object@t_list)) {
-      return("Lists y et t must have the same number of elements.")
+    n <- length(object@y_series)
+
+    # Check lengths of y_series and t_series
+    if (n != length(object@t_series)) {
+      return("y_series and t_series must have the same number of elements.")
     }
 
-    for (i in seq_along(object@y_list)) {
-      if (length(object@y_list[[i]]) != length(object@t_list[[i]])) {
-        return(
-          paste0("y[[", i, "]] and t[[", i, "]] do not have the
-          same number of elements.")
-        )
+    # Check each element is numeric and lengths match
+    for (i in seq_len(n)) {
+      if (!is.numeric(object@y_series[[i]])) {
+        return(sprintf("y_series[[%d]] must be numeric.", i))
+      }
+      if (!is.numeric(object@t_series[[i]])) {
+        return(sprintf("t_series[[%d]] must be numeric.", i))
+      }
+      if (length(object@y_series[[i]]) != length(object@t_series[[i]])) {
+        return(sprintf("y_series[[%d]] and t_series[[%d]] do not have the same length.", i, i))
       }
     }
 
-    n <- length(object@y_list)
-
-    if (!is.null(object@x_sel) && nrow(object@x_sel) != n) {
-      return(
-        paste0(
-          "The matrix 'x_sel' must have exactly", n,
-          "rows, to match the", n, "individual sequences in 'y'.
-          Currently, 'x_sel' has,", nrow(object@x_sel), "rows."
-        )
-      )
+    # Check candidate and forced covariates
+    for (mat_name in c("x_candidates", "x_forced")) {
+      mat <- slot(object, mat_name)
+      if (!is.null(mat)) {
+        if (!is.matrix(mat)) {
+          return(sprintf("'%s' must be a matrix or NULL.", mat_name))
+        }
+        if (!is.numeric(mat)) {
+          return(sprintf("All entries in '%s' must be numeric.", mat_name))
+        }
+        if (nrow(mat) != n) {
+          return(sprintf(
+            "'%s' must have %d rows (matching y_series); currently %d.",
+            mat_name, n, nrow(mat)
+          ))
+        }
+      }
     }
 
-    if (!is.null(object@x_forced) && nrow(object@x_forced) != n) {
-      return(
-        paste0(
-          "The matrix 'x_forced' must have exactly", n,
-          "rows, to match the", n, "individual sequences in 'y'.
-          Currently, 'x_forced' has,", nrow(object@x_forced), "rows."
-        )
-      )
+    # # Warning if overlap between to_select and not_to_select
+    # if (!is.null(object@x_phi_to_select) &&
+    # !is.null(object@x_phi_not_to_select)) {
+    #   common_cols <- intersect(
+    #     colnames(object@x_phi_to_select), colnames(object@x_phi_not_to_select)
+    #     )
+    #   if (length(common_cols) > 0) {
+    #     warning("Some columns appear both in 'x_phi_to_select' and 'x_phi_not_to_select'.")
+    #   }
+    # }
+
+    TRUE
+  }
+)
+
+
+
+#' Constructor for saemvsData
+#'
+#' @param y list of numeric vectors (responses).
+#' @param t list of numeric vectors (time indices).
+#' @param x_candidates matrix or NULL, candidate covariates for selection.
+#' @param x_forced matrix or NULL, forced covariates.
+#'
+#' @return An object of class \code{saemvsData}.
+#' @export
+saemvsData <- function(y, t, x_candidates = NULL, x_forced = NULL) {
+  new("saemvsData",
+    y_series     = y,
+    t_series     = t,
+    x_candidates = x_candidates,
+    x_forced     = x_forced
+  )
+}
+
+
+# Internal class: saemvsProcessedData
+#' Internal class: saemvsProcessedData
+#'
+#' A class to store processed design matrices ready for SAEMVS algorithms.
+#' This class is internal to the package and is not intended to be
+#' directly created or manipulated by the user.
+#' It inherits from \code{saemvsData} and contains additional slots
+#' representing design matrices of covariates associated with the model parameters \code{phi},
+#' split into components subject to selection and components that are not subject to selection.
+#'
+#' @slot x_phi_to_select matrix or NULL.
+#'   Design matrix of covariates for \code{phi} parameters on which variable
+#'   selection will be performed. Rows correspond to individuals; columns to covariates.
+#'
+#' @slot x_phi_not_to_select matrix or NULL.
+#'   Design matrix of covariates for \code{phi} parameters that are not
+#'   subject to selection. Rows correspond to individuals; columns to covariates.
+#'
+#' @slot tx_x_phi_to_select matrix or NULL.
+#'   Transformation of \code{x_phi_to_select} (e.g., multiplied by its transpose) required for algorithm computations.
+#'
+#' @slot kron_tx_x_phi_to_select matrix or NULL.
+#'   Kronecker product of \code{tx_x_phi_to_select} used for vectorized calculations.
+#'
+#' @slot x_phi_not_to_select_list list or NULL.
+#'   List of \code{x_phi_not_to_select} entries per individual. Each element
+#'   corresponds to one individual and contains a numeric vector.
+#'
+#' @section Validity:
+#'   \itemize{
+#'     \item All matrices must be numeric if not NULL.
+#'     \item \code{x_phi_not_to_select_list}, if not NULL, must have length equal to the number of individuals.
+#'     \item Columns in \code{x_phi_to_select} and \code{x_phi_not_to_select} should not overlap (warning issued if they do).
+#'     \item Inherits all validity checks from \code{saemvsData} (e.g., length and type checks for y_series, t_series, x_candidates, x_forced).
+#'   }
+#'
+#' @keywords internal
+setClass(
+  "saemvsProcessedData",
+  slots = list(
+    x_phi_to_select          = "matrixORNULL",
+    x_phi_not_to_select      = "matrixORNULL",
+    tx_x_phi_to_select       = "matrixORNULL",
+    kron_tx_x_phi_to_select  = "matrixORNULL",
+    x_phi_not_to_select_list = "listORNULL"
+  ),
+  prototype = list(
+    x_phi_to_select          = NULL,
+    x_phi_not_to_select      = NULL,
+    tx_x_phi_to_select       = NULL,
+    kron_tx_x_phi_to_select  = NULL,
+    x_phi_not_to_select_list = NULL
+  ),
+  contains = "saemvsData",
+  validity = function(object) {
+    n_ind <- length(object@y_series)
+
+    # Check matrices are numeric if present
+    mats <- list(
+      x_phi_to_select         = object@x_phi_to_select,
+      x_phi_not_to_select     = object@x_phi_not_to_select
+    )
+    for (mat_name in names(mats)) {
+      mat <- mats[[mat_name]]
+      if (!is.null(mat)) {
+        if (!is.matrix(mat)) {
+          return(sprintf(
+            "'%s' must be a matrix or NULL.", mat_name
+          ))
+        }
+        if (!is.numeric(mat)) {
+          return(sprintf(
+            "All entries in '%s' must be numeric.", mat_name
+          ))
+        }
+        if (nrow(mat) != n_ind) {
+          return(sprintf(
+            "'%s' must have %d rows (matching y_series); currently %d.",
+            mat_name, n_ind, nrow(mat)
+          ))
+        }
+      }
+    }
+
+    # Check list length
+    if (!is.null(object@x_phi_not_to_select_list) &&
+      length(object@x_phi_not_to_select_list) != n_ind) {
+      return(sprintf(
+        "'x_phi_not_to_select_list' must have %d elements (matching y_series).",
+        n_ind
+      ))
     }
 
     TRUE
   }
 )
 
-#' @export
-dataC <- function(
-    y, t, x_sel = NULL, x_forced = NULL) {
-  new("dataC",
-    y_list = y, t_list = t, x_sel = x_sel, x_forced = x_forced
+# Internal constructor
+saemvsProcessedData <- function(x_phi_to_select = NULL,
+                                x_phi_not_to_select = NULL,
+                                tx_x_phi_to_select = NULL,
+                                kron_tx_x_phi_to_select = NULL,
+                                x_phi_not_to_select_list = NULL,
+                                ...) {
+  new("saemvsProcessedData",
+    x_phi_to_select          = x_phi_to_select,
+    x_phi_not_to_select      = x_phi_not_to_select,
+    tx_x_phi_to_select       = tx_x_phi_to_select,
+    kron_tx_x_phi_to_select  = kron_tx_x_phi_to_select,
+    x_phi_not_to_select_list = x_phi_not_to_select_list,
+    ...
   )
 }
-
-#' @exportClass dataAlgo
-setClass(
-  "dataAlgo",
-  slots = list( # On déclare ici les slots supplémentaires par rapport à dataC
-    # Ce sont les slots qui vont être utilisés dans les algos
-    # (pas les autres déjà présents dans dataC)
-    x_phi_sel = "matrixORNULL",
-    x_phi_insel = "matrixORNULL",
-    tx_x_phi_sel = "matrixORNULL",
-    kron_tx_x_phi_sel = "matrixORNULL",
-    x_phi_insel_list = "listORNULL"
-  ),
-  prototype = list(
-    x_phi_sel = NULL,
-    x_phi_insel = NULL,
-    tx_x_phi_sel = NULL,
-    kron_tx_x_phi_sel = NULL,
-    x_phi_insel_list = NULL
-  ),
-  contains = "dataC"
-)
-
 
 
 ## -- Model

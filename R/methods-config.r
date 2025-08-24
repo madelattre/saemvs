@@ -10,9 +10,9 @@ setGeneric(
 
 setMethod(
   "prepare_data",
-  signature(data = "dataC", model = "modelC"),
+  signature(data = "saemvsData", model = "modelC"),
   function(data, model) {
-    n <- length(data@y_list)
+    n <- length(data@y_series)
 
     phi_sel_idx <- model@phi_sel_idx
     x_forced_support <- model@x_forced_support
@@ -20,16 +20,19 @@ setMethod(
     # On remplit x_phi_sel
     if (length(phi_sel_idx) > 0) {
       if (is_empty_support(x_forced_support) == TRUE) {
-        x_phi_sel <- cbind(1, data@x_sel)
+        x_phi_sel <- cbind(1, data@x_candidates)
       } else {
         if (is_empty_support(x_forced_support[, phi_sel_idx]) == TRUE) {
-          x_phi_sel <- cbind(1, data@x_sel)
+          x_phi_sel <- cbind(1, data@x_candidates)
         } else {
           xf_supp_phi_sel <-
             matrix(x_forced_support[, phi_sel_idx], ncol = length(phi_sel_idx))
           x_sel_forced_idx <-
             extract_rows_with_ones(xf_supp_phi_sel)
-          x_phi_sel <- cbind(1, data@x_forced[, x_sel_forced_idx], data@x_sel)
+          x_phi_sel <- cbind(
+            1, data@x_forced[, x_sel_forced_idx],
+            data@x_candidates
+          )
         }
       }
     } else {
@@ -67,7 +70,7 @@ setMethod(
     # On en déduit x_phi_insel_list
     if (ncol(x_phi_insel) == 1) {
       x_phi_insel_list <- lapply(
-        seq_len(length(data@y_list)),
+        seq_len(length(data@y_series)),
         function(i) {
           matrix(1, nrow = 1, ncol = 1)
         }
@@ -80,16 +83,16 @@ setMethod(
       )
     }
 
-    data_alg <- new("dataAlgo",
-      y_list = data@y_list,
-      t_list = data@t_list,
-      x_sel = data@x_sel,
+    data_alg <- new("saemvsProcessedData",
+      y_series = data@y_series,
+      t_series = data@t_series,
+      x_candidates = data@x_candidates,
       x_forced = data@x_forced,
-      x_phi_sel = x_phi_sel,
-      x_phi_insel = x_phi_insel,
-      tx_x_phi_sel = tx_x_phi_sel,
-      kron_tx_x_phi_sel = kron_tx_x_phi_sel,
-      x_phi_insel_list = x_phi_insel_list
+      x_phi_to_select = x_phi_sel,
+      x_phi_not_to_select = x_phi_insel,
+      tx_x_phi_to_select = tx_x_phi_sel,
+      kron_tx_x_phi_to_select = kron_tx_x_phi_sel,
+      x_phi_not_to_select_list = x_phi_insel_list
     )
     return(data_alg)
   }
@@ -212,7 +215,7 @@ setGeneric(
 
 setMethod(
   "prepare_hyper",
-  signature(hyper = "hyperC", data = "dataAlgo", model = "modelC"),
+  signature(hyper = "hyperC", data = "saemvsProcessedData", model = "modelC"),
   function(hyper, data, model) {
     nbs <- length(model@phi_sel_idx)
 
@@ -220,7 +223,7 @@ setMethod(
       hyper <- hyperC(NULL, NULL, NULL)
     } else { # map
 
-      p <- dim(data@x_sel)[2] #- 1
+      p <- dim(data@x_candidates)[2] #- 1
 
       if (is.null(hyper@a)) {
         hyper@a <- rep(1, nbs)
@@ -247,7 +250,7 @@ setGeneric(
 setMethod(
   "make_config",
   signature(
-    data = "dataAlgo", model = "modelC", tuning_algo = "tuningC",
+    data = "saemvsProcessedData", model = "modelC", tuning_algo = "tuningC",
     init = "initAlgo", hyperparam = "hyperC"
   ),
   function(data, model, tuning_algo, init, hyperparam) {
@@ -296,18 +299,18 @@ setMethod(
       q_phi = q_phi,
       q_hdim = q_hdim,
       q_ldim = q_ldim,
-      yi = data@y_list,
-      n = length(data@y_list),
-      ni = lengths(data@y_list),
-      ntot = sum(lengths(data@y_list)),
-      ti = data@t_list,
-      v = data@x_phi_sel,
-      tv_v = data@tx_x_phi_sel,
-      kron_tv_v = data@kron_tx_x_phi_sel,
-      w = data@x_phi_insel,
-      x = data@x_phi_insel_list,
-      pv = dim(data@x_phi_sel)[2] - 1,
-      pw = dim(data@x_phi_insel)[2] - 1,
+      yi = data@y_series,
+      n = length(data@y_series),
+      ni = lengths(data@y_series),
+      ntot = sum(lengths(data@y_series)),
+      ti = data@t_series,
+      v = data@x_phi_to_select,
+      tv_v = data@tx_x_phi_to_select,
+      kron_tv_v = data@kron_tx_x_phi_to_select,
+      w = data@x_phi_not_to_select,
+      x = data@x_phi_not_to_select_list,
+      pv = dim(data@x_phi_to_select)[2] - 1,
+      pw = dim(data@x_phi_not_to_select)[2] - 1,
       g = model@model_func,
       support = x_support_insel,
       # est-ce qu'on a besoin de support? OUI...
@@ -350,15 +353,15 @@ setGeneric(
 setMethod(
   "from_map_to_mle_data",
   signature(
-    data = "dataC", cand_support = "matrix"
+    data = "saemvsData", cand_support = "matrix"
   ),
   function(data, cand_support) {
-    n <- length(data@y_list)
+    n <- length(data@y_series)
 
     lines_with_ones <- which(rowSums(cand_support) > 0)
 
     v_restricted <- matrix(
-      cbind(1, data@x_sel)[, lines_with_ones],
+      cbind(1, data@x_candidates)[, lines_with_ones],
       nrow = n
     )[, -1] # -1 pour ne pas contenir l'intercept
 
@@ -368,9 +371,9 @@ setMethod(
       nrow = n
     )
 
-    new_data <- dataC(
-      y = data@y_list,
-      t = data@t_list,
+    new_data <- saemvsData(
+      y = data@y_series,
+      t = data@t_series,
       x_forced = new_x
     )
 

@@ -8,7 +8,7 @@ setGeneric(
 setMethod(
   "run_saem",
   signature(
-    data = "dataC", model = "modelC", init = "initC",
+    data = "saemvsData", model = "modelC", init = "initC",
     tuning_algo = "tuningC", hyperparam = "fullHyperC"
   ),
   function(data, model, init, tuning_algo, hyperparam) {
@@ -16,14 +16,16 @@ setMethod(
     # Attention, l'ordre de ces étapes est important
 
     check_data(data, model)
-    data_alg <- prepare_data(data, model)
+    data_processed <- prepare_data(data, model)
     # if not default_init check_init(init,data,model)
     # else create init object with the default method
-    check_init(init, data_alg, model)
+    check_init(init, data_processed, model)
     init_alg <- prepare_init(init, model)
     check_hyper(hyperparam, model, tuning_algo)
-    hyperparam <- prepare_hyper(hyperparam, data_alg, model)
-    config <- make_config(data_alg, model, tuning_algo, init_alg, hyperparam)
+    hyperparam <- prepare_hyper(hyperparam, data_processed, model)
+    config <- make_config(
+      data_processed, model, tuning_algo, init_alg, hyperparam
+    )
     state <- init_state(config)
     case <- get_case(config)
 
