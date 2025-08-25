@@ -123,17 +123,17 @@ setMethod(
     # est_mle <- list()
 
     res <- new(
-      "resSAEMVS",
-      pen = pen,
-      crit_values = ebic,
+      "saemvsResults",
+      criterion = pen,
+      criterion_values = ebic,
       thresholds = thresholds,
       beta_map = beta_map,
-      est_mle = est_mle,
+      mle_estimates = est_mle,
       support = support,
       unique_support = support[unique_support],
-      map_to_unique_support = map_to_unique_support,
-      nu0_grid = tuning_algo@spike_values_grid,
-      index_fixed = model@phi_fixed_idx
+      support_mapping = map_to_unique_support,
+      spike_values_grid = tuning_algo@spike_values_grid,
+      phi_fixed_idx = model@phi_fixed_idx
     )
 
     return(res)

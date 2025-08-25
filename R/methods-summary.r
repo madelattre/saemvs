@@ -10,16 +10,16 @@ setGeneric(
 setMethod(
   "summary",
   signature(
-    res = "resSAEMVS",
+    res = "saemvsResults",
     dec = "numeric"
   ),
   function(res, dec = 3) {
     # Vérifier que res n'est pas vide
 
 
-    index_fixed <- res@index_fixed
-    
-    selected_model <- which.min(res@crit_values)
+    index_fixed <- res@phi_fixed_idx
+
+    selected_model <- which.min(res@criterion_values)
 
     selected_support <- res@unique_support[[selected_model]]
 
@@ -48,9 +48,9 @@ setMethod(
 
     all_select_var_unique <- unique(all_select_var)
 
-    beta_est <- res@est_mle[[selected_model]]$beta
+    beta_est <- res@mle_estimates[[selected_model]]$beta
     nb_phi <- dim(beta_est)[2]
-    gamma_est <- res@est_mle[[selected_model]]$gamma
+    gamma_est <- res@mle_estimates[[selected_model]]$gamma
 
     colnames(beta_est) <- paste0("\u03C6", 1:nb_phi)
     n <- nrow(beta_est)

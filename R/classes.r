@@ -758,39 +758,79 @@ saemvsTuning <- function(niter = 500,
 }
 
 
-## -- Results
-
-#' @exportClass resSAEMVS
+#' Class saemvsResults
+#'
+#' Results of SAEMVS model selection
+#'
+#' Internal results class storing all outputs from SAEMVS grid evaluation.
+#' Objects of this class are created automatically by the algorithm.
+#'
+#' @slot criterion Character. The model selection criterion used, either "BIC" or "e-BIC".
+#' @slot criterion_values Numeric vector. Criterion values (BIC, e-BIC, etc.) computed for each unique support in `unique_support`.
+#' @slot thresholds List. Threshold values applied to beta coefficients at each spike value.
+#' @slot beta_map List. MAP estimates of beta coefficients for each spike value.
+#' @slot mle_estimates List. Maximum likelihood estimates computed on the unique supports.
+#' @slot support List. All supports selected across the spike grid (may contain duplicates).
+#' @slot unique_support List. Unique supports obtained from `support` (duplicates removed). Each entry corresponds to one element of `crit_values`.
+#' @slot support_mapping Numeric vector. Maps each element of `support` to its corresponding unique support index.
+#' @slot spike_values_grid Numeric vector. The grid of spike parameter values used.
+#' @slot phi_fixed_idx Numeric or NULL. Indices of fixed phi components, needed for console display.
+#'
+#' @keywords internal
+#' @exportClass saemvsResults
 setClass(
-  "resSAEMVS",
+  "saemvsResults",
   slots = list(
-    pen = "character",
-    crit_values = "numeric",
+    criterion = "character",
+    criterion_values = "numeric",
     thresholds = "list",
     beta_map = "list",
-    est_mle = "list",
+    mle_estimates = "list",
     support = "list",
     unique_support = "list",
-    map_to_unique_support = "numeric",
-    nu0_grid = "numeric",
-    index_fixed = "numericORNULL"
+    support_mapping = "numeric",
+    spike_values_grid = "numeric",
+    phi_fixed_idx = "numericORNULL"
   ),
   prototype = list(
-    pen = character(0),
-    crit_values = numeric(0),
+    criterion = character(0),
+    criterion_values = numeric(0),
     thresholds = list(),
     beta_map = list(),
-    est_mle = list(),
+    mle_estimates = list(),
     support = list(),
     unique_support = list(),
-    map_to_unique_support = numeric(0),
-    nu0_grid = numeric(0),
-    index_fixed = numeric(0)
+    support_mapping = numeric(0),
+    spike_values_grid = numeric(0),
+    phi_fixed_idx = numeric(0)
   ),
   validity = function(object) {
+    if (!object@criterion %in% c("BIC", "e-BIC")) {
+      return("Slot 'criterion' must be either 'BIC' or 'e-BIC'.")
+    }
+
+    if (length(object@criterion_values) != length(object@unique_support)) {
+      return("The number of 'criterion_values' must match the number of 'unique_support' entries.")
+    }
+
+
+    if (length(object@thresholds) != length(object@spike_values_grid)) {
+      return("Slot 'thresholds' must have same length as 'spike_values_grid'.")
+    }
+
+    if (length(object@beta_map) != length(object@spike_values_grid)) {
+      return("Slot 'beta_map' must have same length as 'spike_values_grid'.")
+    }
+
+    if (length(object@support_mapping) != length(object@support)) {
+      return("Slot 'support_mapping' must map each support to a unique index.")
+    }
+
     TRUE
   }
 )
+
+
 
 
 #' @exportClass resSAEM

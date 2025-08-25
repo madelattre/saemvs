@@ -125,17 +125,17 @@ setGeneric(
 setMethod(
   "prepare_grid_plot",
   signature(
-    res_saemvs = "resSAEMVS"
+    res_saemvs = "saemvsResults"
   ),
   function(res_saemvs) {
-    ebic <- res_saemvs@crit_values
+    ebic <- res_saemvs@criterion_values
     threshold <- simplify2array(res_saemvs@thresholds)
     beta <- simplify2array(res_saemvs@beta_map)
     support <- res_saemvs@support
-    map_to_unique_support <- res_saemvs@map_to_unique_support
-    nu0_grid <- res_saemvs@nu0_grid
+    map_to_unique_support <- res_saemvs@support_mapping
+    nu0_grid <- res_saemvs@spike_values_grid
     nb_nu0 <- length(nu0_grid)
-    pen <- res_saemvs@pen
+    pen <- res_saemvs@criterion
 
     p <- dim(support[[1]])[1] - 1
     q <- dim(support[[1]])[2]
