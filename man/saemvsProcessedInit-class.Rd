@@ -3,8 +3,11 @@
 \docType{class}
 \name{saemvsProcessedInit-class}
 \alias{saemvsProcessedInit-class}
-\title{Internal processed initialization of parameters}
+\title{Internal classe saemvsProcessedInit}
 \description{
+Internal processed initialization of parameters
+}
+\details{
 Stores processed initial values of parameters transformed into a format compatible with the SAEMVS algorithm.
 }
 \section{Slots}{
