@@ -88,15 +88,15 @@ init_state <- function(config) {
 
 
   if (length(config$index_select) > 0) {
-    beta_hdim[[1]] <- config$param_init@beta_hdim
-    gamma_hdim[[1]] <- config$param_init@gamma_hdim
+    beta_hdim[[1]] <- config$param_init@beta_to_select
+    gamma_hdim[[1]] <- config$param_init@gamma_to_select
     phi[[1]][, config$index_select] <- config$v %*% beta_hdim[[1]]
-    alpha[[1]] <- config$param_init@alpha
+    alpha[[1]] <- config$param_init@inclusion_prob
   }
 
   if (length(config$index_unselect) > 0) {
-    beta_ldim[[1]] <- config$param_init@beta_ldim
-    gamma_ldim[[1]] <- config$param_init@gamma_ldim
+    beta_ldim[[1]] <- config$param_init@beta_not_to_select
+    gamma_ldim[[1]] <- config$param_init@gamma_not_to_select
     phi[[1]][, config$index_unselect] <- config$w %*% beta_ldim[[1]]
   }
 

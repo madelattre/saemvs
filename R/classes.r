@@ -451,109 +451,135 @@ saemvsHyperSpikeAndSlab <- function(spike_parameter,
 
 
 
-## -- Initilialization of unknown parameters
-
-#' @exportClass initC
+#' Class saemvsInit
+#'
+#' Initialization of user-provided parameters
+#'
+#' Stores the initial values of parameters provided by the user for the SAEMVS algorithm.
+#'
+#' @slot intercept Numeric vector of intercepts for each component of phi.
+#'   Must have length equal to \code{phi_dim} in the model.
+#' @slot beta_forced Optional matrix of regression coefficients for forced covariates
+#'   (from \code{x_forced}). Each column corresponds to a component of phi.
+#' @slot beta_candidates Optional matrix of regression coefficients for candidate covariates
+#'   (from \code{x_candidates}). Same structure as \code{beta_forced}.
+#' @slot cov_re Initial covariance matrix of the random effects.
+#' @slot sigma2 Numeric. Initial residual variance (must be strictly positive).
+#'
+#' @details
+#' Validity checks ensure:
+#' \itemize{
+#'   \item The number of columns in \code{beta_forced} and \code{beta_candidates}
+#'         matches the length of \code{intercept}.
+#'   \item \code{cov_re} is a valid covariance matrix.
+#'   \item \code{sigma2} is strictly positive.
+#' }
+#'
+#' @exportClass saemvsInit
 setClass(
-  "initC",
+  "saemvsInit",
   slots = list(
     intercept = "numeric",
     beta_forced = "matrixORNULL",
-    beta_sel = "matrixORNULL",
-    gamma = "matrix",
-    sigma2 = "numeric",
-    alpha = "numericORNULL"
+    beta_candidates = "matrixORNULL",
+    cov_re = "matrix",
+    sigma2 = "numeric"
   ),
   prototype = list(
     intercept = numeric(0),
     beta_forced = NULL,
-    beta_sel = NULL,
-    gamma = matrix(numeric(0), nrow = 0, ncol = 0),
-    sigma2 = numeric(0),
-    alpha = NULL
+    beta_candidates = NULL,
+    cov_re = matrix(numeric(0), nrow = 0, ncol = 0),
+    sigma2 = 1
   ),
   validity = function(object) {
-    # Même nombre de composantes dans intercept que de colonnes dans beta_forced et beta_sel si ces deux derniers sont non nuls
-
-    if (!is.null(object@beta_sel)) {
-      if (ncol(object@beta_sel) != length(object@intercept)) {
-        return(
-          paste0(
-            "The number of colums in 'beta_sel' must be equal to ",
-            "the number of components in 'intercept'."
-          )
-        )
+    n_phi <- length(object@intercept)
+    if (!is.null(object@beta_candidates)) {
+      if (ncol(object@beta_candidates) != n_phi) {
+        return("Number of columns in 'beta_candidates' must equal length of 'intercept'.")
       }
     }
-
-
     if (!is.null(object@beta_forced)) {
-      if (ncol(object@beta_forced) != length(object@intercept)) {
-        return(
-          paste0(
-            "The number of colums in 'beta_forced' must be equal to ",
-            "the number of components in 'intercept'."
-          )
-        )
+      if (ncol(object@beta_forced) != n_phi) {
+        return("Number of columns in 'beta_forced' must equal length of 'intercept'.")
       }
     }
-
-    if (!is.null(object@gamma)) {
-      check_covariance(object@gamma, "The initial value for 'gamma' ")
+    check_covariance(object@cov_re, "cov_re")
+    if (length(object@sigma2) != 1 || object@sigma2 <= 0) {
+      return("'sigma2' must be a single strictly positive value.")
     }
-
-    check_positive_slot(object@sigma2, "The initial value for 'sigma2' ")
-
-    if ((!is.null(object@beta_sel)) && (!is.null(object@alpha))) {
-      if (ncol(object@beta_sel) != length(object@alpha)) {
-        return(
-          paste0(
-            "The number of elements in 'alpha' must be equal to the ",
-            "number of columns in 'beta_sel'."
-          )
-        )
-      }
-    }
-
     TRUE
   }
 )
 
+# Constructor
 #' @export
-initC <- function(
-    intercept, beta_forced = NULL, beta_sel = NULL,
-    gamma, sigma2, alpha = NULL) {
-  new("initC",
+saemvsInit <- function(intercept,
+                       beta_forced = NULL,
+                       beta_candidates = NULL,
+                       cov_re,
+                       sigma2 = 1) {
+  new("saemvsInit",
     intercept = intercept,
     beta_forced = beta_forced,
-    beta_sel = beta_sel,
-    gamma = gamma,
-    sigma2 = sigma2,
-    alpha = alpha
+    beta_candidates = beta_candidates,
+    cov_re = cov_re,
+    sigma2 = sigma2
   )
 }
 
-#' @exportClass initC
+
+#' Internal processed initialization of parameters
+#'
+#' Stores processed initial values of parameters transformed into a format compatible with the SAEMVS algorithm.
+#'
+#' @slot beta_to_select Matrix of regression coefficients for phi components subject to variable selection.
+#' @slot beta_not_to_select Matrix of regression coefficients for phi components not subject to variable selection.
+#' @slot gamma_to_select Covariance_matrix associated with phi_to_select.
+#' @slot gamma_not_to_select Covariance_matrix associated with phi_not_to_select.
+#' @slot sigma2 Numeric. Residual variance.
+#' @slot inclusion_prob Numeric vector of inclusion probabilities, consistent with the processed dimension of phi.
+#'
+#' @note This class is created internally by the package. Users should not create or modify objects of this class directly.
+#'
+#' @keywords internal
 setClass(
-  "initAlgo",
+  "saemvsProcessedInit",
   slots = list(
-    beta_hdim = "matrixORNULL",
-    beta_ldim = "matrixORNULL",
-    gamma_hdim = "matrixORNULL",
-    gamma_ldim = "matrixORNULL",
+    beta_to_select = "matrixORNULL",
+    beta_not_to_select = "matrixORNULL",
+    gamma_to_select = "matrixORNULL",
+    gamma_not_to_select = "matrixORNULL",
     sigma2 = "numeric",
-    alpha = "numericORNULL"
+    inclusion_prob = "numericORNULL"
   ),
   prototype = list(
-    beta_hdim = NULL,
-    beta_ldim = NULL,
-    gamma_hdim = NULL,
-    gamma_ldim = NULL,
-    sigma2 = 10,
-    alpha = NULL
+    beta_to_select = NULL,
+    beta_not_to_select = NULL,
+    gamma_to_select = NULL,
+    gamma_not_to_select = NULL,
+    sigma2 = 1,
+    inclusion_prob = numeric(0)
   )
-  # Pas besoin de validity, je crée ces objets dans le code
+  # No validity: objects created automatically in the code
 )
+
+# Constructor
+saemvsProcessedInit <- function(beta_to_select = NULL,
+                                beta_not_to_select = NULL,
+                                gamma_to_select = NULL,
+                                gamma_not_to_select = NULL,
+                                sigma2 = 1,
+                                inclusion_prob = numeric(0)) {
+  new("saemvsProcessedInit",
+      beta_to_select = beta_to_select,
+      beta_not_to_select = beta_not_to_select,
+      gamma_to_select = gamma_to_select,
+      gamma_not_to_select = gamma_not_to_select,
+      sigma2 = sigma2,
+      inclusion_prob = inclusion_prob
+  )
+}
 
 
 ## -- Tuning parameters

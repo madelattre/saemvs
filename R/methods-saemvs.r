@@ -10,7 +10,7 @@ setGeneric(
 setMethod(
   "saemvs",
   signature(
-    data = "saemvsData", model = "saemvsModel", init = "initC",
+    data = "saemvsData", model = "saemvsModel", init = "saemvsInit",
     tuning_algo = "tuningC", hyperparam = "saemvsHyperSlab",
     pen = "character"
   ),
@@ -153,7 +153,7 @@ setGeneric(
 setMethod(
   "test_saemvs",
   signature(
-    data = "saemvsData", model = "saemvsModel", init = "initC",
+    data = "saemvsData", model = "saemvsModel", init = "saemvsInit",
     tuning_algo = "tuningC", hyperparam = "saemvsHyperSlab"
   ),
   function(data, model, init, tuning_algo, hyperparam) {
@@ -190,7 +190,7 @@ setGeneric(
 setMethod(
   "saemvs_one_map_run",
   signature(
-    data = "saemvsData", model = "saemvsModel", init = "initC",
+    data = "saemvsData", model = "saemvsModel", init = "saemvsInit",
     tuning_algo = "tuningC", hyperparam = "saemvsHyperSpikeAndSlab"
   ),
   function(data, model, init, tuning_algo, hyperparam) {
@@ -249,7 +249,7 @@ setMethod(
   "saemvs_one_ebic_run",
   signature(
     k = "numeric", support = "numeric",
-    data = "saemvsData", model = "saemvsModel", init = "initC",
+    data = "saemvsData", model = "saemvsModel", init = "saemvsInit",
     tuning_algo = "tuningC", hyperparam = "saemvsHyperSpikeAndSlab",
     pen = "character"
   ),

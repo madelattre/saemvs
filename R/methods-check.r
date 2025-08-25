@@ -46,7 +46,7 @@ setGeneric(
 
 setMethod(
   "check_init",
-  signature(init = "initC", data = "saemvsData", model = "saemvsModel"),
+  signature(init = "saemvsInit", data = "saemvsData", model = "saemvsModel"),
   function(init, data, model) {
     # A réécrire
   }

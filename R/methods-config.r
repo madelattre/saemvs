@@ -110,7 +110,7 @@ setGeneric(
 
 setMethod(
   "prepare_init",
-  signature(init = "initC", model = "saemvsModel"),
+  signature(init = "saemvsInit", model = "saemvsModel"),
   function(init, model) {
     # A compléter, initialisation de beta_sel par défaut?
 
@@ -135,7 +135,7 @@ setMethod(
       if (is_empty_support(xf_supp_phi_sel) == TRUE) {
         beta_hdim <- rbind(
           init@intercept[model@phi_to_select_idx],
-          init@beta_sel[, model@phi_to_select_idx]
+          init@beta_candidates[, model@phi_to_select_idx]
         )
       } else {
         raws_bf_phi_sel <- extract_rows_with_ones(xf_supp_phi_sel)
@@ -143,11 +143,11 @@ setMethod(
         beta_hdim <- rbind(
           init@intercept[model@phi_to_select_idx],
           bf_phi_sel,
-          init@beta_sel[, model@phi_to_select_idx]
+          init@beta_candidates[, model@phi_to_select_idx]
         )
       }
       gamma_hdim <- matrix(
-        init@gamma[model@phi_to_select_idx, model@phi_to_select_idx],
+        init@cov_re[model@phi_to_select_idx, model@phi_to_select_idx],
         ncol = length(model@phi_to_select_idx)
       )
 
@@ -185,19 +185,19 @@ setMethod(
       }
 
       gamma_ldim <- matrix(
-        init@gamma[phi_insel_idx, phi_insel_idx],
+        init@cov_re[phi_insel_idx, phi_insel_idx],
         ncol = length(phi_insel_idx)
       )
     }
 
 
-    init_alg <- new("initAlgo",
-      alpha = alpha,
+    init_alg <- new("saemvsProcessedInit",
+      inclusion_prob = alpha,
       sigma2 = init@sigma2,
-      gamma_hdim = gamma_hdim,
-      gamma_ldim = gamma_ldim,
-      beta_hdim = beta_hdim,
-      beta_ldim = beta_ldim
+      gamma_to_select = gamma_hdim,
+      gamma_not_to_select = gamma_ldim,
+      beta_to_select = beta_hdim,
+      beta_not_to_select = beta_ldim
     )
 
     return(init_alg)
@@ -251,7 +251,7 @@ setMethod(
   "make_config",
   signature(
     data = "saemvsProcessedData", model = "saemvsModel", tuning_algo = "tuningC",
-    init = "initAlgo", hyperparam = "saemvsHyperSlab"
+    init = "saemvsProcessedInit", hyperparam = "saemvsHyperSlab"
   ),
   function(data, model, tuning_algo, init, hyperparam) {
     q_phi <- model@phi_dim
@@ -448,7 +448,7 @@ setGeneric(
 setMethod(
   "from_map_to_mle_init",
   signature(
-    init = "initC", model = "saemvsModel", cand_support = "matrix"
+    init = "saemvsInit", model = "saemvsModel", cand_support = "matrix"
   ),
   # Ici il faut tenir compte des indices des phi_s et des phi_ns
   function(init, model, cand_support) {
@@ -456,7 +456,7 @@ setMethod(
 
     new_beta_init <- rbind(
       init@beta_forced,
-      init@beta_sel[lines_with_ones, ]
+      init@beta_candidates[lines_with_ones, ]
     )
 
     # if (is.null(init@gamma_ldim)) {
@@ -468,12 +468,10 @@ setMethod(
     #   ))
     # }
 
-    new_init <- initC(
+    new_init <- saemvsInit(
       intercept = init@intercept,
       beta_forced = new_beta_init,
-      gamma = init@gamma,
-      # beta_ns = new_beta_init[, inv_perm],
-      # gamma_ns = new_gamma_init[inv_perm, inv_perm],
+      cov_re = init@cov_re,
       sigma2 = init@sigma2
     )
 
