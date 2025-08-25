@@ -1,5 +1,25 @@
-## -- Check that the data fits the model
+# ---------------------------------------------
+# -- check_data: verify that the user data fits the model
+# ---------------------------------------------
 
+#' Check Data Consistency with Model
+#'
+#' Internal function to verify that the data provided by the user
+#' is consistent with the SAEMVS model specification.
+#'
+#' @param data An object of class \code{saemvsData}.
+#' @param model An object of class \code{saemvsModel}.
+#'
+#' @details
+#' Performs the following checks:
+#' \itemize{
+#'   \item If \code{phi_to_select_idx} is non-empty, \code{x_candidates} must be provided.
+#'   \item \code{x_candidates}, if present, must have one row per sequence in \code{y_series}.
+#'   \item \code{x_forced} and \code{x_forced_support}, if present, must be numeric matrices
+#'         with compatible dimensions.
+#' }
+#'
+#' @keywords internal
 setGeneric(
   "check_data",
   function(data, model) {
@@ -11,31 +31,59 @@ setMethod(
   "check_data",
   signature(data = "saemvsData", model = "saemvsModel"),
   function(data, model) {
-    if (is.null(data@x_candidates) && (length(model@phi_to_select_idx) > 0)) {
-      stop(
-        paste0(
-          "Parameter selection is requested ('phi_to_select_idx' is not empty), ",
-          "but the covariate matrix 'x_candidates' is missing. Please provide ",
-          "'x_candidates' with one row per sequence in 'y'."
-        )
-      )
+    n_ind <- length(data@y_series)
+
+    if (length(model@phi_to_select_idx) > 0 && is.null(data@x_candidates)) {
+      stop(sprintf(
+        "Parameter selection requested (%d phi_to_select_idx), but 'x_candidates' is missing.",
+        length(model@phi_to_select_idx)
+      ))
+    }
+
+    if (!is.null(data@x_candidates) && nrow(data@x_candidates) != n_ind) {
+      stop(sprintf(
+        "'x_candidates' must have %d rows (matching y_series); got %d.",
+        n_ind, nrow(data@x_candidates)
+      ))
     }
 
     if (!is.null(data@x_forced) && !is.null(model@x_forced_support)) {
+      if (!is.matrix(data@x_forced)) stop("'x_forced' must be a matrix.")
+      if (!is.numeric(data@x_forced)) stop("'x_forced' must be numeric.")
       if (ncol(data@x_forced) != nrow(model@x_forced_support)) {
-        stop(
-          paste0(
-            "The number of columns in matrix 'x_forced' must be equal ",
-            "to the number of lines in 'x_forced_support'."
-          )
-        )
+        stop(sprintf(
+          "Number of columns in 'x_forced' (%d) must equal number of rows in 'x_forced_support' (%d).",
+          ncol(data@x_forced), nrow(model@x_forced_support)
+        ))
       }
     }
   }
 )
 
-## -- Check that the initial values fit the model
+# ---------------------------------------------
+# -- check_init: verify that initial parameters fit the model
+# ---------------------------------------------
 
+#' Check Initial Values Consistency
+#'
+#' Internal function to verify that the initial values provided
+#' by the user match the SAEMVS model and data dimensions.
+#'
+#' @param init An object of class \code{saemvsInit}.
+#' @param data An object of class \code{saemvsData}.
+#' @param model An object of class \code{saemvsModel}.
+#'
+#' @details
+#' Performs the following checks:
+#' \itemize{
+#'   \item Length of \code{intercept} must match \code{phi_dim} in the model.
+#'   \item \code{beta_candidates} and \code{beta_forced}, if present, must have
+#'         the same number of columns as \code{intercept}.
+#'   \item \code{cov_re} must be a numeric square matrix of size \code{phi_dim}.
+#'   \item \code{sigma2} must be a single strictly positive number.
+#' }
+#'
+#' @keywords internal
 setGeneric(
   "check_init",
   function(init, data, model) {
@@ -43,25 +91,79 @@ setGeneric(
   }
 )
 
-
 setMethod(
   "check_init",
   signature(init = "saemvsInit", data = "saemvsData", model = "saemvsModel"),
   function(init, data, model) {
-    # A réécrire
+    n_phi <- length(init@intercept)
+    if (n_phi != model@phi_dim) {
+      stop(sprintf(
+        "Length of 'intercept' (%d) must match 'phi_dim' (%d).",
+        n_phi, model@phi_dim
+      ))
+    }
+
+    if (!is.null(init@beta_candidates)) {
+      if (!is.matrix(init@beta_candidates) || ncol(init@beta_candidates) != n_phi) {
+        stop(sprintf(
+          "'beta_candidates' must be a matrix with %d columns (matching intercept); got %d.",
+          n_phi, ifelse(is.null(ncol(init@beta_candidates)), NA, ncol(init@beta_candidates))
+        ))
+      }
+    }
+
+    if (!is.null(init@beta_forced)) {
+      if (!is.matrix(init@beta_forced) || ncol(init@beta_forced) != n_phi) {
+        stop(sprintf(
+          "'beta_forced' must be a matrix with %d columns (matching intercept); got %d.",
+          n_phi, ifelse(is.null(ncol(init@beta_forced)), NA, ncol(init@beta_forced))
+        ))
+      }
+    }
+
+    if (!is.matrix(init@cov_re) || nrow(init@cov_re) != n_phi || ncol(init@cov_re) != n_phi) {
+      stop(sprintf(
+        "'cov_re' must be a %dx%d numeric matrix; got %dx%d.",
+        n_phi, n_phi, nrow(init@cov_re), ncol(init@cov_re)
+      ))
+    }
+
+    if (!is.numeric(init@sigma2) || length(init@sigma2) != 1 || init@sigma2 <= 0) {
+      stop("'sigma2' must be a single strictly positive number.")
+    }
   }
 )
 
+# ---------------------------------------------
+# -- check_hyper: verify that hyperparameters fit the model and tuning
+# ---------------------------------------------
 
-## -- Check that the hyperparameters fit the model
-
+#' Check Hyperparameters Consistency
+#'
+#' Internal function to verify that the hyperparameters for the spike-and-slab
+#' prior are consistent with the SAEMVS model and tuning parameters.
+#'
+#' @param hyper An object of class \code{saemvsHyperSpikeAndSlab}.
+#' @param model An object of class \code{saemvsModel}.
+#' @param tuning An object of class \code{saemvsTuning}.
+#'
+#' @details
+#' Performs the following checks:
+#' \itemize{
+#'   \item \code{inclusion_prob_prior_a} and \code{inclusion_prob_prior_b} lengths
+#'         must match the number of phi parameters subject to selection.
+#'   \item \code{cov_re_prior_scale} must be a numeric square matrix with
+#'         dimensions equal to the number of phi parameters selected.
+#'   \item All values in \code{spike_values_grid} must be smaller than \code{slab_parameter}.
+#' }
+#'
+#' @keywords internal
 setGeneric(
   "check_hyper",
   function(hyper, model, tuning) {
     standardGeneric("check_hyper")
   }
 )
-
 
 setMethod(
   "check_hyper",
@@ -70,41 +172,39 @@ setMethod(
     tuning = "saemvsTuning"
   ),
   function(hyper, model, tuning) {
-    nbs <- length(model@phi_to_select_idx)
+    nb_selected <- length(model@phi_to_select_idx)
 
-    if (nbs != 0) { # map
-      if (!is.null(hyper@inclusion_prob_prior_a) && (length(hyper@inclusion_prob_priora) != nbs)) {
-        stop(paste0(
-          "As ", nbs, " parameters are subject to selection,",
-          "hyperparameter 'inclusion_prob_prior_a' must contain ", nbs, " components."
+    if (nb_selected > 0) {
+      if (!is.null(hyper@inclusion_prob_prior_a) && length(hyper@inclusion_prob_prior_a) != nb_selected) {
+        stop(sprintf(
+          "Hyperparameter 'inclusion_prob_prior_a' must have %d components; got %d.",
+          nb_selected, length(hyper@inclusion_prob_prior_a)
         ))
       }
-
-      if (!is.null(hyper@inclusion_prob_prior_b) && (length(hyper@inclusion_prob_prior_b) != nbs)) {
-        stop(paste0(
-          "As ", nbs, " parameters are subject to selection,",
-          "hyperparameter 'inclusion_prob_prior_b' must contain ", nbs, " components."
+      if (!is.null(hyper@inclusion_prob_prior_b) && length(hyper@inclusion_prob_prior_b) != nb_selected) {
+        stop(sprintf(
+          "Hyperparameter 'inclusion_prob_prior_b' must have %d components; got %d.",
+          nb_selected, length(hyper@inclusion_prob_prior_b)
         ))
       }
-
-      # Check !is.null(hyper@cov_re_prior_scale) pour éviter les erreurs si vide?
-      if ((dim(hyper@cov_re_prior_scale)[1] != nbs) || (dim(hyper@cov_re_prior_scale)[2] != nbs)) {
-        stop(paste0(
-          "As ", nbs, " parameters are subject to selection,",
-          "hyperparameter 'cov_re_prior_scale' must be a squared matrix with ",
-          nbs, "columns and ", nbs, " rows."
-        ))
+      if (!is.null(hyper@cov_re_prior_scale)) {
+        if (!is.matrix(hyper@cov_re_prior_scale) || !is.numeric(hyper@cov_re_prior_scale)) {
+          stop("'cov_re_prior_scale' must be a numeric matrix.")
+        }
+        if (any(dim(hyper@cov_re_prior_scale) != nb_selected)) {
+          stop(sprintf(
+            "'cov_re_prior_scale' must be a %dx%d matrix; got %dx%d.",
+            nb_selected, nb_selected,
+            nrow(hyper@cov_re_prior_scale), ncol(hyper@cov_re_prior_scale)
+          ))
+        }
       }
     }
 
-    if ((!is.null(tuning@spike_values_grid)) && (!all(tuning@spike_values_grid < hyper@slab_parameter))) {
-      # Vérifier que tuning@spike_values_grid n'est pas vide? (length(tuning@nu_grid)>0)
-      stop(
-        paste0(
-          "All spike parameter values in 'spike_values_grid' must be smaller than ",
-          "'slab_parameter'."
-        )
-      )
+    if (!is.null(tuning@spike_values_grid) && length(tuning@spike_values_grid) > 0) {
+      if (!all(tuning@spike_values_grid < hyper@slab_parameter)) {
+        stop("'spike_values_grid' values must all be smaller than 'slab_parameter'.")
+      }
     }
   }
 )
