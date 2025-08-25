@@ -118,7 +118,7 @@ saemvsData <- function(y, t, x_candidates = NULL, x_forced = NULL) {
 }
 
 
-# Internal class: saemvsProcessedData
+
 #' Internal class: saemvsProcessedData
 #'
 #' A class to store processed design matrices ready for SAEMVS algorithms.
@@ -528,7 +528,8 @@ saemvsInit <- function(intercept,
   )
 }
 
-
+#' Internal classe saemvsProcessedInit
+#'
 #' Internal processed initialization of parameters
 #'
 #' Stores processed initial values of parameters transformed into a format compatible with the SAEMVS algorithm.
@@ -572,144 +573,186 @@ saemvsProcessedInit <- function(beta_to_select = NULL,
                                 sigma2 = 1,
                                 inclusion_prob = numeric(0)) {
   new("saemvsProcessedInit",
-      beta_to_select = beta_to_select,
-      beta_not_to_select = beta_not_to_select,
-      gamma_to_select = gamma_to_select,
-      gamma_not_to_select = gamma_not_to_select,
-      sigma2 = sigma2,
-      inclusion_prob = inclusion_prob
+    beta_to_select = beta_to_select,
+    beta_not_to_select = beta_not_to_select,
+    gamma_to_select = gamma_to_select,
+    gamma_not_to_select = gamma_not_to_select,
+    sigma2 = sigma2,
+    inclusion_prob = inclusion_prob
   )
 }
 
-
-## -- Tuning parameters
-
-#' @exportClass tuningC
-setClass( # ne contient pas les paramètres initiaux ; nu0_grid est obligatoire
-  "tuningC",
+#' Class saemvsTuning
+#'
+#' Algorithm tuning parameters for SAEMVS
+#'
+#' This class contains all parameters controlling the behavior of the SAEMVS algorithm,
+#' including iteration numbers, Metropolis-Hastings steps, importance sampling, step-size
+#' schedule, and the grid of spike values for variable selection.
+#'
+#' @slot niter Total number of SAEM iterations.
+#' @slot nburnin Number of burn-in iterations.
+#' @slot step Step-size schedule vector for stochastic approximation (automatically computed).
+#' @slot niter_mh Number of Metropolis-Hastings iterations per S-step.
+#' @slot kernel_mh Type of MH kernel: either "random_walk" or "pop".
+#' @slot covariance_decay Decay factor controlling how quickly variance and covariance estimates
+#'   are updated during the SAEMVS iterations. Values close to 1 lead to slow updates, ensuring
+#'   stability of the Metropolis-Hastings kernel, while lower values increase the adaptation rate.
+#' @slot mh_proposal_scale Scaling factor for the MH proposal variance (strictly positive).
+#' @slot spike_values_grid Numeric vector of spike values (must be positive and non-empty).
+#' @slot n_is_samples Number of importance sampling iterations for log-likelihood estimation.
+#' @slot seed Integer random seed for reproducibility.
+#' @slot nb_workers Number of parallel workers for SAEMVS.
+#'
+#' @exportClass saemvsTuning
+setClass(
+  "saemvsTuning",
   slots = list(
     niter = "numeric",
     nburnin = "numeric",
     step = "numeric",
     niter_mh = "numeric",
     kernel_mh = "character",
-    tau = "numeric",
-    kappa_mh = "numeric",
-    nu0_grid = "numericORNULL",
-    nb_is = "numeric",
+    covariance_decay = "numeric",
+    mh_proposal_scale = "numeric",
+    spike_values_grid = "numericORNULL",
+    n_is_samples = "numeric",
     seed = "numeric",
     nb_workers = "numeric"
   ),
   prototype = list(
-    niter = integer(500),
-    nburnin = integer(350),
-    # step = c(rep(1, 350 - 1), 1 / ((1:(151))^(2 / 3))),
-    niter_mh = integer(5),
+    niter = 500,
+    nburnin = 350,
+    step = numeric(0), # computed automatically in constructor
+    niter_mh = 5,
     kernel_mh = "random_walk",
-    # tau = 0.98,
-    kappa_mh = 1.5,
-    nu0_grid = NULL,
-    nb_is = 10000,
+    covariance_decay = 0.98,
+    mh_proposal_scale = 1.5,
+    spike_values_grid = NULL,
+    n_is_samples = 10000,
     seed = 220916,
     nb_workers = 4
   ),
   validity = function(object) {
-    if (object@kappa_mh <= 0) {
-      return(
-        paste0(
-          "Parameter 'kappa_mh' used to tune the proposal ",
-          "variance at S-step must of the SAEM algorithm be a ",
-          "strictly positive value."
-        )
-      )
+    # niter
+    if (!is.numeric(object@niter) || length(object@niter) != 1) {
+      return("'niter' must be a single numeric value.")
+    }
+    if (object@niter <= 0 || object@niter != as.integer(object@niter)) {
+      return("'niter' must be a positive integer.")
     }
 
-    if (!object@kernel_mh %in% c("random_walk", "pop")) {
-      return("Invalid kernel: should be 'random_walk' or 'pop'.")
+    # nburnin
+    if (!is.numeric(object@nburnin) || length(object@nburnin) != 1) {
+      return("'nburnin' must be a single numeric value.")
     }
-
-    check_positive_integer_slot(
-      object@niter,
-      "The total number of iterations of the SAEM algorithm 'niter' "
-    )
-
-    check_positive_integer_slot(
-      object@nburnin,
-      "The number of burn-in iterations of the SAEM algorithm 'nburnin' "
-    )
-
+    if (object@nburnin < 0 || object@nburnin != as.integer(object@nburnin)) {
+      return("'nburnin' must be a non-negative integer.")
+    }
     if (object@nburnin > object@niter) {
-      return(
-        paste0(
-          "The number of burn-in iterations of the SAEM algorithm",
-          " 'nburnin' must be smaller than the total number of iterations",
-          " 'niter'."
-        )
-      )
+      return("'nburnin' must be smaller than 'niter'.")
     }
 
-    check_positive_integer_slot(
-      object@niter_mh,
-      paste0(
-        "The number of iterations of Metropolis-Hastings at each",
-        " S-step 'niter_mh' "
-      )
-    )
-
-    check_positive_integer_slot(
-      object@nb_is,
-      paste0(
-        "The number of iterations of Importance Sampling 'nb_is'",
-        " for log-likelihood estimation "
-      )
-    )
-
-    if (!is.integer(object@seed)) {
-      return(
-        paste0("'seed' must be an integer value.")
-      )
+    # step
+    if (!is.numeric(object@step) || length(object@step) != object@niter) {
+      return("'step' must be a numeric vector of length 'niter'.")
     }
 
-    check_positive_integer_slot(
-      object@nb_workers,
-      paste0(
-        "The number of workers 'nb_workers' for parallel processing",
-        " of SAEMVS on 'nu0_grid' "
-      )
-    )
-
-
-    if (!all(object@nu0_grid > 0)) {
-      return(
-        paste0(
-          "All the spike parameter values in 'nu0_grid' must be positive."
-        )
-      )
+    # niter_mh
+    if (!is.numeric(object@niter_mh) || length(object@niter_mh) != 1) {
+      return("'niter_mh' must be a single numeric value.")
+    }
+    if (object@niter_mh <= 0 || object@niter_mh != as.integer(object@niter_mh)) {
+      return("'niter_mh' must be a positive integer.")
     }
 
-    # Ajouter que nu0_grid ne peut pas être vide
+    # kernel_mh
+    if (!is.character(object@kernel_mh) || length(object@kernel_mh) != 1) {
+      return("'kernel_mh' must be a single character string.")
+    }
+    if (!object@kernel_mh %in% c("random_walk", "pop")) {
+      return("'kernel_mh' must be either 'random_walk' or 'pop'.")
+    }
+
+    # covariance_decay
+    if (!is.numeric(object@covariance_decay) || length(object@covariance_decay) != 1) {
+      return("'covariance_decay' must be a single numeric value.")
+    }
+    if (object@covariance_decay <= 0 || object@covariance_decay >= 1) {
+      return("'covariance_decay' must be strictly between 0 and 1 (exclusive).")
+    }
+
+    # mh_proposal_scale
+    if (!is.numeric(object@mh_proposal_scale) || length(object@mh_proposal_scale) != 1) {
+      return("'mh_proposal_scale' must be a single numeric value.")
+    }
+    if (object@mh_proposal_scale <= 0) {
+      return("'mh_proposal_scale' must be strictly positive.")
+    }
+
+    # spike_values_grid
+    if (!is.numeric(object@spike_values_grid) || length(object@spike_values_grid) == 0) {
+      return("'spike_values_grid' must be a non-empty numeric vector.")
+    }
+    if (any(object@spike_values_grid <= 0)) {
+      return("All values in 'spike_values_grid' must be strictly positive.")
+    }
+
+    # n_is_samples
+    if (!is.numeric(object@n_is_samples) || length(object@n_is_samples) != 1) {
+      return("'n_is_samples' must be a single numeric value.")
+    }
+    if (object@n_is_samples <= 0 || object@n_is_samples != as.integer(object@n_is_samples)) {
+      return("'n_is_samples' must be a positive integer.")
+    }
+
+    # seed
+    if (!is.numeric(object@seed) || length(object@seed) != 1) {
+      return("'seed' must be a single numeric value.")
+    }
+    if (object@seed != as.integer(object@seed)) {
+      return("'seed' must be an integer.")
+    }
+
+    # nb_workers
+    if (!is.numeric(object@nb_workers) || length(object@nb_workers) != 1) {
+      return("'nb_workers' must be a single numeric value.")
+    }
+    if (object@nb_workers <= 0 || object@nb_workers != as.integer(object@nb_workers)) {
+      return("'nb_workers' must be a positive integer.")
+    }
 
     TRUE
   }
 )
 
 #' @export
-tuningC <- function(
-    niter = 500,
-    nburnin = 350,
-    niter_mh = 5,
-    kernel_mh = "random_walk",
-    kappa_mh = 1.5,
-    nu0_grid,
-    nb_is = 10000,
-    seed = 220916,
-    nb_workers = 4) {
-  new("tuningC",
-    niter = as.integer(niter), nburnin = as.integer(nburnin),
-    step = c(rep(1, nburnin - 1), 1 / ((1:(niter - nburnin + 1))^(2 / 3))),
-    niter_mh = as.integer(niter_mh), kernel_mh = kernel_mh,
-    tau = 0.98, kappa_mh = kappa_mh, nu0_grid = sort(nu0_grid),
-    nb_is = as.integer(nb_is), seed = as.integer(seed),
+saemvsTuning <- function(niter = 500,
+                         nburnin = 350,
+                         niter_mh = 5,
+                         kernel_mh = "random_walk",
+                         covariance_decay = 0.98,
+                         mh_proposal_scale = 1.5,
+                         spike_values_grid,
+                         n_is_samples = 10000,
+                         seed = 220916,
+                         nb_workers = 4) {
+  step <- c(
+    rep(1, nburnin - 1),
+    1 / ((1:(niter - nburnin + 1))^(2 / 3))
+  )
+
+  new("saemvsTuning",
+    niter = as.integer(niter),
+    nburnin = as.integer(nburnin),
+    step = step,
+    niter_mh = as.integer(niter_mh),
+    kernel_mh = kernel_mh,
+    covariance_decay = covariance_decay,
+    mh_proposal_scale = mh_proposal_scale,
+    spike_values_grid = sort(spike_values_grid),
+    n_is_samples = as.integer(n_is_samples),
+    seed = as.integer(seed),
     nb_workers = as.integer(nb_workers)
   )
 }

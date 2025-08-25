@@ -10,7 +10,7 @@ setMethod(
   "loglik",
   signature(
     data = "saemvsData", model = "saemvsModel",
-    tuning_algo = "tuningC", param = "list", pen = "character",
+    tuning_algo = "saemvsTuning", param = "list", pen = "character",
     p = "numeric"
   ),
   function(data, model, tuning_algo, param, pen, p) {
@@ -18,7 +18,7 @@ setMethod(
 
     data <- prepare_data(data, model)
 
-    nsim <- tuning_algo@nb_is
+    nsim <- tuning_algo@n_is_samples
 
     support <- model@x_forced_support
     supp_index <- which(c(t(support)) == 1)

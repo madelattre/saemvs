@@ -250,7 +250,7 @@ setGeneric(
 setMethod(
   "make_config",
   signature(
-    data = "saemvsProcessedData", model = "saemvsModel", tuning_algo = "tuningC",
+    data = "saemvsProcessedData", model = "saemvsModel", tuning_algo = "saemvsTuning",
     init = "saemvsProcessedInit", hyperparam = "saemvsHyperSlab"
   ),
   function(data, model, tuning_algo, init, hyperparam) {
@@ -324,10 +324,10 @@ setMethod(
       nburnin = tuning_algo@nburnin,
       niter_mh = tuning_algo@niter_mh,
       kernel_mh = tuning_algo@kernel_mh,
-      kappa = tuning_algo@kappa_mh,
+      kappa = tuning_algo@mh_proposal_scale,
       step = tuning_algo@step,
       param_init = init,
-      tau = tuning_algo@tau,
+      tau = tuning_algo@covariance_decay,
       nu0 = nu0,
       nu1 = nu1,
       nsig = nsig,

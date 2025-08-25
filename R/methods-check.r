@@ -67,7 +67,7 @@ setMethod(
   "check_hyper",
   signature(
     hyper = "saemvsHyperSpikeAndSlab", model = "saemvsModel",
-    tuning = "tuningC"
+    tuning = "saemvsTuning"
   ),
   function(hyper, model, tuning) {
     nbs <- length(model@phi_to_select_idx)
@@ -97,11 +97,11 @@ setMethod(
       }
     }
 
-    if ((!is.null(tuning@nu0_grid)) && (!all(tuning@nu0_grid < hyper@slab_parameter))) {
-      # Vérifier que tuning@nu0_grid n'est pas vide? (length(tuning@nu_grid)>0)
+    if ((!is.null(tuning@spike_values_grid)) && (!all(tuning@spike_values_grid < hyper@slab_parameter))) {
+      # Vérifier que tuning@spike_values_grid n'est pas vide? (length(tuning@nu_grid)>0)
       stop(
         paste0(
-          "All spike parameter values in 'nu0_grid' must be smaller than ",
+          "All spike parameter values in 'spike_values_grid' must be smaller than ",
           "'slab_parameter'."
         )
       )

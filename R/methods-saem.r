@@ -9,7 +9,7 @@ setMethod(
   "run_saem",
   signature(
     data = "saemvsData", model = "saemvsModel", init = "saemvsInit",
-    tuning_algo = "tuningC", hyperparam = "saemvsHyperSpikeAndSlab"
+    tuning_algo = "saemvsTuning", hyperparam = "saemvsHyperSpikeAndSlab"
   ),
   function(data, model, init, tuning_algo, hyperparam) {
     # Mise en forme et vérification de la cohérence des objets

@@ -11,7 +11,7 @@ setMethod(
   "saemvs",
   signature(
     data = "saemvsData", model = "saemvsModel", init = "saemvsInit",
-    tuning_algo = "tuningC", hyperparam = "saemvsHyperSlab",
+    tuning_algo = "saemvsTuning", hyperparam = "saemvsHyperSlab",
     pen = "character"
   ),
   function(data, model, init, tuning_algo, hyperparam, pen) {
@@ -36,7 +36,7 @@ setMethod(
     # Plan de parallélisation
     future::plan(future::multisession, workers = tuning_algo@nb_workers)
 
-    nu0_list <- tuning_algo@nu0_grid
+    nu0_list <- tuning_algo@spike_values_grid
 
     # Lancer les calculs en parallèle
 
@@ -132,7 +132,7 @@ setMethod(
       support = support,
       unique_support = support[unique_support],
       map_to_unique_support = map_to_unique_support,
-      nu0_grid = tuning_algo@nu0_grid,
+      nu0_grid = tuning_algo@spike_values_grid,
       index_fixed = model@phi_fixed_idx
     )
 
@@ -154,12 +154,12 @@ setMethod(
   "test_saemvs",
   signature(
     data = "saemvsData", model = "saemvsModel", init = "saemvsInit",
-    tuning_algo = "tuningC", hyperparam = "saemvsHyperSlab"
+    tuning_algo = "saemvsTuning", hyperparam = "saemvsHyperSlab"
   ),
   function(data, model, init, tuning_algo, hyperparam) {
     compile_model(model@model_func)
     full_hyperparam <- saemvsHyperSpikeAndSlab(
-      tuning_algo@nu0_grid[1],
+      tuning_algo@spike_values_grid[1],
       hyperparam
     )
     state <- run_saem(data, model, init, tuning_algo, full_hyperparam)
@@ -191,7 +191,7 @@ setMethod(
   "saemvs_one_map_run",
   signature(
     data = "saemvsData", model = "saemvsModel", init = "saemvsInit",
-    tuning_algo = "tuningC", hyperparam = "saemvsHyperSpikeAndSlab"
+    tuning_algo = "saemvsTuning", hyperparam = "saemvsHyperSpikeAndSlab"
   ),
   function(data, model, init, tuning_algo, hyperparam) {
     map <- run_saem(data, model, init, tuning_algo, hyperparam)
@@ -250,7 +250,7 @@ setMethod(
   signature(
     k = "numeric", support = "numeric",
     data = "saemvsData", model = "saemvsModel", init = "saemvsInit",
-    tuning_algo = "tuningC", hyperparam = "saemvsHyperSpikeAndSlab",
+    tuning_algo = "saemvsTuning", hyperparam = "saemvsHyperSpikeAndSlab",
     pen = "character"
   ),
   saemvs_one_ebic_run <- function(k, support, data, model, init, tuning_algo,
