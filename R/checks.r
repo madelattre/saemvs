@@ -92,6 +92,15 @@ check_positive_slot <- function(slot, name_slot) {
   }
 }
 
+check_positive_or_null_slot <- function(slot, name_slot) {
+  if (!is.null(slot)) {
+    if (slot <= 0) {
+      return(
+        paste0(name_slot, "must be NULL or strictly positive.")
+      )
+    }
+  }
+}
 
 check_positive_integer_slot <- function(slot, name_slot) {
   if ((slot <= 0) || !is.integer(slot)) {
