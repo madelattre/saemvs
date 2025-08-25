@@ -165,11 +165,11 @@ setMethod(
     state <- run_saem(data, model, init, tuning_algo, full_hyperparam)
 
     res <- new(
-      "resSAEM",
-      beta_s = state$beta_hdim,
-      beta_ns = state$beta_ldim,
-      gamma_s = state$gamma_hdim,
-      gamma_ns = state$gamma_ldim,
+      "saemResults",
+      beta_to_select = state$beta_hdim,
+      beta_not_to_select = state$beta_ldim,
+      gamma_to_select = state$gamma_hdim,
+      gamma_not_to_select = state$gamma_ldim,
       sigma2 = state$sigma2
     )
     return(res)

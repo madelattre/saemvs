@@ -833,24 +833,86 @@ setClass(
 
 
 
-#' @exportClass resSAEM
+#' Classe saemResults
+#'
+#' Internal class storing intermediate estimation results produced by
+#' the SAEM algorithm. Objects of this class are not meant
+#' to be created by the user but are automatically produced by
+#' \code{saemvs}.
+#'
+#' @slot beta_to_select A list of matrices containing the estimated regression
+#'   coefficients for covariates that are related with the components of 
+#' `phi` that are subject to selection
+#'   (\code{phi_to_select}) at each iteration.
+#' @slot beta_not_to_select A list of matrices containing the estimated regression
+#'   coefficients for covariates that are related with the components of 
+#' `phi` that are not subject to selection
+#'   (\code{phi_not_to_select}) at each iteration.
+#' @slot gamma_to_select A list of covariance matrices estimated at each iteration
+#'   for the random effects associated with \code{phi_to_select}.
+#' @slot gamma_not_to_select A list of covariance matrices estimated at each iteration
+#'   for the random effects associated with \code{phi_not_to_select}.
+#' @slot sigma2 A numeric vector of estimated residual variances at each iteration.
+#'
+#' @keywords internal
+#' @exportClass saemResults
 setClass(
-  "resSAEM",
+  "saemResults",
   slots = list(
-    beta_s = "listORNULL",
-    beta_ns = "listORNULL",
-    gamma_s = "listORNULL",
-    gamma_ns = "listORNULL",
+    beta_to_select = "listORNULL",
+    beta_not_to_select = "listORNULL",
+    gamma_to_select = "listORNULL",
+    gamma_not_to_select = "listORNULL",
     sigma2 = "numericORNULL"
   ),
   prototype = list(
-    beta_s = NULL,
-    beta_ns = NULL,
-    gamma_s = NULL,
-    gamma_ns = NULL,
+    beta_to_select = NULL,
+    beta_not_to_select = NULL,
+    gamma_to_select = NULL,
+    gamma_not_to_select = NULL,
     sigma2 = NULL
   ),
   validity = function(object) {
+    # Check beta_to_select
+    if (!is.null(object@beta_to_select)) {
+      if (!is.list(object@beta_to_select) ||
+          !all(vapply(object@beta_to_select, is.matrix, logical(1)))) {
+        return("'beta_to_select' must be a list of matrices.")
+      }
+    }
+
+    # Check beta_not_to_select
+    if (!is.null(object@beta_not_to_select)) {
+      if (!is.list(object@beta_not_to_select) ||
+          !all(vapply(object@beta_not_to_select, is.matrix, logical(1)))) {
+        return("'beta_not_to_select' must be a list of matrices.")
+      }
+    }
+
+    # Check gamma_to_select
+    if (!is.null(object@gamma_to_select)) {
+      if (!is.list(object@gamma_to_select) ||
+          !all(vapply(object@gamma_to_select, is.matrix, logical(1)))) {
+        return("'gamma_to_select' must be a list of matrices.")
+      }
+    }
+
+    # Check gamma_not_to_select
+    if (!is.null(object@gamma_not_to_select)) {
+      if (!is.list(object@gamma_not_to_select) ||
+          !all(vapply(object@gamma_not_to_select, is.matrix, logical(1)))) {
+        return("'gamma_not_to_select' must be a list of matrices.")
+      }
+    }
+
+    # Check sigma2
+    if (!is.null(object@sigma2)) {
+      if (!is.numeric(object@sigma2) || any(object@sigma2 <= 0)) {
+        return("'sigma2' must be a positive numeric vector.")
+      }
+    }
+
     TRUE
   }
 )
+

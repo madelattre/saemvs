@@ -10,7 +10,7 @@ setGeneric(
 setMethod(
   "convergence_plot",
   signature(
-    res_saem = "resSAEM", component = "character",
+    res_saem = "saemResults", component = "character",
     sel_components = "character"
   ),
   function(res_saem, component, sel_components) {
@@ -36,16 +36,16 @@ setMethod(
     } else if (component %in% c("beta_s", "beta_ns", "gamma_s", "gamma_ns")) {
       switch(component,
         beta_s = {
-          list_est <- res_saem@beta_s
+          list_est <- res_saem@beta_to_select
         },
         beta_ns = {
-          list_est <- res_saem@beta_ns
+          list_est <- res_saem@beta_not_to_select
         },
         gamma_s = {
-          list_est <- res_saem@gamma_s
+          list_est <- res_saem@gamma_to_select
         },
         gamma_ns = {
-          list_est <- res_saem@gamma_ns
+          list_est <- res_saem@gamma_not_to_select
         },
       )
 
