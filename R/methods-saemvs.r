@@ -11,7 +11,7 @@ setMethod(
   "saemvs",
   signature(
     data = "saemvsData", model = "saemvsModel", init = "initC",
-    tuning_algo = "tuningC", hyperparam = "hyperC",
+    tuning_algo = "tuningC", hyperparam = "saemvsHyperSlab",
     pen = "character"
   ),
   function(data, model, init, tuning_algo, hyperparam, pen) {
@@ -49,7 +49,7 @@ setMethod(
         function(nu0) {
           # Important : le code C++ doit être dispo sur chaque worker
           compile_model(model@model_func)
-          fh <- fullHyperC(nu0, hyperparam)
+          fh <- saemvsHyperSpikeAndSlab(nu0, hyperparam)
           res <- saemvs_one_map_run(data, model, init, tuning_algo, fh)
           p()
           res
@@ -154,11 +154,14 @@ setMethod(
   "test_saemvs",
   signature(
     data = "saemvsData", model = "saemvsModel", init = "initC",
-    tuning_algo = "tuningC", hyperparam = "hyperC"
+    tuning_algo = "tuningC", hyperparam = "saemvsHyperSlab"
   ),
   function(data, model, init, tuning_algo, hyperparam) {
     compile_model(model@model_func)
-    full_hyperparam <- fullHyperC(tuning_algo@nu0_grid[1], hyperparam)
+    full_hyperparam <- saemvsHyperSpikeAndSlab(
+      tuning_algo@nu0_grid[1],
+      hyperparam
+    )
     state <- run_saem(data, model, init, tuning_algo, full_hyperparam)
 
     res <- new(
@@ -188,7 +191,7 @@ setMethod(
   "saemvs_one_map_run",
   signature(
     data = "saemvsData", model = "saemvsModel", init = "initC",
-    tuning_algo = "tuningC", hyperparam = "fullHyperC"
+    tuning_algo = "tuningC", hyperparam = "saemvsHyperSpikeAndSlab"
   ),
   function(data, model, init, tuning_algo, hyperparam) {
     map <- run_saem(data, model, init, tuning_algo, hyperparam)
@@ -209,7 +212,10 @@ setMethod(
     beta_map <- map$beta_hdim[[niter + 1]][-1, ]
     alpha_map <- map$alpha[[niter + 1]]
     threshold_matrix <- matrix(
-      rep(threshold(hyperparam@nu1, hyperparam@nu0, alpha_map), p),
+      rep(threshold(
+        hyperparam@slab_parameter,
+        hyperparam@spike_parameter, alpha_map
+      ), p),
       nrow = p, byrow = TRUE
     )
     support <- rbind(
@@ -244,7 +250,7 @@ setMethod(
   signature(
     k = "numeric", support = "numeric",
     data = "saemvsData", model = "saemvsModel", init = "initC",
-    tuning_algo = "tuningC", hyperparam = "fullHyperC",
+    tuning_algo = "tuningC", hyperparam = "saemvsHyperSpikeAndSlab",
     pen = "character"
   ),
   saemvs_one_ebic_run <- function(k, support, data, model, init, tuning_algo,
@@ -273,8 +279,8 @@ setMethod(
     new_data <- from_map_to_mle_data(data, cand_support)
     new_model <- from_map_to_mle_model(model, cand_support)
     new_init <- from_map_to_mle_init(init, model, cand_support)
-    new_hyperparam <- hyperC(NULL, NULL, NULL)
-    new_full_hyperparam <- fullHyperC(NULL, new_hyperparam)
+    new_hyperparam <- saemvsHyperSlab(NULL, NULL, NULL)
+    new_full_hyperparam <- saemvsHyperSpikeAndSlab(NULL, new_hyperparam)
 
     mle <- run_saem(
       new_data, new_model, new_init, tuning_algo, new_full_hyperparam

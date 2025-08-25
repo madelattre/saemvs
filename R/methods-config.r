@@ -215,22 +215,22 @@ setGeneric(
 
 setMethod(
   "prepare_hyper",
-  signature(hyper = "hyperC", data = "saemvsProcessedData", model = "saemvsModel"),
+  signature(hyper = "saemvsHyperSlab", data = "saemvsProcessedData", model = "saemvsModel"),
   function(hyper, data, model) {
     nbs <- length(model@phi_to_select_idx)
 
     if (nbs == 0) { # mle
-      hyper <- hyperC(NULL, NULL, NULL)
+      hyper <- saemvsHyperSlab(NULL, NULL, NULL)
     } else { # map
 
       p <- dim(data@x_candidates)[2] #- 1
 
-      if (is.null(hyper@a)) {
-        hyper@a <- rep(1, nbs)
+      if (is.null(hyper@inclusion_prob_prior_a)) {
+        hyper@inclusion_prob_prior_a <- rep(1, nbs)
       }
 
-      if (is.null(hyper@b)) {
-        hyper@b <- rep(p, nbs)
+      if (is.null(hyper@inclusion_prob_prior_b)) {
+        hyper@inclusion_prob_prior_b <- rep(p, nbs)
       }
     }
     return(hyper)
@@ -251,7 +251,7 @@ setMethod(
   "make_config",
   signature(
     data = "saemvsProcessedData", model = "saemvsModel", tuning_algo = "tuningC",
-    init = "initAlgo", hyperparam = "hyperC"
+    init = "initAlgo", hyperparam = "saemvsHyperSlab"
   ),
   function(data, model, tuning_algo, init, hyperparam) {
     q_phi <- model@phi_dim
@@ -269,15 +269,15 @@ setMethod(
       q_hdim <- length(index_select)
       q_ldim <- q_phi - length(index_select)
       index_unselect <- setdiff(seq(1, q_phi), index_select)
-      nu0 <- hyperparam@nu0
-      nu1 <- hyperparam@nu1
-      nsig <- hyperparam@nsig # nu_sigma
-      lsig <- hyperparam@lsig # lb_sigma
-      a <- hyperparam@a
-      b <- hyperparam@b
-      sigma2_mu <- hyperparam@sigma2_mu
-      sgam <- hyperparam@sgam # Sigma_Gamma
-      d <- hyperparam@d # qu'est-ce que d?
+      nu0 <- hyperparam@spike_parameter
+      nu1 <- hyperparam@slab_parameter
+      nsig <- hyperparam@residual_variance_prior_shape
+      lsig <- hyperparam@residual_variance_prior_rate
+      a <- hyperparam@inclusion_prob_prior_a
+      b <- hyperparam@inclusion_prob_prior_b
+      sigma2_mu <- hyperparam@phi_intercept_prior_variance
+      sgam <- hyperparam@cov_re_prior_scale
+      d <- hyperparam@cov_re_prior_df
     }
 
     unselect_support <-
@@ -452,8 +452,6 @@ setMethod(
   ),
   # Ici il faut tenir compte des indices des phi_s et des phi_ns
   function(init, model, cand_support) {
-
-
     lines_with_ones <- which(rowSums(cand_support[-1, ]) > 0)
 
     new_beta_init <- rbind(

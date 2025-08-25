@@ -65,43 +65,44 @@ setGeneric(
 
 setMethod(
   "check_hyper",
-  signature(hyper = "hyperC", model = "saemvsModel", tuning = "tuningC"),
+  signature(
+    hyper = "saemvsHyperSpikeAndSlab", model = "saemvsModel",
+    tuning = "tuningC"
+  ),
   function(hyper, model, tuning) {
     nbs <- length(model@phi_to_select_idx)
 
     if (nbs != 0) { # map
-      if (!is.null(hyper@a) && (length(hyper@a) != nbs)) {
+      if (!is.null(hyper@inclusion_prob_prior_a) && (length(hyper@inclusion_prob_priora) != nbs)) {
         stop(paste0(
           "As ", nbs, " parameters are subject to selection,",
-          "hyperparameter 'a' must contain ", nbs, " components."
+          "hyperparameter 'inclusion_prob_prior_a' must contain ", nbs, " components."
         ))
       }
 
-      if (!is.null(hyper@b) && (length(hyper@b) != nbs)) {
+      if (!is.null(hyper@inclusion_prob_prior_b) && (length(hyper@inclusion_prob_prior_b) != nbs)) {
         stop(paste0(
           "As ", nbs, " parameters are subject to selection,",
-          "hyperparameter 'b' must contain ", nbs, " components."
+          "hyperparameter 'inclusion_prob_prior_b' must contain ", nbs, " components."
         ))
       }
 
-      # Check !is.null(hyper@sgam) pour éviter les erreurs si vide?
-      if ((dim(hyper@sgam)[1] != nbs) || (dim(hyper@sgam)[2] != nbs)) {
+      # Check !is.null(hyper@cov_re_prior_scale) pour éviter les erreurs si vide?
+      if ((dim(hyper@cov_re_prior_scale)[1] != nbs) || (dim(hyper@cov_re_prior_scale)[2] != nbs)) {
         stop(paste0(
           "As ", nbs, " parameters are subject to selection,",
-          "hyperparameter 'sgam' must be a squared matrix with ",
+          "hyperparameter 'cov_re_prior_scale' must be a squared matrix with ",
           nbs, "columns and ", nbs, " rows."
         ))
       }
     }
 
-    # Check that all nu0 values are smaller than nu1
-
-    if ((!is.null(tuning@nu0_grid)) && (!all(tuning@nu0_grid < hyper@nu1))) {
+    if ((!is.null(tuning@nu0_grid)) && (!all(tuning@nu0_grid < hyper@slab_parameter))) {
       # Vérifier que tuning@nu0_grid n'est pas vide? (length(tuning@nu_grid)>0)
       stop(
         paste0(
           "All spike parameter values in 'nu0_grid' must be smaller than ",
-          "slab hyperparameter 'nu1'."
+          "'slab_parameter'."
         )
       )
     }

@@ -323,6 +323,134 @@ saemvsModel <- function(
 }
 
 
+#' Class saemvsHyperSlab
+#'
+#' Represents the hyperparameters for the slab component in a spike-and-slab prior.
+#'
+#' Only the slab parameter, random effects covariance prior, and degrees of freedom need
+#' to be specified by the user. Other hyperparameters are fixed internally.
+#'
+#' @slot slab_parameter Numeric: positive slab parameter (controls the slab prior).
+#' @slot cov_re_prior_scale Numeric matrix: scale matrix of the Inverse-Wishart prior for random effects covariance.
+#' @slot cov_re_prior_df Numeric: degrees of freedom of the Inverse-Wishart prior for random effects covariance.
+#' @slot residual_variance_prior_shape Numeric: shape parameter of the inverse-gamma prior on residual variance (fixed internally).
+#' @slot residual_variance_prior_rate Numeric: rate parameter of the inverse-gamma prior on residual variance (fixed internally).
+#' @slot phi_intercept_prior_variance Numeric: variance of the Gaussian prior on each intercept of phi (fixed internally).
+#' @slot inclusion_prob_prior_a Numeric or NULL: alpha parameter of the Beta prior on covariate inclusion probabilities.
+#' @slot inclusion_prob_prior_b Numeric or NULL: beta parameter of the Beta prior on covariate inclusion probabilities.
+#'
+#' @exportClass saemvsHyperSlab
+setClass(
+  "saemvsHyperSlab",
+  slots = list(
+    slab_parameter = "numericORNULL",
+    cov_re_prior_scale = "matrixORNULL",
+    cov_re_prior_df = "numericORNULL",
+    residual_variance_prior_shape = "numericORNULL",
+    residual_variance_prior_rate = "numericORNULL",
+    phi_intercept_prior_variance = "numericORNULL",
+    inclusion_prob_prior_a = "numericORNULL",
+    inclusion_prob_prior_b = "numericORNULL"
+  ),
+  prototype = list(
+    slab_parameter = 12000,
+    cov_re_prior_scale = matrix(numeric(0), 0, 0),
+    cov_re_prior_df = 1,
+    residual_variance_prior_shape = 1,
+    residual_variance_prior_rate = 1,
+    phi_intercept_prior_variance = 3000^2,
+    inclusion_prob_prior_a = NULL,
+    inclusion_prob_prior_b = NULL
+  ),
+  validity = function(object) {
+    check_positive_or_null_slot(object@slab_parameter, "slab_parameter")
+    check_positive_or_null_slot(object@cov_re_prior_df, "cov_re_prior_df")
+    check_positive_or_null_slot(
+      object@residual_variance_prior_shape,
+      "residual_variance_prior_shape"
+    )
+    check_positive_or_null_slot(
+      object@residual_variance_prior_rate,
+      "residual_variance_prior_rate"
+    )
+    check_positive_or_null_slot(
+      object@phi_intercept_prior_variance,
+      "phi_intercept_prior_variance"
+    )
+    if (!is.null(object@cov_re_prior_scale)) {
+      check_covariance(object@cov_re_prior_scale, "cov_re_prior_scale")
+    }
+    TRUE
+  }
+)
+
+# Constructor
+#' @export
+saemvsHyperSlab <- function(slab_parameter = 12000,
+                            cov_re_prior_scale,
+                            cov_re_prior_df = 1) {
+  new("saemvsHyperSlab",
+    slab_parameter = slab_parameter,
+    cov_re_prior_scale = cov_re_prior_scale,
+    cov_re_prior_df = cov_re_prior_df,
+    residual_variance_prior_shape = 1,
+    residual_variance_prior_rate = 1,
+    phi_intercept_prior_variance = 3000^2,
+    inclusion_prob_prior_a = NULL,
+    inclusion_prob_prior_b = NULL
+  )
+}
+
+#' Class "saemvsHyperSpikeAndSlab"
+#'
+#' An S4 class that extends \code{\linkS4class{saemvsHyperSlab}} by adding
+#' a spike hyperparameter for the spike-and-slab prior.
+#'
+#' @slot spike_parameter \code{numeric}. The spike parameter, must be strictly positive.
+#'
+#' @section Prototype:
+#' Defaults to \code{spike_parameter = 0.1}.
+#'
+#' @section Validity:
+#' Ensures that \code{spike_parameter} is strictly positive.
+#'
+#' @seealso \code{\linkS4class{saemvsHyperSlab}}
+#'
+#' @exportClass saemvsHyperSpikeAndSlab
+setClass(
+  "saemvsHyperSpikeAndSlab",
+  slots = list(
+    spike_parameter = "numericORNULL"
+  ),
+  prototype = list(
+    spike_parameter = 0.1
+  ),
+  contains = "saemvsHyperSlab",
+  validity = function(object) {
+    check_positive_or_null_slot(object@spike_parameter, "spike_parameter")
+    TRUE
+  }
+)
+
+# Constructor
+#' @export
+saemvsHyperSpikeAndSlab <- function(spike_parameter,
+                                    hyper_slab) {
+  new("saemvsHyperSpikeAndSlab",
+    spike_parameter = spike_parameter,
+    slab_parameter = hyper_slab@slab_parameter,
+    cov_re_prior_scale = hyper_slab@cov_re_prior_scale,
+    cov_re_prior_df = hyper_slab@cov_re_prior_df,
+    residual_variance_prior_shape = hyper_slab@residual_variance_prior_shape,
+    residual_variance_prior_rate = hyper_slab@residual_variance_prior_rate,
+    phi_intercept_prior_variance = hyper_slab@phi_intercept_prior_variance,
+    inclusion_prob_prior_a = hyper_slab@inclusion_prob_prior_a,
+    inclusion_prob_prior_b = hyper_slab@inclusion_prob_prior_b
+  )
+}
+
+
+
 ## -- Initilialization of unknown parameters
 
 #' @exportClass initC
@@ -426,100 +554,6 @@ setClass(
   )
   # Pas besoin de validity, je crée ces objets dans le code
 )
-
-## -- Hyperparameters
-
-#' @exportClass hyperC
-setClass(
-  "hyperC",
-  slots = list(
-    nu1 = "numericORNULL",
-    nsig = "numericORNULL",
-    lsig = "numericORNULL",
-    a = "numericORNULL",
-    b = "numericORNULL",
-    sigma2_mu = "numericORNULL",
-    sgam = "matrixORNULL",
-    d = "numericORNULL"
-  ),
-  prototype = list(
-    # nu0 = NULL,
-    nu1 = 12000 # ,
-    # nsig = 1,
-    # lsig = 1,
-    # a = NULL,
-    # b = NULL,
-    # sgam = NULL,
-    # d = NULL,
-    # sigma2_mu = 3000**2
-  ),
-  validity = function(object) {
-    # if (!is.null(object@nu0)) {
-    #   check_positive_slot(object@nu0, "Hyperparameter 'nu0' ")
-    # }
-
-    if (!is.null(object@nu1)) {
-      check_positive_slot(object@nu1, "Hyperparameter 'nu1' ")
-    }
-
-    if (!is.null(object@nsig)) {
-      check_positive_slot(object@nsig, "Hyperparameter 'nsig' ")
-    }
-
-    if (!is.null(object@lsig)) {
-      check_positive_slot(object@lsig, "Hyperparameter 'lsig' ")
-    }
-
-
-    if (!is.null(object@ sigma2_mu)) {
-      check_positive_slot(object@sigma2_mu, "Hyperparameter 'sigma2_mu' ")
-    }
-
-    if (!is.null(object@d)) {
-      check_positive_slot(object@d, "Hyperparameter 'd' ")
-    }
-
-    if (!is.null(object@sgam)) {
-      check_covariance(object@sgam, "Hyperparameter 'sgam' ")
-    }
-    TRUE
-  }
-)
-
-#' @export
-hyperC <- function(nu1 = 12000, sgam, d) {
-  # L'utilisateur est obligé de rentrer des valeurs pour nu0, sgam, d
-  # (cf prototype de la classe)
-  new("hyperC",
-    nu1 = nu1, nsig = 1, lsig = 1, a = NULL, b = NULL,
-    sgam = sgam, d = d, sigma2_mu = 3000**2
-  )
-}
-
-#' @exportClass fullHyperC
-setClass(
-  "fullHyperC",
-  slots = list(
-    nu0 = "numericORNULL"
-  ),
-  contains = "hyperC"
-)
-
-#' @export
-fullHyperC <- function(nu0 = NULL, hc) {
-  new(
-    "fullHyperC",
-    nu0 = nu0,
-    nu1 = hc@nu1,
-    nsig = hc@nsig,
-    lsig = hc@lsig,
-    a = hc@a,
-    b = hc@b,
-    sgam = hc@sgam,
-    d = hc@d,
-    sigma2_mu = hc@sigma2_mu
-  )
-}
 
 
 ## -- Tuning parameters
