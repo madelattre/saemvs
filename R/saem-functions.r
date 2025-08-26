@@ -1,7 +1,7 @@
 single_iteration <- function(
     k, config, state, sa_func,
     m_func, mh_update_func) {
-  state <- s_step(config, k, state)
+  state <- metropolis_s_step(config, k, state)
   state <- sa_func(config, k, state)
   state <- m_func(config, k, state)
 
