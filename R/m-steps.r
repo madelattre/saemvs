@@ -67,7 +67,7 @@ m_step_to_select <- function(config, k, state) {
   s2 <- state$s2_to_select[[k + 1]]
   s3 <- state$s3_to_select[[k + 1]]
 
-  p_star_k <- p_star_fast(
+  p_star_k <- p_star(
     old_beta[-1, ],
     old_alpha,
     config$spike_parameter,
