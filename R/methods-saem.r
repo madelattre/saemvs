@@ -34,17 +34,17 @@ setMethod(
     switch(case,
       map_full_select = {
         state <- run_generic_saem(
-          config, state, sa_step_to_select, m_step_full_map, update_proposal_mh_to_select
+          config, state, sa_step_to_select, m_step_map_to_select, update_proposal_mh_to_select
         )
       },
       map_part_select_nofixed = {
         state <- run_generic_saem(
-          config, state, sa_step_all, m_step_mix, update_proposal_mh_all
+          config, state, sa_step_all, m_step_map_all, update_proposal_mh_all
         )
       },
       map_part_select_fixed = {
         state <- run_fixed_saem(
-          config, state, sa_step_all, m_step_mix, update_proposal_mh_all
+          config, state, sa_step_all, m_step_map_all, update_proposal_mh_all
         )
       },
       mle_nofixed = {
