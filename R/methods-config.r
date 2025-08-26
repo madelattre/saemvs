@@ -313,8 +313,38 @@ setMethod(
   }
 )
 
-## -- Complete the hyperparameters according to the model
 
+#' Prepare and Complete Hyperparameters for SAEM Variable Selection
+#'
+#' This internal function completes and validates the hyperparameters of a
+#' \code{saemvsHyperSlab} object according to the processed data and model.
+#' For parameters subject to selection (MAP case), it ensures that the prior
+#' inclusion probabilities \code{a} and \code{b} are set correctly.
+#' In the case where no parameter is selected (MLE case), it returns
+#' a default hyperparameter object with NULL fields.
+#'
+#' @param hyper A \code{saemvsHyperSlab} object containing the current hyperparameters.
+#' @param data A \code{saemvsProcessedData} object containing the processed data for the algorithm.
+#' @param model A \code{saemvsModel} object representing the model structure.
+#'
+#' @return A \code{saemvsHyperSlab} object with completed and validated hyperparameters.
+#'
+#' @details
+#' - If no parameters are subject to selection (\code{length(model@phi_to_select_idx) == 0}),
+#'   the function returns \code{saemvsHyperSlab(NULL, NULL, NULL)}.
+#' - If some parameters are subject to selection, it fills missing \code{inclusion_prob_prior_a}
+#'   and \code{inclusion_prob_prior_b} with default values (\code{1} and number of candidates, respectively),
+#'   and checks their length consistency.
+#' - Stops with a descriptive error if the provided prior vectors have inconsistent lengths.
+#'
+#' @examples
+#' \dontrun{
+#' hyper <- saemvsHyperSlab(NULL, NULL, NULL)
+#' data_processed <- prepare_data(data, model)
+#' hyper_completed <- prepare_hyper(hyper, data_processed, model)
+#' }
+#'
+#' @export
 setGeneric(
   "prepare_hyper",
   function(hyper, data, model) {
@@ -324,24 +354,43 @@ setGeneric(
 
 setMethod(
   "prepare_hyper",
-  signature(hyper = "saemvsHyperSlab", data = "saemvsProcessedData", model = "saemvsModel"),
+  signature(
+    hyper = "saemvsHyperSlab",
+    data = "saemvsProcessedData",
+    model = "saemvsModel"
+  ),
   function(hyper, data, model) {
-    nbs <- length(model@phi_to_select_idx)
+    # Number of parameters subject to selection
+    n_selected <- length(model@phi_to_select_idx)
 
-    if (nbs == 0) { # mle
-      hyper <- saemvsHyperSlab(NULL, NULL, NULL)
-    } else { # map
-
-      p <- dim(data@x_candidates)[2] #- 1
-
-      if (is.null(hyper@inclusion_prob_prior_a)) {
-        hyper@inclusion_prob_prior_a <- rep(1, nbs)
-      }
-
-      if (is.null(hyper@inclusion_prob_prior_b)) {
-        hyper@inclusion_prob_prior_b <- rep(p, nbs)
-      }
+    # MLE case: no parameter is selected
+    if (n_selected == 0) {
+      return(saemvsHyperSlab(NULL, NULL, NULL))
     }
+
+    # MAP case: parameters are selected
+    n_candidates <- ncol(data@x_candidates)
+
+    # Complete inclusion probability prior 'a' if missing
+    if (is.null(hyper@inclusion_prob_prior_a)) {
+      hyper@inclusion_prob_prior_a <- rep(1, n_selected)
+    } else if (length(hyper@inclusion_prob_prior_a) != n_selected) {
+      stop(sprintf(
+        "Length of 'inclusion_prob_prior_a' (%d) does not match the number of selected parameters (%d).",
+        length(hyper@inclusion_prob_prior_a), n_selected
+      ))
+    }
+
+    # Complete inclusion probability prior 'b' if missing
+    if (is.null(hyper@inclusion_prob_prior_b)) {
+      hyper@inclusion_prob_prior_b <- rep(n_candidates, n_selected)
+    } else if (length(hyper@inclusion_prob_prior_b) != n_selected) {
+      stop(sprintf(
+        "Length of 'inclusion_prob_prior_b' (%d) does not match the number of selected parameters (%d).",
+        length(hyper@inclusion_prob_prior_b), n_selected
+      ))
+    }
+
     return(hyper)
   }
 )
