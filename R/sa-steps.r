@@ -1,67 +1,99 @@
-sa_step_ldim <- function(config, k, state) {
-  step <- config$step_size[k]
+#' Stochastic Approximation Step for parameters subject to selection
+#' 
+#' Update the stochastic approximation statistics for parameters that are subject to selection.
+#' This function updates s1, s2_to_select, and s3_to_select in the MCMC state for a given iteration.
+#' @param config List containing model configuration, including step sizes, series data, parameter indices, and the model function.
+#' @param iteration Integer, the current iteration index (1-based).
+#' @param state List representing the current MCMC state, including phi, s1, s2_to_select, and s3_to_select.
+#' @return Updated \code{state} list with statistics updated for the parameters to select.
+#' @keywords internal
+sa_step_to_select <- function(config, iteration, state) {
+  step_size <- config$step_size[iteration]
+  phi_matrix <- state$phi[[iteration + 1]]
 
-  phi <- state$phi[[k + 1]]
+  squared_errors <- vapply(
+    seq_along(config$y_series),
+    function(i) {
+      sum((config$y_series[[i]] - config$model_function(phi_matrix[i, ], config$t_series[[i]]))^2)
+    },
+    numeric(1)
+  )
+  total_error <- sum(squared_errors)
 
-  errs <- vapply(seq_along(config$y_series), function(i) {
-    sum((config$y_series[[i]] - config$model_function(phi[i, ], config$t_series[[i]]))^2)
-  }, numeric(1))
-
-  mco <- sum(errs)
-
-  state$s1[k + 1] <- state$s1[k] + step * (mco - state$s1[k])
-  state$s2_not_to_select[[k + 1]] <- state$s2_not_to_select[[k]] +
-    step * (t(phi) %*% phi - state$s2_not_to_select[[k]])
-  state$s3_not_to_select[[k + 1]] <- state$s3_not_to_select[[k]] +
-    step * (phi - state$s3_not_to_select[[k]])
-
-  return(state)
-}
-
-sa_step_hdim <- function(config, k, state) {
-  step <- config$step_size[k]
-
-  phi <- state$phi[[k + 1]]
-
-  errs <- vapply(seq_along(config$y_series), function(i) {
-    sum((config$y_series[[i]] - config$model_function(phi[i, ], config$t_series[[i]]))^2)
-  }, numeric(1))
-
-  mco <- sum(errs)
-
-  state$s1[k + 1] <- state$s1[k] + step * (mco - state$s1[k])
-  state$s2_to_select[[k + 1]] <- state$s2_to_select[[k]] +
-    step * (t(phi) %*% phi - state$s2_to_select[[k]])
-  state$s3_to_select[[k + 1]] <- state$s3_to_select[[k]] +
-    step * (phi - state$s3_to_select[[k]])
+  state$s1[iteration + 1] <- state$s1[iteration] + step_size * (total_error - state$s1[iteration])
+  state$s2_to_select[[iteration + 1]] <- state$s2_to_select[[iteration]] +
+    step_size * (t(phi_matrix) %*% phi_matrix - state$s2_to_select[[iteration]])
+  state$s3_to_select[[iteration + 1]] <- state$s3_to_select[[iteration]] +
+    step_size * (phi_matrix - state$s3_to_select[[iteration]])
 
   return(state)
 }
 
-sa_step_split <- function(config, k, state) {
-  step <- config$step_size[k]
+#' Stochastic Approximation Step for parameters not subject to selection
+#' 
+#' Update the stochastic approximation statistics for parameters that are not subject to selection.
+#' This function updates s1, s2_not_to_select, and s3_not_to_select in the MCMC state for a given iteration.
+#' @param config List containing model configuration, including step sizes, series data, parameter indices, and the model function.
+#' @param iteration Integer, the current iteration index (1-based).
+#' @param state List representing the current MCMC state, including phi, s1, s2_not_to_select, and s3_not_to_select.
+#' @return Updated \code{state} list with statistics updated for the parameters not to select.
+#' @keywords internal
+sa_step_not_to_select <- function(config, iteration, state) {
+  step_size <- config$step_size[iteration]
+  phi_matrix <- state$phi[[iteration + 1]]
 
-  phi <- state$phi[[k + 1]]
+  squared_errors <- vapply(
+    seq_along(config$y_series),
+    function(i) {
+      sum((config$y_series[[i]] - config$model_function(phi_matrix[i, ], config$t_series[[i]]))^2)
+    },
+    numeric(1)
+  )
+  total_error <- sum(squared_errors)
 
+  state$s1[iteration + 1] <- state$s1[iteration] + step_size * (total_error - state$s1[iteration])
+  state$s2_not_to_select[[iteration + 1]] <- state$s2_not_to_select[[iteration]] +
+    step_size * (t(phi_matrix) %*% phi_matrix - state$s2_not_to_select[[iteration]])
+  state$s3_not_to_select[[iteration + 1]] <- state$s3_not_to_select[[iteration]] +
+    step_size * (phi_matrix - state$s3_not_to_select[[iteration]])
 
-  errs <- vapply(seq_along(config$y_series), function(i) {
-    sum((config$y_series[[i]] - g_vector_cpp(phi[i, ], config$t_series[[i]]))^2)
-  }, numeric(1))
+  return(state)
+}
 
-  mco <- sum(errs)
+#' Stochastic Approximation Step for All Parameters
+#' 
+#' Update the stochastic approximation statistics for all parameters simultaneously.
+#' This function updates s1, s2_to_select, s3_to_select, s2_not_to_select, and s3_not_to_select in the MCMC state for a given iteration.
+#' @param config List containing model configuration, including step sizes, series data, parameter indices, and the model function.
+#' @param iteration Integer, the current iteration index (1-based).
+#' @param state List representing the current MCMC state, including phi, s1, s2_to_select, s3_to_select, s2_not_to_select, and s3_not_to_select.
+#' @return Updated \code{state} list with statistics updated for all parameters.
+#' @keywords internal
+sa_step_all <- function(config, iteration, state) {
+  step_size <- config$step_size[iteration]
+  phi_matrix <- state$phi[[iteration + 1]]
 
-  phih <- as.matrix(phi[, config$parameters_to_select_indices])
-  phil <- as.matrix(phi[, -config$parameters_to_select_indices])
+  squared_errors <- vapply(
+    seq_along(config$y_series),
+    function(i) {
+      sum((config$y_series[[i]] - g_vector_cpp(phi_matrix[i, ], config$t_series[[i]]))^2)
+    },
+    numeric(1)
+  )
+  total_error <- sum(squared_errors)
 
-  state$s1[k + 1] <- state$s1[k] + step * (mco - state$s1[k])
-  state$s2_to_select[[k + 1]] <- state$s2_to_select[[k]] +
-    step * (t(phih) %*% phih - state$s2_to_select[[k]])
-  state$s3_to_select[[k + 1]] <- state$s3_to_select[[k]] +
-    step * (phih - state$s3_to_select[[k]])
-  state$s2_not_to_select[[k + 1]] <- state$s2_not_to_select[[k]] +
-    step * (t(phil) %*% phil - state$s2_not_to_select[[k]])
-  state$s3_not_to_select[[k + 1]] <- state$s3_not_to_select[[k]] +
-    step * (phil - state$s3_not_to_select[[k]])
+  phi_to_select <- as.matrix(phi_matrix[, config$parameters_to_select_indices])
+  phi_not_to_select <- as.matrix(phi_matrix[, -config$parameters_to_select_indices])
+
+  state$s1[iteration + 1] <- state$s1[iteration] + step_size * (total_error - state$s1[iteration])
+  state$s2_to_select[[iteration + 1]] <- state$s2_to_select[[iteration]] +
+    step_size * (t(phi_to_select) %*% phi_to_select - state$s2_to_select[[iteration]])
+  state$s3_to_select[[iteration + 1]] <- state$s3_to_select[[iteration]] +
+    step_size * (phi_to_select - state$s3_to_select[[iteration]])
+  state$s2_not_to_select[[iteration + 1]] <- state$s2_not_to_select[[iteration]] +
+    step_size * (t(phi_not_to_select) %*% phi_not_to_select - state$s2_not_to_select[[iteration]])
+  state$s3_not_to_select[[iteration + 1]] <- state$s3_not_to_select[[iteration]] +
+    step_size * (phi_not_to_select - state$s3_not_to_select[[iteration]])
 
   return(state)
 }
