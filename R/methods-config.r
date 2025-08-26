@@ -237,9 +237,20 @@ setMethod(
   }
 )
 
-
-## -- Config
-
+#' Create a unified configuration list for the SAEMVS algorithm
+#'
+#' This function constructs a configuration list containing processed data, model information,
+#' initialization, hyperparameters, and tuning parameters, with fields aligned with the
+#' original object slots.
+#'
+#' @param data A \code{saemvsProcessedData} object.
+#' @param model A \code{saemvsModel} object.
+#' @param tuning_algo A \code{saemvsTuning} object.
+#' @param init A \code{saemvsProcessedInit} object.
+#' @param hyperparam A \code{saemvsHyperSlab} object.
+#'
+#' @return A named list containing all information necessary to run the SAEMVS algorithm.
+#' @keywords internal
 setGeneric(
   "make_config",
   function(data, model, tuning_algo, init, hyperparam) {
@@ -254,92 +265,205 @@ setMethod(
     init = "saemvsProcessedInit", hyperparam = "saemvsHyperSlab"
   ),
   function(data, model, tuning_algo, init, hyperparam) {
-    q_phi <- model@phi_dim
-    index_select <- model@phi_to_select_idx
+    # Dimensions
+    total_phi <- model@phi_dim
+    phi_to_select_idx <- model@phi_to_select_idx
+    phi_not_to_select_idx <- setdiff(seq_len(total_phi), phi_to_select_idx)
+    n_phi_to_select <- length(phi_to_select_idx)
+    n_phi_not_to_select <- total_phi - n_phi_to_select
 
+    # Method type
+    method_type <- if (n_phi_to_select == 0) "mle" else "map"
 
-    if (length(index_select) == 0) {
-      method <- "mle"
-      q_hdim <- 0
-      q_ldim <- q_phi
-      index_unselect <- seq(1, q_phi)
-      nu0 <- nu1 <- nsig <- lsig <- a <- b <- sigma2_mu <- sgam <- d <- NULL
-    } else {
-      method <- "map"
-      q_hdim <- length(index_select)
-      q_ldim <- q_phi - length(index_select)
-      index_unselect <- setdiff(seq(1, q_phi), index_select)
-      nu0 <- hyperparam@spike_parameter
-      nu1 <- hyperparam@slab_parameter
-      nsig <- hyperparam@residual_variance_prior_shape
-      lsig <- hyperparam@residual_variance_prior_rate
-      a <- hyperparam@inclusion_prob_prior_a
-      b <- hyperparam@inclusion_prob_prior_b
-      sigma2_mu <- hyperparam@phi_intercept_prior_variance
-      sgam <- hyperparam@cov_re_prior_scale
-      d <- hyperparam@cov_re_prior_df
+    # MAP hyperparameters
+    spike_parameter <- slab_parameter <- residual_variance_prior_shape <- 
+      residual_variance_prior_rate <- inclusion_prob_prior_a <- 
+      inclusion_prob_prior_b <- phi_intercept_prior_variance <- 
+      cov_re_prior_scale <- cov_re_prior_df <- NULL
+
+    if (method_type == "map") {
+      spike_parameter <- hyperparam@spike_parameter
+      slab_parameter <- hyperparam@slab_parameter
+      residual_variance_prior_shape <- hyperparam@residual_variance_prior_shape
+      residual_variance_prior_rate <- hyperparam@residual_variance_prior_rate
+      inclusion_prob_prior_a <- hyperparam@inclusion_prob_prior_a
+      inclusion_prob_prior_b <- hyperparam@inclusion_prob_prior_b
+      phi_intercept_prior_variance <- hyperparam@phi_intercept_prior_variance
+      cov_re_prior_scale <- hyperparam@cov_re_prior_scale
+      cov_re_prior_df <- hyperparam@cov_re_prior_df
     }
 
-    unselect_support <-
-      extract_sub_support(model@x_forced_support, index_unselect)
+    # Support for unselected parameters
+    phi_not_to_select_forced_support <- extract_sub_support(model@x_forced_support, 
+    phi_not_to_select_idx)
+    x_support_phi_not_to_select <- if (!is_empty_support(phi_not_to_select_forced_support)) {
+      matrix(model@x_forced_support[, phi_not_to_select_idx], ncol = n_phi_not_to_select)
+    } else NULL
 
-    if (!is_empty_support(unselect_support)) {
-      x_support_insel <- matrix(
-        model@x_forced_support[, index_unselect],
-        ncol = model@phi_dim - length(model@phi_to_select_idx)
-      )
-    } else {
-      x_support_insel <- NULL
-    }
+    # Build configuration list with explicit names
+    config <- list(
+      # === Data ===
+      y_series = data@y_series,
+      t_series = data@t_series,
+      x_candidates = data@x_candidates,           # Covariates available for selection
+      x_forced = data@x_forced,                   # Forced covariates
+      x_phi_to_select = data@x_phi_to_select,     # Covariates for parameters to select
+      x_phi_not_to_select = data@x_phi_not_to_select, # Covariates for parameters not to select
+      tx_x_phi_to_select = data@tx_x_phi_to_select,   # t(X) %*% X for selected parameters
+      kron_tx_x_phi_to_select = data@kron_tx_x_phi_to_select, # Block-diagonal matrix
+      x_phi_not_to_select_list = data@x_phi_not_to_select_list, # List for sequences
+      num_series = length(data@y_series),            # <- n
+      series_lengths = lengths(data@y_series),      # <- ni
+      total_observations = sum(lengths(data@y_series)), # <- ntot
+      num_covariates_to_select = if (!is.null(data@x_phi_to_select)) dim(data@x_phi_to_select)[2] - 1 else 0,
+      num_covariates_not_to_select = if (!is.null(data@x_phi_not_to_select)) dim(data@x_phi_not_to_select)[2] - 1 else 0,
 
-    return(list(
-      method = method,
-      index_select = index_select,
-      index_unselect = index_unselect,
-      q_phi = q_phi,
-      q_hdim = q_hdim,
-      q_ldim = q_ldim,
-      yi = data@y_series,
-      n = length(data@y_series),
-      ni = lengths(data@y_series),
-      ntot = sum(lengths(data@y_series)),
-      ti = data@t_series,
-      v = data@x_phi_to_select,
-      tv_v = data@tx_x_phi_to_select,
-      kron_tv_v = data@kron_tx_x_phi_to_select,
-      w = data@x_phi_not_to_select,
-      x = data@x_phi_not_to_select_list,
-      pv = dim(data@x_phi_to_select)[2] - 1,
-      pw = dim(data@x_phi_not_to_select)[2] - 1,
-      g = model@model_func,
-      support = x_support_insel,
-      # est-ce qu'on a besoin de support? OUI...
-      supp_index = which(rbind(
-        1,
-        x_support_insel
-      ) == 1),
-      index_fixed = model@phi_fixed_idx,
-      q_fixed = length(model@phi_fixed_idx),
-      niter = tuning_algo@niter,
-      nburnin = tuning_algo@nburnin,
-      niter_mh = tuning_algo@niter_mh,
-      kernel_mh = tuning_algo@kernel_mh,
-      kappa = tuning_algo@mh_proposal_scale,
-      step = tuning_algo@step,
-      param_init = init,
-      tau = tuning_algo@covariance_decay,
-      nu0 = nu0,
-      nu1 = nu1,
-      nsig = nsig,
-      lsig = lsig,
-      a = a,
-      b = b,
-      sigma2_mu = sigma2_mu,
-      sgam = sgam,
-      d = d
-    ))
+      # === Model info ===
+      total_parameters = total_phi,
+      parameters_to_select_indices = phi_to_select_idx,
+      parameters_not_to_select_indices = phi_not_to_select_idx,
+      fixed_parameter_indices = model@phi_fixed_idx,
+      model_function = model@model_func,
+      x_support_phi_not_to_select = x_support_phi_not_to_select,
+      forced_covariates_indices = if (!is.null(x_support_phi_not_to_select)) which(rbind(1, x_support_phi_not_to_select) == 1) else matrix(1, ncol = length(phi_not_to_select_idx), nrow = 1),
+
+
+      # === Initialization ===
+      init_parameters = init,
+
+      # === Tuning ===
+      num_iterations = tuning_algo@niter,
+      num_burnin = tuning_algo@nburnin,
+      num_mh_iterations = tuning_algo@niter_mh,
+      mh_kernel_type = tuning_algo@kernel_mh,
+      mh_proposal_scale = tuning_algo@mh_proposal_scale,
+      step_size = tuning_algo@step,
+      covariance_decay = tuning_algo@covariance_decay,
+
+      # === Hyperparameters (MAP only) ===
+      method_type = method_type,
+      spike_parameter = spike_parameter,                     # Spike prior value
+      slab_parameter = slab_parameter,                       # Slab prior value
+      residual_variance_prior_shape = residual_variance_prior_shape,
+      residual_variance_prior_rate = residual_variance_prior_rate,
+      inclusion_prob_prior_a = inclusion_prob_prior_a,
+      inclusion_prob_prior_b = inclusion_prob_prior_b,
+      phi_intercept_prior_variance = phi_intercept_prior_variance,
+      cov_re_prior_scale = cov_re_prior_scale,
+      cov_re_prior_df = cov_re_prior_df,
+
+      # === Dimension info ===
+      num_parameters_to_select = n_phi_to_select,
+      num_parameters_not_to_select = n_phi_not_to_select
+    )
+
+    return(config)
   }
 )
+
+
+# ## -- Config
+
+# setGeneric(
+#   "make_config",
+#   function(data, model, tuning_algo, init, hyperparam) {
+#     standardGeneric("make_config")
+#   }
+# )
+
+# setMethod(
+#   "make_config",
+#   signature(
+#     data = "saemvsProcessedData", model = "saemvsModel", tuning_algo = "saemvsTuning",
+#     init = "saemvsProcessedInit", hyperparam = "saemvsHyperSlab"
+#   ),
+#   function(data, model, tuning_algo, init, hyperparam) {
+#     q_phi <- model@phi_dim
+#     index_select <- model@phi_to_select_idx
+
+
+#     if (length(index_select) == 0) {
+#       method <- "mle"
+#       q_hdim <- 0
+#       q_ldim <- q_phi
+#       index_unselect <- seq(1, q_phi)
+#       nu0 <- nu1 <- nsig <- lsig <- a <- b <- sigma2_mu <- sgam <- d <- NULL
+#     } else {
+#       method <- "map"
+#       q_hdim <- length(index_select)
+#       q_ldim <- q_phi - length(index_select)
+#       index_unselect <- setdiff(seq(1, q_phi), index_select)
+#       nu0 <- hyperparam@spike_parameter
+#       nu1 <- hyperparam@slab_parameter
+#       nsig <- hyperparam@residual_variance_prior_shape
+#       lsig <- hyperparam@residual_variance_prior_rate
+#       a <- hyperparam@inclusion_prob_prior_a
+#       b <- hyperparam@inclusion_prob_prior_b
+#       sigma2_mu <- hyperparam@phi_intercept_prior_variance
+#       sgam <- hyperparam@cov_re_prior_scale
+#       d <- hyperparam@cov_re_prior_df
+#     }
+
+#     unselect_support <-
+#       extract_sub_support(model@x_forced_support, index_unselect)
+
+#     if (!is_empty_support(unselect_support)) {
+#       x_support_insel <- matrix(
+#         model@x_forced_support[, index_unselect],
+#         ncol = model@phi_dim - length(model@phi_to_select_idx)
+#       )
+#     } else {
+#       x_support_insel <- NULL
+#     }
+
+#     return(list(
+#       method = method,
+#       index_select = index_select,
+#       index_unselect = index_unselect,
+#       q_phi = q_phi,
+#       q_hdim = q_hdim,
+#       q_ldim = q_ldim,
+#       yi = data@y_series,
+#       n = length(data@y_series),
+#       ni = lengths(data@y_series),
+#       ntot = sum(lengths(data@y_series)),
+#       ti = data@t_series,
+#       v = data@x_phi_to_select,
+#       tv_v = data@tx_x_phi_to_select,
+#       kron_tv_v = data@kron_tx_x_phi_to_select,
+#       w = data@x_phi_not_to_select,
+#       x = data@x_phi_not_to_select_list,
+#       pv = dim(data@x_phi_to_select)[2] - 1,
+#       pw = dim(data@x_phi_not_to_select)[2] - 1,
+#       g = model@model_func,
+#       support = x_support_insel,
+#       # est-ce qu'on a besoin de support? OUI...
+#       supp_index = which(rbind(
+#         1,
+#         x_support_insel
+#       ) == 1),
+#       index_fixed = model@phi_fixed_idx,
+#       q_fixed = length(model@phi_fixed_idx),
+#       niter = tuning_algo@niter,
+#       nburnin = tuning_algo@nburnin,
+#       niter_mh = tuning_algo@niter_mh,
+#       kernel_mh = tuning_algo@kernel_mh,
+#       kappa = tuning_algo@mh_proposal_scale,
+#       step = tuning_algo@step,
+#       param_init = init,
+#       tau = tuning_algo@covariance_decay,
+#       nu0 = nu0,
+#       nu1 = nu1,
+#       nsig = nsig,
+#       lsig = lsig,
+#       a = a,
+#       b = b,
+#       sigma2_mu = sigma2_mu,
+#       sgam = sgam,
+#       d = d
+#     ))
+#   }
+# )
 
 ## -- Prepare data, model and initialization from map to mle
 

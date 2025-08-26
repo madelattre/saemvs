@@ -16,15 +16,15 @@ p_star_fast <- function(beta, alpha, nu0, nu1) {
 
 
 get_case <- function(config) {
-  if (config$method == "map") {
-    if (config$q_ldim == 0) {
+  if (config$method_type == "map") {
+    if (config$num_parameters_not_to_select == 0) {
       "map_full_select"
-    } else if (length(config$index_fixed) == 0) {
+    } else if (length(config$fixed_parameters_indices) == 0) {
       "map_part_select_nofixed"
     } else {
       "map_part_select_fixed"
     }
   } else {
-    if (length(config$index_fixed) > 0) "mle_fixed" else "mle_nofixed"
+    if (length(config$fixed_parameters_indices) > 0) "mle_fixed" else "mle_nofixed"
   }
 }

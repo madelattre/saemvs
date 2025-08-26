@@ -1,39 +1,39 @@
 init_state <- function(config) {
-  sigma2 <- rep(0, config$niter + 1)
+  sigma2 <- rep(0, config$num_iterations + 1)
 
   phi <- lapply(
-    seq_len(config$niter + 1),
-    function(k) matrix(0, config$n, config$q_phi)
+    seq_len(config$num_iterations + 1),
+    function(k) matrix(0, config$num_series, config$total_parameters)
   )
 
-  s1 <- rep(0, config$niter + 1)
+  s1 <- rep(0, config$num_series + 1)
 
 
   # For the estimation of parameters subject to selection (hdim)
 
-  if (config$q_hdim != 0) {
+  if (config$num_parameters_to_select != 0) {
     beta_hdim <- lapply(
-      seq_len(config$niter + 1),
-      function(k) matrix(0, config$pv + 1, config$q_hdim)
+      seq_len(config$num_iterations + 1),
+      function(k) matrix(0, config$num_covariates_to_select + 1, config$num_parameters_to_select)
     )
 
     gamma_hdim <- lapply(
-      seq_len(config$niter + 1),
-      function(k) matrix(0, config$q_hdim, config$q_hdim)
+      seq_len(config$num_iterations + 1),
+      function(k) matrix(0, config$num_parameters_to_select, config$num_parameters_to_select)
     )
 
     alpha <- lapply(
-      seq_len(config$niter + 1),
-      function(k) matrix(0, config$q_hdim, 1)
+      seq_len(config$num_iterations + 1),
+      function(k) matrix(0, config$num_parameters_to_select, 1)
     )
 
     s2_hdim <- lapply(
-      seq_len(config$niter + 1),
-      function(k) matrix(0, config$q_hdim, config$q_hdim)
+      seq_len(config$num_iterations + 1),
+      function(k) matrix(0, config$num_parameters_to_select, config$num_parameters_to_select)
     )
     s3_hdim <- lapply(
-      seq_len(config$niter + 1),
-      function(k) matrix(0, config$n, config$q_hdim)
+      seq_len(config$num_iterations + 1),
+      function(k) matrix(0, config$num_series, config$num_parameters_to_select)
     )
   } else {
     beta_hdim <- NULL
@@ -46,36 +46,36 @@ init_state <- function(config) {
 
   # For the estimation of parameters non subject to selection (ldim)
 
-  if (config$q_ldim != 0) {
+  if (config$num_parameters_not_to_select != 0) {
     beta_ldim <- lapply(
-      seq_len(config$niter + 1),
-      function(k) matrix(0, config$pw + 1, config$q_ldim)
+      seq_len(config$num_iterations + 1),
+      function(k) matrix(0, config$num_covariates_not_to_select + 1, config$num_parameters_not_to_select)
     )
 
     gamma_ldim <- lapply(
-      seq_len(config$niter + 1),
-      function(k) matrix(0, config$q_ldim, config$q_ldim)
+      seq_len(config$num_iterations + 1),
+      function(k) matrix(0, config$num_parameters_not_to_select, config$num_parameters_not_to_select)
     )
 
     s2_ldim <- lapply(
-      seq_len(config$niter + 1),
-      function(k) matrix(0, config$q_ldim, config$q_ldim)
+      seq_len(config$num_iterations + 1),
+      function(k) matrix(0, config$num_parameters_not_to_select, config$num_parameters_not_to_select)
     )
     s3_ldim <- lapply(
-      seq_len(config$niter + 1),
-      function(k) matrix(0, config$n, config$q_ldim)
+      seq_len(config$num_iterations + 1),
+      function(k) matrix(0, config$num_series, config$num_parameters_not_to_select)
     )
 
-    beta_mat_0 <- rep(0, config$q_ldim * (config$pw + 1))
+    beta_mat_0 <- rep(0, config$num_parameters_not_to_select * (config$num_covariates_not_to_select + 1))
   } else {
     beta_ldim <- NULL
     gamma_ldim <- NULL
     s2_ldim <- lapply(
-      seq_len(config$niter + 1),
+      seq_len(config$num_iterations + 1),
       function(k) NULL
     )
     s3_ldim <- lapply(
-      seq_len(config$niter + 1),
+      seq_len(config$num_iterations + 1),
       function(k) NULL
     )
     beta_mat_0 <- NULL
@@ -84,31 +84,31 @@ init_state <- function(config) {
 
 
 
-  sigma2[1] <- config$param_init@sigma2
+  sigma2[1] <- config$init_parameters@sigma2
 
 
-  if (length(config$index_select) > 0) {
-    beta_hdim[[1]] <- config$param_init@beta_to_select
-    gamma_hdim[[1]] <- config$param_init@gamma_to_select
-    phi[[1]][, config$index_select] <- config$v %*% beta_hdim[[1]]
-    alpha[[1]] <- config$param_init@inclusion_prob
+  if (length(config$parameters_to_select_indices) > 0) {
+    beta_hdim[[1]] <- config$init_parameters@beta_to_select
+    gamma_hdim[[1]] <- config$init_parameters@gamma_to_select
+    phi[[1]][, config$parameters_to_select_indices] <- config$x_phi_to_select %*% beta_hdim[[1]]
+    alpha[[1]] <- config$init_parameters@inclusion_prob
   }
 
-  if (length(config$index_unselect) > 0) {
-    beta_ldim[[1]] <- config$param_init@beta_not_to_select
-    gamma_ldim[[1]] <- config$param_init@gamma_not_to_select
-    phi[[1]][, config$index_unselect] <- config$w %*% beta_ldim[[1]]
+  if (length(config$parameters_not_to_select_indices) > 0) {
+    beta_ldim[[1]] <- config$init_parameters@beta_not_to_select
+    gamma_ldim[[1]] <- config$init_parameters@gamma_not_to_select
+    phi[[1]][, config$parameters_not_to_select_indices] <- config$x_phi_not_to_select %*% beta_ldim[[1]]
   }
 
   # -- For the proposal distribution in the MH step
   mprop_mh <- phi
   vprop_mh <- lapply(
-    seq_len(config$niter + 1),
-    function(k) matrix(0, config$q_phi, config$q_phi)
+    seq_len(config$num_iterations + 1),
+    function(k) matrix(0, config$total_parameters, config$total_parameters)
   )
-  vprop_mh[[1]][config$index_select, config$index_select] <- gamma_hdim[[1]]
-  if (length(config$index_unselect) > 0) {
-    vprop_mh[[1]][config$index_unselect, config$index_unselect] <-
+  vprop_mh[[1]][config$parameters_to_select_indices, config$parameters_to_select_indices] <- gamma_hdim[[1]]
+  if (length(config$parameters_not_to_select_indices) > 0) {
+    vprop_mh[[1]][config$parameters_not_to_select_indices, config$parameters_not_to_select_indices] <-
       gamma_ldim[[1]]
   }
 

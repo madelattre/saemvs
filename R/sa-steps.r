@@ -1,10 +1,10 @@
 sa_step_ldim <- function(config, k, state) {
-  step <- config$step[k]
+  step <- config$step_size[k]
 
   phi <- state$phi[[k + 1]]
 
-  errs <- vapply(seq_along(config$yi), function(i) {
-    sum((config$yi[[i]] - config$g(phi[i, ], config$ti[[i]]))^2)
+  errs <- vapply(seq_along(config$y_series), function(i) {
+    sum((config$y_series[[i]] - config$model_function(phi[i, ], config$t_series[[i]]))^2)
   }, numeric(1))
 
   mco <- sum(errs)
@@ -19,12 +19,12 @@ sa_step_ldim <- function(config, k, state) {
 }
 
 sa_step_hdim <- function(config, k, state) {
-  step <- config$step[k]
+  step <- config$step_size[k]
 
   phi <- state$phi[[k + 1]]
 
-  errs <- vapply(seq_along(config$yi), function(i) {
-    sum((config$yi[[i]] - config$g(phi[i, ], config$ti[[i]]))^2)
+  errs <- vapply(seq_along(config$y_series), function(i) {
+    sum((config$y_series[[i]] - config$model_function(phi[i, ], config$t_series[[i]]))^2)
   }, numeric(1))
 
   mco <- sum(errs)
@@ -39,24 +39,19 @@ sa_step_hdim <- function(config, k, state) {
 }
 
 sa_step_split <- function(config, k, state) {
-  step <- config$step[k]
+  step <- config$step_size[k]
 
   phi <- state$phi[[k + 1]]
 
 
-  # errs <- vapply(seq_along(config$yi), function(i) {
-  #   sum((config$yi[[i]] - config$g(phi[i, ], config$ti[[i]]))^2)
-  # }, numeric(1))
-
-
-  errs <- vapply(seq_along(config$yi), function(i) {
-    sum((config$yi[[i]] - g_vector_cpp(phi[i, ], config$ti[[i]]))^2)
+  errs <- vapply(seq_along(config$y_series), function(i) {
+    sum((config$y_series[[i]] - g_vector_cpp(phi[i, ], config$t_series[[i]]))^2)
   }, numeric(1))
 
   mco <- sum(errs)
 
-  phih <- as.matrix(phi[, config$index_select])
-  phil <- as.matrix(phi[, -config$index_select])
+  phih <- as.matrix(phi[, config$parameters_to_select_indices])
+  phil <- as.matrix(phi[, -config$parameters_to_select_indices])
 
   state$s1[k + 1] <- state$s1[k] + step * (mco - state$s1[k])
   state$s2_hdim[[k + 1]] <- state$s2_hdim[[k]] +
