@@ -1,7 +1,7 @@
 m_step_ldim <- function(config, k, state) {
-  old_gamma <- state$gamma_ldim[[k]]
-  s3 <- state$s3_ldim[[k + 1]]
-  s2 <- state$s2_ldim[[k + 1]]
+  old_gamma <- state$gamma_not_to_select[[k]]
+  s3 <- state$s3_not_to_select[[k + 1]]
+  s2 <- state$s2_not_to_select[[k + 1]]
 
 
   gamma_inv <- mat_inv(old_gamma)
@@ -18,7 +18,7 @@ m_step_ldim <- function(config, k, state) {
   cbeta_outer <- beta_vect %*% t(beta_vect)
   state$beta_mat_0[config$forced_covariates_indices] <- beta_vect
 
-  state$beta_ldim[[k + 1]] <-
+  state$beta_not_to_select[[k + 1]] <-
     matrix(state$beta_mat_0,
       ncol = config$num_parameters_not_to_select,
       nrow = config$num_covariates_not_to_select + 1, byrow = FALSE
@@ -38,7 +38,7 @@ m_step_ldim <- function(config, k, state) {
   gamma_scaled <- config$covariance_decay * old_gamma
   cond_gamma <- (sum(gamma_scaled^2) > sum(gamma_prop^2))
   gamma_scaled <- config$covariance_decay * old_gamma
-  state$gamma_ldim[[k + 1]] <- if (cond_gamma) gamma_scaled else gamma_prop
+  state$gamma_not_to_select[[k + 1]] <- if (cond_gamma) gamma_scaled else gamma_prop
 
   return(state)
 }
@@ -46,11 +46,11 @@ m_step_ldim <- function(config, k, state) {
 # Update coefficients and covariance matrix for the high-dimensional part of
 # the model
 m_step_hdim <- function(config, k, state) {
-  old_beta <- state$beta_hdim[[k]]
-  old_gamma <- state$gamma_hdim[[k]]
+  old_beta <- state$beta_to_select[[k]]
+  old_gamma <- state$gamma_to_select[[k]]
   old_alpha <- state$alpha[[k]]
-  s2 <- state$s2_hdim[[k + 1]]
-  s3 <- state$s3_hdim[[k + 1]]
+  s2 <- state$s2_to_select[[k + 1]]
+  s3 <- state$s3_to_select[[k + 1]]
 
   p_star_k <- p_star_fast(
     old_beta[-1, ],
@@ -75,21 +75,21 @@ m_step_hdim <- function(config, k, state) {
 
   beta_vect <- solve_linear_syst(s_xgx, s_xgs3)
 
-  state$beta_hdim[[k + 1]] <-
+  state$beta_to_select[[k + 1]] <-
     matrix(beta_vect, nrow = config$num_covariates_to_select + 1, ncol = config$num_parameters_to_select, byrow = FALSE)
 
-  sum_bx <- t(state$beta_hdim[[k + 1]]) %*% config$tx_x_phi_to_select %*%
-    state$beta_hdim[[k + 1]]
+  sum_bx <- t(state$beta_to_select[[k + 1]]) %*% config$tx_x_phi_to_select %*%
+    state$beta_to_select[[k + 1]]
 
-  sum_xbs3 <- t(config$x_phi_to_select %*% state$beta_hdim[[k + 1]]) %*% s3
+  sum_xbs3 <- t(config$x_phi_to_select %*% state$beta_to_select[[k + 1]]) %*% s3
 
-  gamma_prop <- (config$cov_re_prior_scale + s2 + sum_bx - sum_xbs3 - 
-  t(sum_xbs3)) / (config$num_series + config$cov_re_prior_df + config$num_parameters_to_select + 1)
+  gamma_prop <- (config$cov_re_prior_scale + s2 + sum_bx - sum_xbs3 -
+    t(sum_xbs3)) / (config$num_series + config$cov_re_prior_df + config$num_parameters_to_select + 1)
   gamma_prop <- (gamma_prop + t(gamma_prop)) / 2 # Forcing symmetry
   gamma_scaled <- config$covariance_decay * old_gamma
   cond_gamma <- (sum(gamma_scaled^2) > sum(gamma_prop^2))
 
-  state$gamma_hdim[[k + 1]] <- if (cond_gamma) gamma_scaled else gamma_prop
+  state$gamma_to_select[[k + 1]] <- if (cond_gamma) gamma_scaled else gamma_prop
 
   return(state)
 }

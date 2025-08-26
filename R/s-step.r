@@ -22,33 +22,33 @@ s_step <- function(config, k, state) {
 
 update_prop_mh_mix <- function(config, k, state) {
   state$mprop_mh[[k + 1]][, config$parameters_to_select_indices] <-
-    config$x_phi_to_select %*% state$beta_hdim[[k + 1]]
+    config$x_phi_to_select %*% state$beta_to_select[[k + 1]]
   state$mprop_mh[[k + 1]][, -config$parameters_to_select_indices] <-
-    config$x_phi_not_to_select %*% state$beta_ldim[[k + 1]]
+    config$x_phi_not_to_select %*% state$beta_not_to_select[[k + 1]]
 
   state$vprop_mh[[k + 1]][config$parameters_to_select_indices, config$parameters_to_select_indices] <-
-    state$gamma_hdim[[k + 1]]
+    state$gamma_to_select[[k + 1]]
   state$vprop_mh[[k + 1]][-config$parameters_to_select_indices, -config$parameters_to_select_indices] <-
-    state$gamma_ldim[[k + 1]]
+    state$gamma_not_to_select[[k + 1]]
 
   return(state)
 }
 
 update_prop_mh_hdim <- function(config, k, state) {
   state$mprop_mh[[k + 1]][, config$parameters_to_select_indices] <-
-    config$x_phi_to_select %*% state$beta_hdim[[k + 1]]
+    config$x_phi_to_select %*% state$beta_to_select[[k + 1]]
 
-  state$vprop_mh[[k + 1]][config$parameters_to_select_indices, config$parameters_to_select_indices] <- state$gamma_hdim[[k + 1]]
+  state$vprop_mh[[k + 1]][config$parameters_to_select_indices, config$parameters_to_select_indices] <- state$gamma_to_select[[k + 1]]
 
   return(state)
 }
 
 update_prop_mh_ldim <- function(config, k, state) {
   state$mprop_mh[[k + 1]][, config$parameters_not_to_select_indices] <-
-    config$x_phi_not_to_select %*% state$beta_ldim[[k + 1]]
+    config$x_phi_not_to_select %*% state$beta_not_to_select[[k + 1]]
 
   state$vprop_mh[[k + 1]][config$parameters_not_to_select_indices, config$parameters_not_to_select_indices] <-
-    state$gamma_ldim[[k + 1]]
+    state$gamma_not_to_select[[k + 1]]
 
   return(state)
 }

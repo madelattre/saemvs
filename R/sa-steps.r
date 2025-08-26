@@ -10,10 +10,10 @@ sa_step_ldim <- function(config, k, state) {
   mco <- sum(errs)
 
   state$s1[k + 1] <- state$s1[k] + step * (mco - state$s1[k])
-  state$s2_ldim[[k + 1]] <- state$s2_ldim[[k]] +
-    step * (t(phi) %*% phi - state$s2_ldim[[k]])
-  state$s3_ldim[[k + 1]] <- state$s3_ldim[[k]] +
-    step * (phi - state$s3_ldim[[k]])
+  state$s2_not_to_select[[k + 1]] <- state$s2_not_to_select[[k]] +
+    step * (t(phi) %*% phi - state$s2_not_to_select[[k]])
+  state$s3_not_to_select[[k + 1]] <- state$s3_not_to_select[[k]] +
+    step * (phi - state$s3_not_to_select[[k]])
 
   return(state)
 }
@@ -30,10 +30,10 @@ sa_step_hdim <- function(config, k, state) {
   mco <- sum(errs)
 
   state$s1[k + 1] <- state$s1[k] + step * (mco - state$s1[k])
-  state$s2_hdim[[k + 1]] <- state$s2_hdim[[k]] +
-    step * (t(phi) %*% phi - state$s2_hdim[[k]])
-  state$s3_hdim[[k + 1]] <- state$s3_hdim[[k]] +
-    step * (phi - state$s3_hdim[[k]])
+  state$s2_to_select[[k + 1]] <- state$s2_to_select[[k]] +
+    step * (t(phi) %*% phi - state$s2_to_select[[k]])
+  state$s3_to_select[[k + 1]] <- state$s3_to_select[[k]] +
+    step * (phi - state$s3_to_select[[k]])
 
   return(state)
 }
@@ -54,14 +54,14 @@ sa_step_split <- function(config, k, state) {
   phil <- as.matrix(phi[, -config$parameters_to_select_indices])
 
   state$s1[k + 1] <- state$s1[k] + step * (mco - state$s1[k])
-  state$s2_hdim[[k + 1]] <- state$s2_hdim[[k]] +
-    step * (t(phih) %*% phih - state$s2_hdim[[k]])
-  state$s3_hdim[[k + 1]] <- state$s3_hdim[[k]] +
-    step * (phih - state$s3_hdim[[k]])
-  state$s2_ldim[[k + 1]] <- state$s2_ldim[[k]] +
-    step * (t(phil) %*% phil - state$s2_ldim[[k]])
-  state$s3_ldim[[k + 1]] <- state$s3_ldim[[k]] +
-    step * (phil - state$s3_ldim[[k]])
+  state$s2_to_select[[k + 1]] <- state$s2_to_select[[k]] +
+    step * (t(phih) %*% phih - state$s2_to_select[[k]])
+  state$s3_to_select[[k + 1]] <- state$s3_to_select[[k]] +
+    step * (phih - state$s3_to_select[[k]])
+  state$s2_not_to_select[[k + 1]] <- state$s2_not_to_select[[k]] +
+    step * (t(phil) %*% phil - state$s2_not_to_select[[k]])
+  state$s3_not_to_select[[k + 1]] <- state$s3_not_to_select[[k]] +
+    step * (phil - state$s3_not_to_select[[k]])
 
   return(state)
 }

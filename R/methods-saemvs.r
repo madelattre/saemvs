@@ -166,10 +166,10 @@ setMethod(
 
     res <- new(
       "saemResults",
-      beta_to_select = state$beta_hdim,
-      beta_not_to_select = state$beta_ldim,
-      gamma_to_select = state$gamma_hdim,
-      gamma_not_to_select = state$gamma_ldim,
+      beta_to_select = state$beta_to_select,
+      beta_not_to_select = state$beta_not_to_select,
+      gamma_to_select = state$gamma_to_select,
+      gamma_not_to_select = state$gamma_not_to_select,
       sigma2 = state$sigma2
     )
     return(res)
@@ -209,7 +209,7 @@ setMethod(
     }
 
     # et non -1, car les data sont transformées dans run_saem
-    beta_map <- map$beta_hdim[[niter + 1]][-1, ]
+    beta_map <- map$beta_to_select[[niter + 1]][-1, ]
     alpha_map <- map$alpha[[niter + 1]]
     threshold_matrix <- matrix(
       rep(threshold(
@@ -276,9 +276,9 @@ setMethod(
     }
 
 
-    new_data <- from_map_to_mle_data(data, cand_support)
-    new_model <- from_map_to_mle_model(model, cand_support)
-    new_init <- from_map_to_mle_init(init, model, cand_support)
+    new_data <- map_to_mle_data(data, cand_support)
+    new_model <- map_to_mle_model(model, cand_support)
+    new_init <- map_to_mle_init(init, model, cand_support)
     new_hyperparam <- saemvsHyperSlab(NULL, NULL, NULL)
     new_full_hyperparam <- saemvsHyperSpikeAndSlab(NULL, new_hyperparam)
 
@@ -287,8 +287,8 @@ setMethod(
     )
 
     param <- list(
-      beta   = mle$beta_ldim[[tuning_algo@niter + 1]],
-      gamma  = mle$gamma_ldim[[tuning_algo@niter + 1]],
+      beta   = mle$beta_not_to_select[[tuning_algo@niter + 1]],
+      gamma  = mle$gamma_not_to_select[[tuning_algo@niter + 1]],
       sigma2 = mle$sigma2[tuning_algo@niter + 1]
     )
 
