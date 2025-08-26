@@ -1,6 +1,5 @@
-#' @title Prepare processed design matrices for SAEMVS model fitting
+#' Prepare processed design matrices for SAEMVS model fitting
 #'
-#' @description
 #' Internal method that constructs design matrices and related structures
 #' required for fitting a \code{saemvsModel} to a \code{saemvsData} object.
 #'
@@ -164,8 +163,50 @@ setMethod(
 )
 
 
-## -- Prepare the initial values according to the model
-
+#' Prepare initial values for the SAEMVS algorithm
+#'
+#' This internal method constructs processed initial values for the SAEMVS
+#' algorithm, splitting parameters into those subject to variable selection
+#' and those not. It combines intercepts, forced and candidate
+#' betas into matrices ready for algorithmic use.
+#'
+#' @param init An object of class \code{saemvsInit} containing initial values
+#'   for intercepts, candidate betas, forced betas, covariance of random effects,
+#'   and residual variance.
+#' @param model An object of class \code{saemvsModel} defining the model structure,
+#'   including indices of parameters subject to selection (\code{phi_to_select_idx}) and
+#'   forced covariate support (\code{x_forced_support}).
+#'
+#' @return An object of class \code{saemvsProcessedInit} containing:
+#' \describe{
+#'   \item{\code{inclusion_prob}}{Vector of prior inclusion probabilities for
+#'         parameters subject to selection (default 0.5).}
+#'   \item{\code{sigma2}}{Residual variance, copied from \code{init}.}
+#'   \item{\code{gamma_to_select}}{Covariance matrix of random effects for
+#'         parameters subject to selection.}
+#'   \item{\code{gamma_not_to_select}}{Covariance matrix of random effects for
+#'         parameters not subject to selection.}
+#'   \item{\code{beta_to_select}}{Matrix of coefficients for parameters subject
+#'         to selection, combining intercept, forced and candidate betas.}
+#'   \item{\code{beta_not_to_select}}{Matrix of coefficients for parameters not
+#'         subject to selection, combining intercept and forced covariates.}
+#' }
+#'
+#' @details
+#' The function handles the following cases explicitly:
+#' \itemize{
+#'   \item No parameters are subject to selection (\code{phi_to_select_idx} is empty),
+#'         resulting in \code{beta_to_select}, \code{gamma_to_select}, and
+#'         \code{inclusion_prob} being \code{NULL}.
+#'   \item No forced covariates for either selected or non-selected parameters,
+#'         in which case only intercepts and candidate betas are used.
+#'   \item Forced covariates present, in which case only rows corresponding to
+#'         active support (rows with ones) are included in the beta matrices.
+#' }
+#'
+#' The method ensures all matrices maintain proper dimensions using \code{drop = FALSE}.
+#'
+#' @keywords internal
 setGeneric(
   "prepare_init",
   function(init, model) {
@@ -177,95 +218,98 @@ setMethod(
   "prepare_init",
   signature(init = "saemvsInit", model = "saemvsModel"),
   function(init, model) {
-    # A compléter, initialisation de beta_sel par défaut?
 
-    # On remplit beta_hdim, gamma_hdim et alpha
+    ## === 0. Extract indices ===
+    phi_to_select_idx   <- model@phi_to_select_idx
+    phi_not_to_select_idx <- setdiff(seq_len(model@phi_dim), phi_to_select_idx)
+    forced_support       <- model@x_forced_support
 
-
-    # S'assurer qu'on ait bien des matrices partout
-
-    if (length(model@phi_to_select_idx) == 0) {
-      beta_hdim <- NULL
-      gamma_hdim <- NULL
-      alpha <- NULL
+    ## === 1. Prepare beta and gamma for parameters subject to selection ===
+    if (length(phi_to_select_idx) == 0) {
+      beta_to_select  <- NULL
+      gamma_to_select <- NULL
+      inclusion_prob  <- NULL
     } else {
-      if (is_empty_support(model@x_forced_support) == TRUE) {
-        xf_supp_phi_sel <- NULL
+      # Extract forced support for parameters subject to selection
+      if (is_empty_support(forced_support)) {
+        xf_sel <- NULL
       } else {
-        xf_supp_phi_sel <- matrix(
-          model@x_forced_support[, model@phi_to_select_idx],
-          ncol = length(model@phi_to_select_idx)
+        xf_sel <- matrix(forced_support[, phi_to_select_idx],
+                         ncol = length(phi_to_select_idx))
+      }
+
+      # Compose beta_to_select
+      if (is_empty_support(xf_sel)) {
+        beta_to_select <- rbind(
+          init@intercept[phi_to_select_idx],
+          init@beta_candidates[, phi_to_select_idx, drop = FALSE]
+        )
+      } else {
+        rows_forced_sel <- extract_rows_with_ones(xf_sel)
+        beta_forced_sel <- init@beta_forced[rows_forced_sel, phi_to_select_idx, drop = FALSE]
+        beta_to_select <- rbind(
+          init@intercept[phi_to_select_idx],
+          beta_forced_sel,
+          init@beta_candidates[, phi_to_select_idx, drop = FALSE]
         )
       }
-      if (is_empty_support(xf_supp_phi_sel) == TRUE) {
-        beta_hdim <- rbind(
-          init@intercept[model@phi_to_select_idx],
-          init@beta_candidates[, model@phi_to_select_idx]
-        )
-      } else {
-        raws_bf_phi_sel <- extract_rows_with_ones(xf_supp_phi_sel)
-        bf_phi_sel <- init@beta_forced[raws_bf_phi_sel, model@phi_to_select_idx]
-        beta_hdim <- rbind(
-          init@intercept[model@phi_to_select_idx],
-          bf_phi_sel,
-          init@beta_candidates[, model@phi_to_select_idx]
-        )
-      }
-      gamma_hdim <- matrix(
-        init@cov_re[model@phi_to_select_idx, model@phi_to_select_idx],
-        ncol = length(model@phi_to_select_idx)
+
+      # gamma_to_select
+      gamma_to_select <- matrix(
+        init@cov_re[phi_to_select_idx, phi_to_select_idx, drop = FALSE],
+        ncol = length(phi_to_select_idx)
       )
 
-      alpha <- rep(0.5, length(model@phi_to_select_idx))
+      # inclusion probabilities (default 0.5)
+      inclusion_prob <- rep(0.5, length(phi_to_select_idx))
     }
 
-    phi_insel_idx <- setdiff(seq(1, model@phi_dim), model@phi_to_select_idx)
-
-    if (length(phi_insel_idx) == 0) {
-      beta_ldim <- NULL
-      gamma_ldim <- NULL
+    ## === 2. Prepare beta and gamma for parameters NOT subject to selection ===
+    if (length(phi_not_to_select_idx) == 0) {
+      beta_not_to_select  <- NULL
+      gamma_not_to_select <- NULL
     } else {
-      if (is_empty_support(model@x_forced_support) == TRUE) {
-        xf_supp_phi_insel <- NULL
+      if (is_empty_support(forced_support)) {
+        xf_not_sel <- NULL
       } else {
-        xf_supp_phi_insel <- matrix(
-          model@x_forced_support[, phi_insel_idx],
-          ncol = length(phi_insel_idx)
-        )
+        xf_not_sel <- matrix(forced_support[, phi_not_to_select_idx],
+                             ncol = length(phi_not_to_select_idx))
       }
-      if (is_empty_support(xf_supp_phi_insel) == TRUE) {
-        beta_ldim <- matrix(init@intercept[phi_insel_idx],
-          ncol = length(phi_insel_idx)
-        )
+
+      # Compose beta_not_to_select
+      if (is_empty_support(xf_not_sel)) {
+        beta_not_to_select <- matrix(init@intercept[phi_not_to_select_idx],
+                                     ncol = length(phi_not_to_select_idx))
       } else {
-        raws_bf_phi_insel <- extract_rows_with_ones(xf_supp_phi_insel)
-        bf_phi_insel <- matrix(
-          init@beta_forced[raws_bf_phi_insel, phi_insel_idx],
-          ncol = length(phi_insel_idx)
+        rows_forced_not_sel <- extract_rows_with_ones(xf_not_sel)
+        beta_forced_not_sel <- matrix(
+          init@beta_forced[rows_forced_not_sel, phi_not_to_select_idx, drop = FALSE],
+          ncol = length(phi_not_to_select_idx)
         )
-        beta_ldim <- rbind(
-          init@intercept[phi_insel_idx],
-          bf_phi_insel
+        beta_not_to_select <- rbind(
+          init@intercept[phi_not_to_select_idx],
+          beta_forced_not_sel
         )
       }
 
-      gamma_ldim <- matrix(
-        init@cov_re[phi_insel_idx, phi_insel_idx],
-        ncol = length(phi_insel_idx)
+      # gamma_not_to_select
+      gamma_not_to_select <- matrix(
+        init@cov_re[phi_not_to_select_idx, phi_not_to_select_idx, drop = FALSE],
+        ncol = length(phi_not_to_select_idx)
       )
     }
 
-
-    init_alg <- new("saemvsProcessedInit",
-      inclusion_prob = alpha,
-      sigma2 = init@sigma2,
-      gamma_to_select = gamma_hdim,
-      gamma_not_to_select = gamma_ldim,
-      beta_to_select = beta_hdim,
-      beta_not_to_select = beta_ldim
+    ## === 3. Construct processed init object ===
+    init_processed <- new("saemvsProcessedInit",
+      inclusion_prob      = inclusion_prob,
+      sigma2              = init@sigma2,
+      gamma_to_select     = gamma_to_select,
+      gamma_not_to_select = gamma_not_to_select,
+      beta_to_select      = beta_to_select,
+      beta_not_to_select  = beta_not_to_select
     )
 
-    return(init_alg)
+    return(init_processed)
   }
 )
 
@@ -430,109 +474,6 @@ setMethod(
   }
 )
 
-
-# ## -- Config
-
-# setGeneric(
-#   "make_config",
-#   function(data, model, tuning_algo, init, hyperparam) {
-#     standardGeneric("make_config")
-#   }
-# )
-
-# setMethod(
-#   "make_config",
-#   signature(
-#     data = "saemvsProcessedData", model = "saemvsModel", tuning_algo = "saemvsTuning",
-#     init = "saemvsProcessedInit", hyperparam = "saemvsHyperSlab"
-#   ),
-#   function(data, model, tuning_algo, init, hyperparam) {
-#     q_phi <- model@phi_dim
-#     index_select <- model@phi_to_select_idx
-
-
-#     if (length(index_select) == 0) {
-#       method <- "mle"
-#       q_hdim <- 0
-#       q_ldim <- q_phi
-#       index_unselect <- seq(1, q_phi)
-#       nu0 <- nu1 <- nsig <- lsig <- a <- b <- sigma2_mu <- sgam <- d <- NULL
-#     } else {
-#       method <- "map"
-#       q_hdim <- length(index_select)
-#       q_ldim <- q_phi - length(index_select)
-#       index_unselect <- setdiff(seq(1, q_phi), index_select)
-#       nu0 <- hyperparam@spike_parameter
-#       nu1 <- hyperparam@slab_parameter
-#       nsig <- hyperparam@residual_variance_prior_shape
-#       lsig <- hyperparam@residual_variance_prior_rate
-#       a <- hyperparam@inclusion_prob_prior_a
-#       b <- hyperparam@inclusion_prob_prior_b
-#       sigma2_mu <- hyperparam@phi_intercept_prior_variance
-#       sgam <- hyperparam@cov_re_prior_scale
-#       d <- hyperparam@cov_re_prior_df
-#     }
-
-#     unselect_support <-
-#       extract_sub_support(model@x_forced_support, index_unselect)
-
-#     if (!is_empty_support(unselect_support)) {
-#       x_support_insel <- matrix(
-#         model@x_forced_support[, index_unselect],
-#         ncol = model@phi_dim - length(model@phi_to_select_idx)
-#       )
-#     } else {
-#       x_support_insel <- NULL
-#     }
-
-#     return(list(
-#       method = method,
-#       index_select = index_select,
-#       index_unselect = index_unselect,
-#       q_phi = q_phi,
-#       q_hdim = q_hdim,
-#       q_ldim = q_ldim,
-#       yi = data@y_series,
-#       n = length(data@y_series),
-#       ni = lengths(data@y_series),
-#       ntot = sum(lengths(data@y_series)),
-#       ti = data@t_series,
-#       v = data@x_phi_to_select,
-#       tv_v = data@tx_x_phi_to_select,
-#       kron_tv_v = data@kron_tx_x_phi_to_select,
-#       w = data@x_phi_not_to_select,
-#       x = data@x_phi_not_to_select_list,
-#       pv = dim(data@x_phi_to_select)[2] - 1,
-#       pw = dim(data@x_phi_not_to_select)[2] - 1,
-#       g = model@model_func,
-#       support = x_support_insel,
-#       # est-ce qu'on a besoin de support? OUI...
-#       supp_index = which(rbind(
-#         1,
-#         x_support_insel
-#       ) == 1),
-#       index_fixed = model@phi_fixed_idx,
-#       q_fixed = length(model@phi_fixed_idx),
-#       niter = tuning_algo@niter,
-#       nburnin = tuning_algo@nburnin,
-#       niter_mh = tuning_algo@niter_mh,
-#       kernel_mh = tuning_algo@kernel_mh,
-#       kappa = tuning_algo@mh_proposal_scale,
-#       step = tuning_algo@step,
-#       param_init = init,
-#       tau = tuning_algo@covariance_decay,
-#       nu0 = nu0,
-#       nu1 = nu1,
-#       nsig = nsig,
-#       lsig = lsig,
-#       a = a,
-#       b = b,
-#       sigma2_mu = sigma2_mu,
-#       sgam = sgam,
-#       d = d
-#     ))
-#   }
-# )
 
 ## -- Prepare data, model and initialization from map to mle
 
