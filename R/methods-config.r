@@ -1,5 +1,56 @@
-## -- Prepare data according to the model
-
+#' @title Prepare processed design matrices for SAEMVS model fitting
+#'
+#' @description
+#' Internal method that constructs design matrices and related structures
+#' required for fitting a \code{saemvsModel} to a \code{saemvsData} object.
+#'
+#' Specifically, it:
+#' \itemize{
+#'   \item separates covariates for parameters subject to selection from those for parameters not subject to selection,
+#'   \item builds corresponding design matrices (with intercept),
+#'   \item computes Gram matrices and block-diagonal expansions for covariates related to parameters subject to selection,
+#'   \item constructs a list representation of design matrices for parameters not subject to selection for efficient use in SAEM updates,
+#'   \item and returns a \code{saemvsProcessedData} object encapsulating all results.
+#' }
+#'
+#' @param data A \code{\linkS4class{saemvsData}} object.
+#'   Contains observed time series \code{y_series}, covariates
+#'   to be selected (\code{x_candidates}), and forced covariates
+#'   (\code{x_forced}).
+#'
+#' @param model A \code{\linkS4class{saemvsModel}} object.
+#'   Provides model dimension (\code{phi_dim}), indices of parameters
+#'   subject to selection (\code{phi_to_select_idx}), and the forced
+#'   support structure (\code{x_forced_support}).
+#'
+#' @return A \code{\linkS4class{saemvsProcessedData}} object containing:
+#' \describe{
+#'   \item{\code{y_series}}{Original response time series.}
+#'   \item{\code{t_series}}{Associated time points.}
+#'   \item{\code{x_candidates}}{Design matrix of candidate covariates.}
+#'   \item{\code{x_forced}}{Design matrix of forced covariates.}
+#'   \item{\code{x_phi_to_select}}{Final design matrix for parameters subject to selection, including intercept.}
+#'   \item{\code{x_phi_not_to_select}}{Final design matrix for parameters not subject to selection, including intercept.}
+#'   \item{\code{tx_x_phi_to_select}}{Gram matrix \eqn{X'X} for the parameters subject to selection.}
+#'   \item{\code{kron_tx_x_phi_to_select}}{Block-diagonal expansion of the Gram matrix, one block per parameter subject to selection.}
+#'   \item{\code{x_phi_not_to_select_list}}{List of matrices representing the design for parameters not subject to selection, expanded by support.}
+#' }
+#'
+#' @note
+#' This method is internal to the package and not intended for direct user calls.
+#' It assumes that \code{data} and \code{model} are consistent, and may error
+#' if the forced support structure does not match model dimensions.
+#'
+#' @seealso \code{\linkS4class{saemvsData}}, \code{\linkS4class{saemvsModel}}, \code{\linkS4class{saemvsProcessedData}}
+#'
+#' @keywords internal
+#'
+#' @examples
+#' \dontrun{
+#' data_obj <- new("saemvsData", ...) # create data
+#' model_obj <- new("saemvsModel", ...) # create model
+#' processed <- prepare_data(data_obj, model_obj)
+#' }
 setGeneric(
   "prepare_data",
   function(data, model) {
@@ -7,94 +58,108 @@ setGeneric(
   }
 )
 
-
 setMethod(
   "prepare_data",
   signature(data = "saemvsData", model = "saemvsModel"),
   function(data, model) {
-    n <- length(data@y_series)
+    n_obs <- length(data@y_series)
 
-    phi_sel_idx <- model@phi_to_select_idx
-    x_forced_support <- model@x_forced_support
+    ## === Extract model indices and supports ===
+    phi_to_select_indices <- model@phi_to_select_idx
+    phi_not_to_select_indices <- setdiff(seq_len(model@phi_dim), phi_to_select_indices)
+    forced_support <- model@x_forced_support
 
-    # On remplit x_phi_sel
-    if (length(phi_sel_idx) > 0) {
-      if (is_empty_support(x_forced_support) == TRUE) {
-        x_phi_sel <- cbind(1, data@x_candidates)
+    ## === 1. Build design matrix for parameters subject to selection ===
+    x_to_select_design <- NULL
+
+    if (length(phi_to_select_indices) > 0) {
+      if (is_empty_support(forced_support)) {
+        ## No forced covariates at all → intercept + candidates
+        x_to_select_design <- cbind(1, data@x_candidates)
+      } else if (is_empty_support(forced_support[, phi_to_select_indices])) {
+        ## No forced covariates among the candidate subset → intercept + candidates
+        x_to_select_design <- cbind(1, data@x_candidates)
       } else {
-        if (is_empty_support(x_forced_support[, phi_sel_idx]) == TRUE) {
-          x_phi_sel <- cbind(1, data@x_candidates)
-        } else {
-          xf_supp_phi_sel <-
-            matrix(x_forced_support[, phi_sel_idx], ncol = length(phi_sel_idx))
-          x_sel_forced_idx <-
-            extract_rows_with_ones(xf_supp_phi_sel)
-          x_phi_sel <- cbind(
-            1, data@x_forced[, x_sel_forced_idx],
-            data@x_candidates
-          )
-        }
+        ## Some forced covariates correspond to params subject to selection
+        forced_support_params_to_select <- matrix(
+          forced_support[, phi_to_select_indices],
+          ncol = length(phi_to_select_indices)
+        )
+        forced_cov_params_to_select_idx <- extract_rows_with_ones(forced_support_params_to_select)
+        x_to_select_design <- cbind(
+          1,
+          data@x_forced[, forced_cov_params_to_select_idx, drop = FALSE],
+          data@x_candidates
+        )
       }
-    } else {
-      x_phi_sel <- NULL
     }
 
-    # On en déduit tx_x_phi_sel et kron_tx_x_phi_sel
-
-    if (is.null(x_phi_sel)) {
-      tx_x_phi_sel <- kron_tx_x_phi_sel <- NULL
+    ## === 2. Compute Gram and block-diagonal matrices ===
+    if (is.null(x_to_select_design)) {
+      tx_x_to_select <- NULL
+      kron_tx_x_to_select <- NULL
     } else {
-      tx_x_phi_sel <- t(x_phi_sel) %*% x_phi_sel
-      kron_tx_x_phi_sel <- as.matrix(Matrix::bdiag(replicate(
-        length(phi_sel_idx),
-        tx_x_phi_sel,
+      tx_x_to_select <- t(x_to_select_design) %*% x_to_select_design
+      kron_tx_x_to_select <- as.matrix(Matrix::bdiag(replicate(
+        length(phi_to_select_indices),
+        tx_x_to_select,
         simplify = FALSE
       )))
     }
 
-    # On remplit x_phi_insel
-    phi_insel_idx <- setdiff(seq(1, model@phi_dim), phi_sel_idx)
-    if (is_empty_support(x_forced_support) == TRUE) {
-      x_phi_insel <- matrix(1, nrow = n)
-    } else if (is_empty_support(x_forced_support[, phi_insel_idx]) == TRUE) {
-      x_phi_insel <- matrix(1, nrow = n)
+    ## === 3. Build design matrix for unselected parameters ===
+    x_not_to_select_design <- NULL
+    forced_support_params_not_to_select <- NULL
+
+    if (is_empty_support(forced_support)) {
+      x_not_to_select_design <- matrix(1, nrow = n_obs)
+    } else if (length(phi_not_to_select_indices) == 0 ||
+      is_empty_support(forced_support[, phi_not_to_select_indices])) {
+      ## No unselected parameters or no forced covariates among them
+      x_not_to_select_design <- matrix(1, nrow = n_obs)
     } else {
-      xf_supp_phi_insel <- matrix(x_forced_support[, phi_insel_idx],
-        ncol = model@phi_dim - length(phi_sel_idx)
+      forced_support_params_not_to_select <- matrix(
+        forced_support[, phi_not_to_select_indices],
+        ncol = length(phi_not_to_select_indices)
       )
-      x_insel_forced_idx <-
-        extract_rows_with_ones(xf_supp_phi_insel)
-      x_phi_insel <- cbind(1, data@x_forced[, x_insel_forced_idx])
+      forced_cov_params_not_to_select_idx <- extract_rows_with_ones(forced_support_params_not_to_select)
+      x_not_to_select_design <- cbind(
+        1,
+        data@x_forced[, forced_cov_params_not_to_select_idx, drop = FALSE]
+      )
     }
 
-    # On en déduit x_phi_insel_list
-    if (ncol(x_phi_insel) == 1) {
-      x_phi_insel_list <- lapply(
+    ## === 4. Build list representation for unselected design ===
+    if (ncol(x_not_to_select_design) == 1) {
+      x_not_to_select_list <- lapply(
         seq_len(length(data@y_series)),
-        function(i) {
-          matrix(1, nrow = 1, ncol = 1)
-        }
+        function(i) matrix(1, nrow = 1, ncol = 1)
       )
     } else {
-      x_phi_insel_list <- expand_to_list(
-        x_phi_insel,
-        rbind(1, xf_supp_phi_insel), # besoin de l'intercept
-        model@phi_dim - length(phi_sel_idx)
+      if (is.null(forced_support_params_not_to_select)) {
+        stop("Internal error: 'support' is NULL while x_design has >1 column.")
+      }
+      x_not_to_select_list <- expand_to_list(
+        x_not_to_select_design,
+        rbind(1, forced_support_params_not_to_select), # include intercept
+        length(phi_not_to_select_indices)
       )
     }
 
-    data_alg <- new("saemvsProcessedData",
-      y_series = data@y_series,
-      t_series = data@t_series,
-      x_candidates = data@x_candidates,
-      x_forced = data@x_forced,
-      x_phi_to_select = x_phi_sel,
-      x_phi_not_to_select = x_phi_insel,
-      tx_x_phi_to_select = tx_x_phi_sel,
-      kron_tx_x_phi_to_select = kron_tx_x_phi_sel,
-      x_phi_not_to_select_list = x_phi_insel_list
+    ## === 5. Construct processed data object ===
+    data_processed <- new("saemvsProcessedData",
+      y_series                 = data@y_series,
+      t_series                 = data@t_series,
+      x_candidates             = data@x_candidates,
+      x_forced                 = data@x_forced,
+      x_phi_to_select          = x_to_select_design,
+      x_phi_not_to_select      = x_not_to_select_design,
+      tx_x_phi_to_select       = tx_x_to_select,
+      kron_tx_x_phi_to_select  = kron_tx_x_to_select,
+      x_phi_not_to_select_list = x_not_to_select_list
     )
-    return(data_alg)
+
+    return(data_processed)
   }
 )
 
@@ -276,9 +341,9 @@ setMethod(
     method_type <- if (n_phi_to_select == 0) "mle" else "map"
 
     # MAP hyperparameters
-    spike_parameter <- slab_parameter <- residual_variance_prior_shape <- 
-      residual_variance_prior_rate <- inclusion_prob_prior_a <- 
-      inclusion_prob_prior_b <- phi_intercept_prior_variance <- 
+    spike_parameter <- slab_parameter <- residual_variance_prior_shape <-
+      residual_variance_prior_rate <- inclusion_prob_prior_a <-
+      inclusion_prob_prior_b <- phi_intercept_prior_variance <-
       cov_re_prior_scale <- cov_re_prior_df <- NULL
 
     if (method_type == "map") {
@@ -294,26 +359,30 @@ setMethod(
     }
 
     # Support for unselected parameters
-    phi_not_to_select_forced_support <- extract_sub_support(model@x_forced_support, 
-    phi_not_to_select_idx)
+    phi_not_to_select_forced_support <- extract_sub_support(
+      model@x_forced_support,
+      phi_not_to_select_idx
+    )
     x_support_phi_not_to_select <- if (!is_empty_support(phi_not_to_select_forced_support)) {
       matrix(model@x_forced_support[, phi_not_to_select_idx], ncol = n_phi_not_to_select)
-    } else NULL
+    } else {
+      NULL
+    }
 
     # Build configuration list with explicit names
     config <- list(
       # === Data ===
       y_series = data@y_series,
       t_series = data@t_series,
-      x_candidates = data@x_candidates,           # Covariates available for selection
-      x_forced = data@x_forced,                   # Forced covariates
-      x_phi_to_select = data@x_phi_to_select,     # Covariates for parameters to select
+      x_candidates = data@x_candidates, # Covariates available for selection
+      x_forced = data@x_forced, # Forced covariates
+      x_phi_to_select = data@x_phi_to_select, # Covariates for parameters to select
       x_phi_not_to_select = data@x_phi_not_to_select, # Covariates for parameters not to select
-      tx_x_phi_to_select = data@tx_x_phi_to_select,   # t(X) %*% X for selected parameters
+      tx_x_phi_to_select = data@tx_x_phi_to_select, # t(X) %*% X for selected parameters
       kron_tx_x_phi_to_select = data@kron_tx_x_phi_to_select, # Block-diagonal matrix
       x_phi_not_to_select_list = data@x_phi_not_to_select_list, # List for sequences
-      num_series = length(data@y_series),            # <- n
-      series_lengths = lengths(data@y_series),      # <- ni
+      num_series = length(data@y_series), # <- n
+      series_lengths = lengths(data@y_series), # <- ni
       total_observations = sum(lengths(data@y_series)), # <- ntot
       num_covariates_to_select = if (!is.null(data@x_phi_to_select)) dim(data@x_phi_to_select)[2] - 1 else 0,
       num_covariates_not_to_select = if (!is.null(data@x_phi_not_to_select)) dim(data@x_phi_not_to_select)[2] - 1 else 0,
@@ -342,8 +411,8 @@ setMethod(
 
       # === Hyperparameters (MAP only) ===
       method_type = method_type,
-      spike_parameter = spike_parameter,                     # Spike prior value
-      slab_parameter = slab_parameter,                       # Slab prior value
+      spike_parameter = spike_parameter, # Spike prior value
+      slab_parameter = slab_parameter, # Slab prior value
       residual_variance_prior_shape = residual_variance_prior_shape,
       residual_variance_prior_rate = residual_variance_prior_rate,
       inclusion_prob_prior_a = inclusion_prob_prior_a,
