@@ -366,7 +366,7 @@ setMethod(
     tuning_algo = "saemvsTuning", hyperparam = "saemvsHyperSpikeAndSlab",
     pen = "character"
   ),
-  saemvs_one_ic_run <- function(k, support, data, model, init, tuning_algo,
+  function(k, support, data, model, init, tuning_algo,
                                   hyperparam, pen) {
     p <- dim(data@x_candidates)[2]
 
