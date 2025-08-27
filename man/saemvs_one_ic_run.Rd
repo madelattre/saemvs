@@ -4,10 +4,10 @@
 \alias{saemvs_one_ic_run}
 \title{Internal: EBIC/BIC Evaluation for a Candidate Support}
 \usage{
-saemvs_one_ic_run(k, support, data, model, init, tuning_algo, hyperparam, pen)
+saemvs_one_ic_run(k, support, data, model, init, tuning_algo, pen)
 }
 \arguments{
-\item{k}{Numeric index of the candidate support to be evaluated.}
+\item{k}{Integer index of the candidate support to be evaluated.}
 
 \item{support}{A list of logical or numeric matrices, each encoding a
 candidate support obtained from MAP estimation (\code{saemvs_one_map_run}).}
@@ -22,9 +22,6 @@ initialization for SAEM.}
 
 \item{tuning_algo}{An object of class \code{\link{saemvsTuning}},
 containing algorithmic tuning parameters (e.g. number of iterations).}
-
-\item{hyperparam}{An object of class \code{\link{saemvsHyperSpikeAndSlab}},
-hyperparameters of the spike-and-slab prior (not directly used in EBIC step).}
 
 \item{pen}{Character string, the information criterion to use.
 Must be either \code{"BIC"} or \code{"e-BIC"}.}

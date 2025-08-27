@@ -166,7 +166,7 @@ setMethod(
         function(k) {
           compile_model(model@model_func)
           res <- saemvs_one_ic_run(
-            k, support, data, model, init, tuning_algo, hyperparam, pen
+            k, support, data, model, init, tuning_algo, pen
           )
           p()
           res
@@ -314,7 +314,7 @@ setMethod(
 #' This function is used internally by \code{\link{saemvs}} in the second step 
 #' of the SAEMVS algorithm to rank candidate supports obtained from MAP runs.
 #'
-#' @param k Numeric index of the candidate support to be evaluated.
+#' @param k Integer index of the candidate support to be evaluated.
 #' @param support A list of logical or numeric matrices, each encoding a 
 #'   candidate support obtained from MAP estimation (\code{saemvs_one_map_run}).
 #' @param data An object of class \code{\link{saemvsData}}, the dataset.
@@ -324,8 +324,6 @@ setMethod(
 #'   initialization for SAEM.
 #' @param tuning_algo An object of class \code{\link{saemvsTuning}}, 
 #'   containing algorithmic tuning parameters (e.g. number of iterations).
-#' @param hyperparam An object of class \code{\link{saemvsHyperSpikeAndSlab}}, 
-#'   hyperparameters of the spike-and-slab prior (not directly used in EBIC step).
 #' @param pen Character string, the information criterion to use. 
 #'   Must be either \code{"BIC"} or \code{"e-BIC"}.
 #'
@@ -353,7 +351,7 @@ setMethod(
 #' @seealso \code{\link{saemvs}}, \code{\link{saemvs_one_map_run}}, \code{\link{loglik}}
 setGeneric(
   "saemvs_one_ic_run",
-  function(k, support, data, model, init, tuning_algo, hyperparam, pen) {
+  function(k, support, data, model, init, tuning_algo, pen) {
     standardGeneric("saemvs_one_ic_run")
   }
 )
@@ -361,13 +359,11 @@ setGeneric(
 setMethod(
   "saemvs_one_ic_run",
   signature(
-    k = "numeric", support = "numeric",
+    k = "integer", support = "list",
     data = "saemvsData", model = "saemvsModel", init = "saemvsInit",
-    tuning_algo = "saemvsTuning", hyperparam = "saemvsHyperSpikeAndSlab",
-    pen = "character"
+    tuning_algo = "saemvsTuning", pen = "character"
   ),
-  function(k, support, data, model, init, tuning_algo,
-                                  hyperparam, pen) {
+  function(k, support, data, model, init, tuning_algo, pen) {
     p <- dim(data@x_candidates)[2]
 
     forced_support <- extract_sub_support(
@@ -383,7 +379,7 @@ setMethod(
       cand_support <- matrix(as.numeric(support[[k]]),
         nrow = nrow(support[[k]])
       )
-      idx_forced_phi_sel <- seq(1, dim(supp_forced_phi_sel)[1]) + 1
+      idx_forced_phi_sel <- seq(1, dim(forced_support)[1]) + 1
       cand_support <- cand_support[-idx_forced_phi_sel, ]
     }
 
