@@ -5,34 +5,58 @@
 \alias{saemvsResults-class}
 \title{Class saemvsResults}
 \description{
-Results of SAEMVS model selection
+Results of SAEMVS model selection.
 }
 \details{
-Internal results class storing all outputs from SAEMVS grid evaluation.
-Objects of this class are created automatically by the algorithm.
+Internal results container storing all outputs from a SAEMVS grid search and
+model selection procedure. Objects of this class are created automatically
+by the SAEMVS algorithm and are not intended to be constructed manually.
+
+The class is mainly used as an internal result structure and is returned by
+functions implementing SAEMVS. Downstream methods such as
+\code{\link{summary_saemvs}} make use of these slots for reporting.
 }
 \section{Slots}{
 
 \describe{
-\item{\code{criterion}}{Character. The model selection criterion used, either "BIC" or "e-BIC".}
+\item{\code{criterion}}{Character scalar. The selection criterion used to identify
+the best model. Supported values: \code{"BIC"} or \code{"e-BIC"}.}
 
-\item{\code{criterion_values}}{Numeric vector. Criterion values (BIC, e-BIC, etc.) computed for each unique support in \code{unique_support}.}
+\item{\code{criterion_values}}{Numeric vector. Values of the selection criterion
+computed for each unique support in \code{unique_support}.}
 
-\item{\code{thresholds}}{List. Threshold values applied to beta coefficients at each spike value.}
+\item{\code{thresholds}}{List. Thresholds applied to beta coefficients for each
+spike parameter value in \code{spike_values_grid}.}
 
-\item{\code{beta_map}}{List. MAP estimates of beta coefficients for each spike value.}
+\item{\code{beta_map}}{List. MAP (maximum a posteriori) estimates of beta
+coefficients for each spike value.}
 
-\item{\code{mle_estimates}}{List. Maximum likelihood estimates computed on the unique supports.}
+\item{\code{mle_estimates}}{List. Maximum likelihood estimates of model parameters
+(beta and gamma) computed on each unique support.}
 
-\item{\code{support}}{List. All supports selected across the spike grid (may contain duplicates).}
+\item{\code{support}}{List. Raw supports selected across the spike grid
+(may contain duplicates).}
 
-\item{\code{unique_support}}{List. Unique supports obtained from \code{support} (duplicates removed). Each entry corresponds to one element of \code{crit_values}.}
+\item{\code{unique_support}}{List. Unique supports obtained from \code{support}
+(duplicates removed). Each entry corresponds to one element of
+\code{criterion_values}.}
 
-\item{\code{support_mapping}}{Numeric vector. Maps each element of \code{support} to its corresponding unique support index.}
+\item{\code{support_mapping}}{Numeric vector. For each element of \code{support},
+gives the index of the corresponding entry in \code{unique_support}.}
 
-\item{\code{spike_values_grid}}{Numeric vector. The grid of spike parameter values used.}
+\item{\code{spike_values_grid}}{Numeric vector. The grid of spike parameter values
+explored during the SAEMVS run.}
 
-\item{\code{phi_fixed_idx}}{Numeric or NULL. Indices of fixed phi components, needed for console display.}
+\item{\code{phi_fixed_idx}}{Numeric vector or \code{NULL}. Indices of fixed
+\eqn{\phi} components (non-estimated parameters), used for display in
+summaries.}
+
+\item{\code{forced_variables_idx}}{List. For each unique support, indices of
+covariates that were forced into the model (always included).}
+
+\item{\code{selected_variables_idx}}{List. For each unique support, indices of
+covariates that were actively selected by the variable selection
+procedure (excluding forced covariates).}
 }}
 
 \keyword{internal}

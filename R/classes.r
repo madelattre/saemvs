@@ -760,24 +760,59 @@ saemvsTuning <- function(niter = 500,
 
 #' Class saemvsResults
 #'
-#' Results of SAEMVS model selection
+#' Results of SAEMVS model selection.
 #'
-#' Internal results class storing all outputs from SAEMVS grid evaluation.
-#' Objects of this class are created automatically by the algorithm.
+#' Internal results container storing all outputs from a SAEMVS grid search and
+#' model selection procedure. Objects of this class are created automatically
+#' by the SAEMVS algorithm and are not intended to be constructed manually.
 #'
-#' @slot criterion Character. The model selection criterion used, either "BIC" or "e-BIC".
-#' @slot criterion_values Numeric vector. Criterion values (BIC, e-BIC, etc.) computed for each unique support in `unique_support`.
-#' @slot thresholds List. Threshold values applied to beta coefficients at each spike value.
-#' @slot beta_map List. MAP estimates of beta coefficients for each spike value.
-#' @slot mle_estimates List. Maximum likelihood estimates computed on the unique supports.
-#' @slot support List. All supports selected across the spike grid (may contain duplicates).
-#' @slot unique_support List. Unique supports obtained from `support` (duplicates removed). Each entry corresponds to one element of `crit_values`.
-#' @slot support_mapping Numeric vector. Maps each element of `support` to its corresponding unique support index.
-#' @slot spike_values_grid Numeric vector. The grid of spike parameter values used.
-#' @slot phi_fixed_idx Numeric or NULL. Indices of fixed phi components, needed for console display.
+#' @slot criterion Character scalar. The selection criterion used to identify
+#'   the best model. Supported values: `"BIC"` or `"e-BIC"`.
+#'
+#' @slot criterion_values Numeric vector. Values of the selection criterion
+#'   computed for each unique support in \code{unique_support}.
+#'
+#' @slot thresholds List. Thresholds applied to beta coefficients for each
+#'   spike parameter value in \code{spike_values_grid}.
+#'
+#' @slot beta_map List. MAP (maximum a posteriori) estimates of beta
+#'   coefficients for each spike value.
+#'
+#' @slot mle_estimates List. Maximum likelihood estimates of model parameters
+#'   (beta and gamma) computed on each unique support.
+#'
+#' @slot support List. Raw supports selected across the spike grid
+#'   (may contain duplicates).
+#'
+#' @slot unique_support List. Unique supports obtained from \code{support}
+#'   (duplicates removed). Each entry corresponds to one element of
+#'   \code{criterion_values}.
+#'
+#' @slot support_mapping Numeric vector. For each element of \code{support},
+#'   gives the index of the corresponding entry in \code{unique_support}.
+#'
+#' @slot spike_values_grid Numeric vector. The grid of spike parameter values
+#'   explored during the SAEMVS run.
+#'
+#' @slot phi_fixed_idx Numeric vector or \code{NULL}. Indices of fixed
+#'   \eqn{\phi} components (non-estimated parameters), used for display in
+#'   summaries.
+#'
+#' @slot forced_variables_idx List. For each unique support, indices of
+#'   covariates that were forced into the model (always included).
+#'
+#' @slot selected_variables_idx List. For each unique support, indices of
+#'   covariates that were actively selected by the variable selection
+#'   procedure (excluding forced covariates).
+#'
+#' @details
+#' The class is mainly used as an internal result structure and is returned by
+#' functions implementing SAEMVS. Downstream methods such as
+#' \code{\link{summary_saemvs}} make use of these slots for reporting.
 #'
 #' @keywords internal
 #' @exportClass saemvsResults
+
 setClass(
   "saemvsResults",
   slots = list(
@@ -790,7 +825,9 @@ setClass(
     unique_support = "list",
     support_mapping = "numeric",
     spike_values_grid = "numeric",
-    phi_fixed_idx = "numericORNULL"
+    phi_fixed_idx = "numericORNULL",
+    forced_variables_idx = "list",
+    selected_variables_idx = "list"
   ),
   prototype = list(
     criterion = character(0),
@@ -802,7 +839,9 @@ setClass(
     unique_support = list(),
     support_mapping = numeric(0),
     spike_values_grid = numeric(0),
-    phi_fixed_idx = numeric(0)
+    phi_fixed_idx = numeric(0),
+    forced_variables_idx = list(),
+    selected_variables_idx = list()
   ),
   validity = function(object) {
     if (!object@criterion %in% c("BIC", "e-BIC")) {
@@ -841,11 +880,11 @@ setClass(
 #' \code{saemvs}.
 #'
 #' @slot beta_to_select A list of matrices containing the estimated regression
-#'   coefficients for covariates that are related with the components of 
+#'   coefficients for covariates that are related with the components of
 #' `phi` that are subject to selection
 #'   (\code{phi_to_select}) at each iteration.
 #' @slot beta_not_to_select A list of matrices containing the estimated regression
-#'   coefficients for covariates that are related with the components of 
+#'   coefficients for covariates that are related with the components of
 #' `phi` that are not subject to selection
 #'   (\code{phi_not_to_select}) at each iteration.
 #' @slot gamma_to_select A list of covariance matrices estimated at each iteration
@@ -876,7 +915,7 @@ setClass(
     # Check beta_to_select
     if (!is.null(object@beta_to_select)) {
       if (!is.list(object@beta_to_select) ||
-          !all(vapply(object@beta_to_select, is.matrix, logical(1)))) {
+        !all(vapply(object@beta_to_select, is.matrix, logical(1)))) {
         return("'beta_to_select' must be a list of matrices.")
       }
     }
@@ -884,7 +923,7 @@ setClass(
     # Check beta_not_to_select
     if (!is.null(object@beta_not_to_select)) {
       if (!is.list(object@beta_not_to_select) ||
-          !all(vapply(object@beta_not_to_select, is.matrix, logical(1)))) {
+        !all(vapply(object@beta_not_to_select, is.matrix, logical(1)))) {
         return("'beta_not_to_select' must be a list of matrices.")
       }
     }
@@ -892,7 +931,7 @@ setClass(
     # Check gamma_to_select
     if (!is.null(object@gamma_to_select)) {
       if (!is.list(object@gamma_to_select) ||
-          !all(vapply(object@gamma_to_select, is.matrix, logical(1)))) {
+        !all(vapply(object@gamma_to_select, is.matrix, logical(1)))) {
         return("'gamma_to_select' must be a list of matrices.")
       }
     }
@@ -900,7 +939,7 @@ setClass(
     # Check gamma_not_to_select
     if (!is.null(object@gamma_not_to_select)) {
       if (!is.list(object@gamma_not_to_select) ||
-          !all(vapply(object@gamma_not_to_select, is.matrix, logical(1)))) {
+        !all(vapply(object@gamma_not_to_select, is.matrix, logical(1)))) {
         return("'gamma_not_to_select' must be a list of matrices.")
       }
     }
@@ -915,4 +954,3 @@ setClass(
     TRUE
   }
 )
-
