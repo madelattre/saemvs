@@ -1,24 +1,24 @@
 #' Sparse Variable Selection with SAEM
 #'
-#' The \code{saemvs} function performs stochastic approximation EM (SAEM) 
-#' combined with variable selection using a spike-and-slab prior. 
+#' The \code{saemvs} function performs stochastic approximation EM (SAEM)
+#' combined with variable selection using a spike-and-slab prior.
 #' It supports both BIC and extended BIC (e-BIC) as model selection criteria.
 #'
 #' This method explores a grid of spike variances (\eqn{\nu_0}) in parallel,
-#' fits MAP estimates for each candidate support, and then evaluates unique 
+#' fits MAP estimates for each candidate support, and then evaluates unique
 #' supports with the chosen information criterion to select the best model.
 #'
-#' @param data An object of class \code{\link{saemvsData}} 
+#' @param data An object of class \code{\link{saemvsData}}
 #'   containing the dataset (observations and design matrices).
-#' @param model An object of class \code{\link{saemvsModel}} 
-#'   specifying the model structure and the indices of parameters 
+#' @param model An object of class \code{\link{saemvsModel}}
+#'   specifying the model structure and the indices of parameters
 #'   that are candidates for selection (\code{phi_to_select_idx}).
-#' @param init An object of class \code{\link{saemvsInit}} 
+#' @param init An object of class \code{\link{saemvsInit}}
 #'   providing the initialization for the SAEM algorithm.
-#' @param tuning_algo An object of class \code{\link{saemvsTuning}} 
-#'   containing algorithmic tuning parameters such as 
+#' @param tuning_algo An object of class \code{\link{saemvsTuning}}
+#'   containing algorithmic tuning parameters such as
 #'   the spike grid (\code{spike_values_grid}), number of workers, and random seed.
-#' @param hyperparam An object of class \code{\link{saemvsHyperSlab}} 
+#' @param hyperparam An object of class \code{\link{saemvsHyperSlab}}
 #'   containing the hyperparameters for the slab prior.
 #' @param pen Character string indicating the model selection criterion.
 #'   Must be either \code{"BIC"} or \code{"e-BIC"}.
@@ -48,6 +48,10 @@
 #'   \item \code{support_mapping} Mapping from each run to the corresponding unique support.
 #'   \item \code{spike_values_grid} The grid of spike variances used.
 #'   \item \code{phi_fixed_idx} Indices of fixed parameters (not subject to selection).
+#'   \item \code{forced_variables_idx} For each unique support, indices of covariates
+#'     that were forced into the model (always included).
+#'   \item \code{selected_variables_idx} For each unique support, indices of covariates
+#'     that were actively selected by the algorithm (excluding forced ones).
 #' }
 #'
 #' @examples
@@ -65,7 +69,6 @@
 #'
 #' @seealso \code{\link{saemvsResults}}, \code{\link{run_saem}}
 #'
- 
 #' @export
 setGeneric(
   "saemvs",
@@ -101,7 +104,7 @@ setMethod(
         )
       )
     }
-    
+
     # --- Step 2: Parallelization setup ---
     future::plan(future::multisession, workers = tuning_algo@nb_workers)
 
@@ -186,7 +189,18 @@ setMethod(
       function(x) criterion_results[[x]]$mle_param
     )
 
-    # --- Step 5: Assemble results object ---
+    forced_variables_idx <- lapply(
+      seq_along(criterion_results),
+      function(x) criterion_results[[x]]$forced_variables_idx
+    )
+
+    selected_variables_idx <- lapply(
+      seq_along(criterion_results),
+      function(x) criterion_results[[x]]$selected_variables_idx
+    )
+
+    # --- Step 5: Assemble results object including forced and selected variable indices ---
+    
     res <- new(
       "saemvsResults",
       criterion = pen,
@@ -198,7 +212,9 @@ setMethod(
       unique_support = support[unique_support_indices],
       support_mapping = support_index_mapping,
       spike_values_grid = tuning_algo@spike_values_grid,
-      phi_fixed_idx = model@phi_fixed_idx
+      phi_fixed_idx = model@phi_fixed_idx,
+      forced_variables_idx = forced_variables_idx,
+      selected_variables_idx = selected_variables_idx
     )
 
     return(res)
@@ -210,31 +226,31 @@ setMethod(
 
 #' Internal: Single MAP Run of SAEMVS
 #'
-#' Performs one MAP estimation run of the SAEM algorithm for a given 
-#' spike-and-slab prior configuration. 
+#' Performs one MAP estimation run of the SAEM algorithm for a given
+#' spike-and-slab prior configuration.
 #' This function is used internally by \code{\link{saemvs}} to explore
 #' different spike variances and extract candidate supports.
 #'
-#' @param data An object of class \code{\link{saemvsData}} 
+#' @param data An object of class \code{\link{saemvsData}}
 #'   containing the dataset (observations and design matrices).
-#' @param model An object of class \code{\link{saemvsModel}} 
-#'   specifying the model structure and indices of parameters subject 
+#' @param model An object of class \code{\link{saemvsModel}}
+#'   specifying the model structure and indices of parameters subject
 #'   to selection (\code{phi_to_select_idx}).
-#' @param init An object of class \code{\link{saemvsInit}} 
+#' @param init An object of class \code{\link{saemvsInit}}
 #'   providing initial values for the SAEM algorithm.
-#' @param tuning_algo An object of class \code{\link{saemvsTuning}} 
+#' @param tuning_algo An object of class \code{\link{saemvsTuning}}
 #'   defining algorithmic parameters such as the number of iterations (\code{niter}).
-#' @param hyperparam An object of class \code{\link{saemvsHyperSpikeAndSlab}} 
-#'   containing hyperparameters of the spike-and-slab prior 
+#' @param hyperparam An object of class \code{\link{saemvsHyperSpikeAndSlab}}
+#'   containing hyperparameters of the spike-and-slab prior
 #'   (spike variance, slab variance, and mixing proportion).
 #'
 #' @details
-#' The function runs the SAEM algorithm via \code{\link{run_saem}}, 
-#' then constructs the MAP estimates of coefficients and derives 
-#' the support set by thresholding \eqn{\beta} coefficients. 
+#' The function runs the SAEM algorithm via \code{\link{run_saem}},
+#' then constructs the MAP estimates of coefficients and derives
+#' the support set by thresholding \eqn{\beta} coefficients.
 #'
-#' Special handling is performed for parameters that are forced 
-#' to be in the model (\code{x_forced_support}). 
+#' Special handling is performed for parameters that are forced
+#' to be in the model (\code{x_forced_support}).
 #' These are always marked as selected in the support matrix.
 #'
 #' The returned support matrix includes the intercept term as the first row.
@@ -242,7 +258,7 @@ setMethod(
 #' @return A \code{list} with elements:
 #' \itemize{
 #'   \item \code{threshold} Vector of threshold values applied to coefficients.
-#'   \item \code{support} Logical matrix indicating selected variables 
+#'   \item \code{support} Logical matrix indicating selected variables
 #'         across iterations (including intercept).
 #'   \item \code{beta} Matrix of MAP coefficient estimates.
 #' }
@@ -277,7 +293,7 @@ setMethod(
       p <- dim(data@x_candidates)[2] + dim(forced_support)[1]
     }
 
-    
+
     beta_map <- map$beta_to_select[[niter + 1]][-1, ]
     alpha_map <- map$alpha[[niter + 1]]
     threshold_matrix <- matrix(
@@ -290,7 +306,7 @@ setMethod(
     support <- rbind(
       rep(TRUE, n_phi_select),
       abs(beta_map) >= threshold_matrix
-    ) 
+    )
 
     if (!is_empty_support(forced_support)) {
       support[2:(1 + dim(forced_support)[1]), ] <- TRUE
@@ -307,33 +323,33 @@ setMethod(
 
 #' Internal: EBIC/BIC Evaluation for a Candidate Support
 #'
-#' Performs a maximum likelihood estimation (MLE) of the model restricted to 
-#' a given support set of parameters, and computes the corresponding 
-#' information criterion (BIC or extended BIC). 
+#' Performs a maximum likelihood estimation (MLE) of the model restricted to
+#' a given support set of parameters, and computes the corresponding
+#' information criterion (BIC or extended BIC).
 #'
-#' This function is used internally by \code{\link{saemvs}} in the second step 
+#' This function is used internally by \code{\link{saemvs}} in the second step
 #' of the SAEMVS algorithm to rank candidate supports obtained from MAP runs.
 #'
 #' @param k Integer index of the candidate support to be evaluated.
-#' @param support A list of logical or numeric matrices, each encoding a 
+#' @param support A list of logical or numeric matrices, each encoding a
 #'   candidate support obtained from MAP estimation (\code{saemvs_one_map_run}).
 #' @param data An object of class \code{\link{saemvsData}}, the dataset.
-#' @param model An object of class \code{\link{saemvsModel}}, specifying 
+#' @param model An object of class \code{\link{saemvsModel}}, specifying
 #'   model structure and indices of parameters subject to selection.
-#' @param init An object of class \code{\link{saemvsInit}}, providing 
+#' @param init An object of class \code{\link{saemvsInit}}, providing
 #'   initialization for SAEM.
-#' @param tuning_algo An object of class \code{\link{saemvsTuning}}, 
+#' @param tuning_algo An object of class \code{\link{saemvsTuning}},
 #'   containing algorithmic tuning parameters (e.g. number of iterations).
-#' @param pen Character string, the information criterion to use. 
+#' @param pen Character string, the information criterion to use.
 #'   Must be either \code{"BIC"} or \code{"e-BIC"}.
 #'
 #' @details
-#' The function restricts the model to the variables specified in 
-#' \code{support[[k]]}, taking into account variables that are always forced 
-#' into the model (\code{x_forced_support}).  
-#' The SAEM algorithm is then rerun under this restricted model to obtain 
-#' MLE estimates of the parameters.  
-#' Finally, the log-likelihood penalized by the chosen criterion (BIC/e-BIC) 
+#' The function restricts the model to the variables specified in
+#' \code{support[[k]]}, taking into account variables that are always forced
+#' into the model (\code{x_forced_support}).
+#' The SAEM algorithm is then rerun under this restricted model to obtain
+#' MLE estimates of the parameters.
+#' Finally, the log-likelihood penalized by the chosen criterion (BIC/e-BIC)
 #' is computed via \code{\link{loglik}}.
 #'
 #' @return A \code{list} with elements:
@@ -375,12 +391,19 @@ setMethod(
       cand_support <- matrix(as.numeric(support[[k]]),
         nrow = nrow(support[[k]])
       )
+      forced_rows <- integer(0) # no forced covariates
+      # selected_rows <- seq_len(nrow(cand_support))
+      active_candidate_idx <- which(rowSums(cand_support[-1, , drop = FALSE]) > 0)
+      selected_rows <- active_candidate_idx
     } else {
       cand_support <- matrix(as.numeric(support[[k]]),
         nrow = nrow(support[[k]])
       )
-      idx_forced_phi_sel <- seq(1, dim(forced_support)[1]) + 1
+      idx_forced_phi_sel <- seq(1, dim(forced_support)[1])
       cand_support <- cand_support[-idx_forced_phi_sel, ]
+      forced_rows <- idx_forced_phi_sel
+      active_candidate_idx <- which(rowSums(cand_support[-1, , drop = FALSE]) > 0)
+      selected_rows <- active_candidate_idx
     }
 
 
@@ -403,7 +426,7 @@ setMethod(
     ll <- loglik(new_data, new_model, tuning_algo, mle_param, pen, p)
 
 
-    return(list(ll = ll, mle_param = mle_param))
+    return(list(ll = ll, mle_param = mle_param, forced_variables_idx = forced_rows, selected_variables_idx = selected_rows))
   }
 )
 
@@ -414,7 +437,7 @@ setMethod(
 #' procedure on the provided data and model. It is primarily intended for quick testing or
 #' validation of the model setup and algorithm configuration.
 #'
-#' @param data A \code{\link{saemvsData}} object containing the observed response series, 
+#' @param data A \code{\link{saemvsData}} object containing the observed response series,
 #'   candidate covariates, and any forced covariates.
 #' @param model A \code{\link{saemvsModel}} object defining the model structure, including
 #'   parameter indices, random effects, and the model function.
@@ -469,16 +492,16 @@ setMethod(
   function(data, model, init, tuning_algo, hyperparam) {
     # Compile the model function to C++ for efficiency
     compile_model(model@model_func)
-    
+
     # Construct full spike-and-slab hyperparameter object for SAEM
-    full_hyperparam <- saemvsHyperSpikeAndSlab( 
-      tuning_algo@spike_values_grid[1], 
-      hyperparam 
+    full_hyperparam <- saemvsHyperSpikeAndSlab(
+      tuning_algo@spike_values_grid[1],
+      hyperparam
     )
-    
+
     # Run the SAEM algorithm to estimate parameters
     saem_state <- run_saem(data, model, init, tuning_algo, full_hyperparam)
-    
+
     # Package results into saemResults object
     res <- new(
       "saemResults",
@@ -488,7 +511,7 @@ setMethod(
       gamma_not_to_select = saem_state$gamma_not_to_select,
       sigma2 = saem_state$sigma2
     )
-    
+
     return(res)
   }
 )

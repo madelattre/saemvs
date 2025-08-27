@@ -40,6 +40,10 @@ An object of class \code{\link{saemvsResults}} containing:
 \item \code{support_mapping} Mapping from each run to the corresponding unique support.
 \item \code{spike_values_grid} The grid of spike variances used.
 \item \code{phi_fixed_idx} Indices of fixed parameters (not subject to selection).
+\item \code{forced_variables_idx} For each unique support, indices of covariates
+that were forced into the model (always included).
+\item \code{selected_variables_idx} For each unique support, indices of covariates
+that were actively selected by the algorithm (excluding forced ones).
 }
 }
 \description{
