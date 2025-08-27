@@ -27,7 +27,7 @@ Rows are scanned using \code{\link[base]{apply}} over the first dimension,
 checking for the presence of \code{1} in each row.
 }
 \examples{
-m <- matrix(c(0,1,0,0,1,0), nrow = 3, byrow = TRUE)
+m <- matrix(c(0, 1, 0, 0, 1, 0), nrow = 3, byrow = TRUE)
 extract_rows_with_ones(m)
 # Returns: 1 2
 
