@@ -46,8 +46,8 @@
 #'
 #' @examples
 #' \dontrun{
-#' data_obj <- new("saemvsData", ...) # create data
-#' model_obj <- new("saemvsModel", ...) # create model
+#' data_obj <- methods::new("saemvsData", ...) # create data
+#' model_obj <- methods::new("saemvsModel", ...) # create model
 #' processed <- prepare_data(data_obj, model_obj)
 #' }
 setGeneric(
@@ -146,7 +146,7 @@ setMethod(
     }
 
     ## === 5. Construct processed data object ===
-    data_processed <- new("saemvsProcessedData",
+    data_processed <- methods::new("saemvsProcessedData",
       y_series                 = data@y_series,
       t_series                 = data@t_series,
       x_candidates             = data@x_candidates,
@@ -218,24 +218,24 @@ setMethod(
   "prepare_init",
   signature(init = "saemvsInit", model = "saemvsModel"),
   function(init, model) {
-
     ## === 0. Extract indices ===
-    phi_to_select_idx   <- model@phi_to_select_idx
+    phi_to_select_idx <- model@phi_to_select_idx
     phi_not_to_select_idx <- setdiff(seq_len(model@phi_dim), phi_to_select_idx)
-    forced_support       <- model@x_forced_support
+    forced_support <- model@x_forced_support
 
     ## === 1. Prepare beta and gamma for parameters subject to selection ===
     if (length(phi_to_select_idx) == 0) {
-      beta_to_select  <- NULL
+      beta_to_select <- NULL
       gamma_to_select <- NULL
-      inclusion_prob  <- NULL
+      inclusion_prob <- NULL
     } else {
       # Extract forced support for parameters subject to selection
       if (is_empty_support(forced_support)) {
         xf_sel <- NULL
       } else {
         xf_sel <- matrix(forced_support[, phi_to_select_idx],
-                         ncol = length(phi_to_select_idx))
+          ncol = length(phi_to_select_idx)
+        )
       }
 
       # Compose beta_to_select
@@ -266,20 +266,22 @@ setMethod(
 
     ## === 2. Prepare beta and gamma for parameters NOT subject to selection ===
     if (length(phi_not_to_select_idx) == 0) {
-      beta_not_to_select  <- NULL
+      beta_not_to_select <- NULL
       gamma_not_to_select <- NULL
     } else {
       if (is_empty_support(forced_support)) {
         xf_not_sel <- NULL
       } else {
         xf_not_sel <- matrix(forced_support[, phi_not_to_select_idx],
-                             ncol = length(phi_not_to_select_idx))
+          ncol = length(phi_not_to_select_idx)
+        )
       }
 
       # Compose beta_not_to_select
       if (is_empty_support(xf_not_sel)) {
         beta_not_to_select <- matrix(init@intercept[phi_not_to_select_idx],
-                                     ncol = length(phi_not_to_select_idx))
+          ncol = length(phi_not_to_select_idx)
+        )
       } else {
         rows_forced_not_sel <- extract_rows_with_ones(xf_not_sel)
         beta_forced_not_sel <- matrix(
@@ -300,7 +302,7 @@ setMethod(
     }
 
     ## === 3. Construct processed init object ===
-    init_processed <- new("saemvsProcessedInit",
+    init_processed <- methods::new("saemvsProcessedInit",
       inclusion_prob      = inclusion_prob,
       sigma2              = init@sigma2,
       gamma_to_select     = gamma_to_select,
@@ -522,4 +524,3 @@ setMethod(
     return(config)
   }
 )
-

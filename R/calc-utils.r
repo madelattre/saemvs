@@ -1,5 +1,5 @@
 #' Compute threshold for spike-and-slab prior
-#' 
+#'
 #' Computes the threshold value for variable selection in a spike-and-slab prior,
 #'              based on prior variances and inclusion probability.
 #' @param nu1 Numeric. Variance of the "slab" component (large variance).
@@ -13,7 +13,7 @@ threshold <- function(nu1, nu0, alpha) {
 }
 
 #' Compute posterior inclusion probability p*
-#' 
+#'
 #' Computes the posterior probability that a coefficient belongs to the "slab" component
 #'              of a spike-and-slab prior. This is used for fast variable selection updates.
 #' @param beta Numeric matrix. Current coefficient estimates (rows: covariates, columns: responses/parameters).
@@ -23,8 +23,8 @@ threshold <- function(nu1, nu0, alpha) {
 #' @return Numeric matrix of the same dimension as \code{beta}. Each entry is the posterior probability p*.
 #' @keywords internal
 p_star <- function(beta, alpha, nu0, nu1) {
-  norm1 <- dnorm(beta, mean = 0, sd = sqrt(nu1))
-  norm0 <- dnorm(beta, mean = 0, sd = sqrt(nu0))
+  norm1 <- stats::dnorm(beta, mean = 0, sd = sqrt(nu1))
+  norm0 <- stats::dnorm(beta, mean = 0, sd = sqrt(nu0))
   num <- norm1 * rep(alpha, each = nrow(beta))
   denom <- num + norm0 * rep(1 - alpha, each = nrow(beta))
   p_star <- num / denom
@@ -32,7 +32,7 @@ p_star <- function(beta, alpha, nu0, nu1) {
 }
 
 #' Determine algorithmic case based on model configuration
-#' 
+#'
 #' Determines the operational case for the algorithm (e.g., MAP vs MLE, full vs partial selection,
 #'              presence of fixed parameters) based on the provided configuration.
 #' @param config List. Configuration object containing the following elements:

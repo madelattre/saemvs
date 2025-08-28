@@ -19,10 +19,11 @@
 #' }
 #'
 #' @examples
+#' \dontrun{
 #' x <- matrix(1:6, nrow = 2, ncol = 3)
 #' supp <- matrix(c(1, 0, 1, 0, 1, 1), nrow = 2, byrow = TRUE)
 #' expand_to_list(x, supp, q = 2)
-#'
+#'}
 #' @keywords internal
 expand_to_list <- function(x_mat, support, q) {
   fun_name <- "expand_to_list"
@@ -89,12 +90,13 @@ expand_to_list <- function(x_mat, support, q) {
 #'   (NULL matrices, dimension mismatch, invalid indices, or mismatched `alphas` length).
 #'
 #' @examples
+#' \dontrun{
 #' sigma_old <- diag(3)
 #' sigma_temp <- matrix(1, 3, 3)
 #' shrink_indices <- c(1, 3)
 #' alphas <- c(0.5, 0.2)
 #' shrink_covariance_matrix(sigma_old, sigma_temp, shrink_indices, alphas)
-#'
+#'}
 #' @keywords internal
 shrink_covariance_matrix <- function(
     sigma_old, sigma_temp, shrink_indices, alphas) {
@@ -163,10 +165,11 @@ shrink_covariance_matrix <- function(
 #'   throws an informative error.
 #'
 #' @examples
+#' \dontrun{
 #' mat <- matrix(1:9, nrow = 3, byrow = TRUE)
 #' indices <- c(1, 3)
 #' zero_out_shrinked(mat, indices)
-#'
+#'}
 #' @keywords internal
 zero_out_shrinked <- function(mat, indices) {
   if (is.null(mat) || !is.matrix(mat)) {
@@ -215,10 +218,12 @@ zero_out_shrinked <- function(mat, indices) {
 #' - The output matrix does not contain an intercept column.
 #'
 #' @examples
+#' \dontrun{
 #' fixed_support <- matrix(c(1, 0, 0, 1), nrow = 2, byrow = TRUE)
 #' selected_support <- matrix(c(0, 1, 1, 0), nrow = 2, byrow = TRUE)
 #' inv_perm <- c(2, 1)
 #' merge_support(fixed_support, selected_support, nb_phi_s = 2, nb_phi_ns = 2, inv_perm)
+#' }
 #'
 #' @keywords internal
 merge_support <- function(
@@ -264,7 +269,7 @@ merge_support <- function(
 
 #' Check if a support matrix is empty
 #'
-#' Internal utility function that tests whether a support matrix is considered empty.  
+#' Internal utility function that tests whether a support matrix is considered empty.
 #' A support is empty if it is `NULL`, has zero length, or contains only zeros.
 #'
 #' @param support Numeric matrix, vector, or NULL. Support to be checked.
@@ -274,14 +279,16 @@ merge_support <- function(
 #'   - `FALSE` otherwise.
 #'
 #' @details
-#' - Internal function; should **not** be exported.  
-#' - Accepts both matrices and vectors.  
-#' - Returns `TRUE` if the input is `NULL`, has zero elements, or is entirely zero.  
+#' - Internal function; should **not** be exported.
+#' - Accepts both matrices and vectors.
+#' - Returns `TRUE` if the input is `NULL`, has zero elements, or is entirely zero.
 #'
 #' @examples
-#' is_empty_support(NULL)                  # TRUE
-#' is_empty_support(matrix(0, nrow=2, ncol=2)) # TRUE
-#' is_empty_support(matrix(c(0,1), nrow=1))    # FALSE
+#' \dontrun{
+#' is_empty_support(NULL) # TRUE
+#' is_empty_support(matrix(0, nrow = 2, ncol = 2)) # TRUE
+#' is_empty_support(matrix(c(0, 1), nrow = 1)) # FALSE
+#' }
 #' @keywords internal
 is_empty_support <- function(support) {
   if (is.null(support)) {
@@ -323,11 +330,12 @@ is_empty_support <- function(support) {
 #' \code{FALSE} otherwise.
 #'
 #' @examples
-#' is_empty_matrix(NULL)              # TRUE
-#' is_empty_matrix(matrix(nrow = 0))  # TRUE
-#' is_empty_matrix(matrix(, 2, 0))    # TRUE
-#' is_empty_matrix(matrix(0, 2, 2))   # FALSE
-#'
+#' \dontrun{
+#' is_empty_matrix(NULL) # TRUE
+#' is_empty_matrix(matrix(nrow = 0)) # TRUE
+#' is_empty_matrix(matrix(, 2, 0)) # TRUE
+#' is_empty_matrix(matrix(0, 2, 2)) # FALSE
+#'}
 #' @keywords internal
 is_empty_matrix <- function(mat) {
   if (is.null(mat)) {
@@ -363,7 +371,8 @@ is_empty_matrix <- function(mat) {
 #'   is empty.
 #'
 #' @examples
-#' m <- matrix(c(0,1,0,0,1,0), nrow = 3, byrow = TRUE)
+#' \dontrun{
+#' m <- matrix(c(0, 1, 0, 0, 1, 0), nrow = 3, byrow = TRUE)
 #' extract_rows_with_ones(m)
 #' # Returns: 1 2
 #'
@@ -372,7 +381,7 @@ is_empty_matrix <- function(mat) {
 #'
 #' extract_rows_with_ones(NULL)
 #' # Returns: integer(0)
-#'
+#'}
 #' @seealso \code{\link{is_empty_matrix}}
 #' @keywords internal
 extract_rows_with_ones <- function(mat) {
@@ -409,12 +418,13 @@ extract_rows_with_ones <- function(mat) {
 #'   submatrix contains only zeros.
 #'
 #' @examples
-#' supp <- matrix(c(1,0,0,1,0,0), nrow = 2, byrow = TRUE)
+#' \dontrun{
+#' supp <- matrix(c(1, 0, 0, 1, 0, 0), nrow = 2, byrow = TRUE)
 #'
-#' extract_sub_support(supp, 1)   # Returns matrix with first column
+#' extract_sub_support(supp, 1) # Returns matrix with first column
 #' extract_sub_support(supp, 2:3) # Returns NULL if only zeros
-#' extract_sub_support(NULL, 1)   # Returns NULL
-#'
+#' extract_sub_support(NULL, 1) # Returns NULL
+#'}
 #' @seealso \code{\link{is_empty_support}}
 #' @keywords internal
 extract_sub_support <- function(support, idx) {

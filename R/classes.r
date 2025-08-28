@@ -25,9 +25,12 @@ setClassUnion("listORNULL", c("list", "NULL"))
 #' @exportClass saemvsData
 #'
 #' @examples
+#' \dontrun{
 #' y <- list(rnorm(10), rnorm(8))
 #' t <- list(1:10, 1:8)
 #' d <- saemvsData(y, t)
+#' }
+
 setClass(
   "saemvsData",
   slots = list(
@@ -109,7 +112,7 @@ setClass(
 #' @return An object of class \code{saemvsData}.
 #' @export
 saemvsData <- function(y, t, x_candidates = NULL, x_forced = NULL) {
-  new("saemvsData",
+  methods::new("saemvsData",
     y_series     = y,
     t_series     = t,
     x_candidates = x_candidates,
@@ -222,7 +225,7 @@ saemvsProcessedData <- function(x_phi_to_select = NULL,
                                 kron_tx_x_phi_to_select = NULL,
                                 x_phi_not_to_select_list = NULL,
                                 ...) {
-  new("saemvsProcessedData",
+  methods::new("saemvsProcessedData",
     x_phi_to_select          = x_phi_to_select,
     x_phi_not_to_select      = x_phi_not_to_select,
     tx_x_phi_to_select       = tx_x_phi_to_select,
@@ -313,7 +316,7 @@ setClass(
 saemvsModel <- function(
     g, phi_dim, phi_to_select_idx = c(), phi_fixed_idx = c(),
     x_forced_support = matrix(numeric(0), nrow = 0, ncol = 0)) {
-  new("saemvsModel",
+  methods::new("saemvsModel",
     model_func = g,
     phi_dim = as.integer(phi_dim),
     phi_to_select_idx = as.integer(phi_to_select_idx),
@@ -389,7 +392,7 @@ setClass(
 saemvsHyperSlab <- function(slab_parameter = 12000,
                             cov_re_prior_scale,
                             cov_re_prior_df = 1) {
-  new("saemvsHyperSlab",
+  methods::new("saemvsHyperSlab",
     slab_parameter = slab_parameter,
     cov_re_prior_scale = cov_re_prior_scale,
     cov_re_prior_df = cov_re_prior_df,
@@ -436,7 +439,7 @@ setClass(
 #' @export
 saemvsHyperSpikeAndSlab <- function(spike_parameter,
                                     hyper_slab) {
-  new("saemvsHyperSpikeAndSlab",
+  methods::new("saemvsHyperSpikeAndSlab",
     spike_parameter = spike_parameter,
     slab_parameter = hyper_slab@slab_parameter,
     cov_re_prior_scale = hyper_slab@cov_re_prior_scale,
@@ -519,7 +522,7 @@ saemvsInit <- function(intercept,
                        beta_candidates = NULL,
                        cov_re,
                        sigma2 = 1) {
-  new("saemvsInit",
+  methods::new("saemvsInit",
     intercept = intercept,
     beta_forced = beta_forced,
     beta_candidates = beta_candidates,
@@ -572,7 +575,7 @@ saemvsProcessedInit <- function(beta_to_select = NULL,
                                 gamma_not_to_select = NULL,
                                 sigma2 = 1,
                                 inclusion_prob = numeric(0)) {
-  new("saemvsProcessedInit",
+  methods::new("saemvsProcessedInit",
     beta_to_select = beta_to_select,
     beta_not_to_select = beta_not_to_select,
     gamma_to_select = gamma_to_select,
@@ -742,7 +745,7 @@ saemvsTuning <- function(niter = 500,
     1 / ((1:(niter - nburnin + 1))^(2 / 3))
   )
 
-  new("saemvsTuning",
+  methods::new("saemvsTuning",
     niter = as.integer(niter),
     nburnin = as.integer(nburnin),
     step = step,

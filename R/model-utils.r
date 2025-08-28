@@ -1,7 +1,7 @@
 #' Compile a user-defined model into C++ with RcppArmadillo
 #'
 #' Internal function that compiles a user-specified R function into optimized C++
-#' code using \pkg{RcppArmadillo}.  
+#' code using \pkg{RcppArmadillo}.
 #'
 #' The function extracts the body of an R function \code{g_fun}, adapts the
 #' indexing from R (1-based) to C++ (0-based), and generates C++ code containing:
@@ -46,18 +46,19 @@
 #'
 #' @examples
 #' \dontrun{
-#' g_fun <- function(phi, t) { phi[1] + phi[2] * t }
+#' g_fun <- function(phi, t) {
+#'   phi[1] + phi[2] * t
+#' }
 #' compile_model(g_fun)
 #'
 #' # Then call the compiled function
 #' g_scalar_cpp(c(1, 2), 0.5)
 #' }
 compile_model <- function(g_fun, build_dir = "compiled_models") {
-  
   # Extract the body of the R function
   body_txt <- deparse(body(g_fun))
   body_txt <- paste(body_txt, collapse = "")
-  
+
   # Adjustment of R indexing (1-based) to C++ (0-based)
   body_txt <- gsub("phi\\[(\\d+)\\]", "phi[\\1-1]", body_txt)
 
@@ -189,7 +190,7 @@ List metropolis_vector_cpp(
 #'
 #' @details
 #' This function is a thin wrapper around \code{dyn.load()}, and is intended for
-#' internal use.  
+#' internal use.
 #' It does not check whether the symbols are already loaded or whether the file
 #' was compiled with \code{\link{compile_model}}.
 #'

@@ -148,7 +148,7 @@ setMethod(
     # Deduplicate supports
     support_hashes <- sapply(support, digest::digest)
     unique_support_indices <- which(!duplicated(support_hashes) == TRUE)
-    hash_to_compact_index <- setNames(
+    hash_to_compact_index <- stats::setNames(
       seq_along(unique_support_indices),
       support_hashes[unique_support_indices]
     )
@@ -200,8 +200,8 @@ setMethod(
     )
 
     # --- Step 5: Assemble results object including forced and selected variable indices ---
-    
-    res <- new(
+
+    res <- methods::new(
       "saemvsResults",
       criterion = pen,
       criterion_values = criterion_values,
@@ -503,7 +503,7 @@ setMethod(
     saem_state <- run_saem(data, model, init, tuning_algo, full_hyperparam)
 
     # Package results into saemResults object
-    res <- new(
+    res <- methods::new(
       "saemResults",
       beta_to_select = saem_state$beta_to_select,
       beta_not_to_select = saem_state$beta_not_to_select,
