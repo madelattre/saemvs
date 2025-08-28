@@ -1,3 +1,7 @@
+^\\.vscode$
+^\\.pdf$
+^compiled_models$
+^saemvs_doc\\.pdf$
 ^saemvs\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
