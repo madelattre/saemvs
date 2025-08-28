@@ -17,12 +17,12 @@ selected by the model. Must not include an intercept.}
 
 \item{nb_phi_ns}{Integer. Number of non-selected parameters (columns) in the model.}
 
-\item{inv_perm}{Integer vector. Permutation to reorder columns of the combined
+\item{perm}{Integer vector. Permutation to reorder columns of the combined
 support matrix.}
 }
 \value{
 A numeric matrix combining \code{fixed_support} and \code{selected_support},
-reordered by \code{inv_perm}. Returns \code{NULL} if both inputs are empty or NULL.
+reordered by \code{perm}. Returns \code{NULL} if both inputs are empty or NULL.
 }
 \description{
 Internal utility function that merges two covariate support matrices
@@ -42,8 +42,8 @@ it is ignored in the combination.
 \dontrun{
 fixed_support <- matrix(c(1, 0, 0, 1), nrow = 2, byrow = TRUE)
 selected_support <- matrix(c(0, 1, 1, 0), nrow = 2, byrow = TRUE)
-inv_perm <- c(2, 1)
-merge_support(fixed_support, selected_support, nb_phi_s = 2, nb_phi_ns = 2, inv_perm)
+perm <- c(2, 1)
+merge_support(fixed_support, selected_support, nb_phi_s = 2, nb_phi_ns = 2, perm)
 }
 
 }

@@ -3,11 +3,10 @@
 \docType{class}
 \name{saemvsHyperSlab-class}
 \alias{saemvsHyperSlab-class}
-\title{Class saemvsHyperSlab}
+\title{saemvsHyperSlab}
 \description{
 Represents the hyperparameters for the slab component in a spike-and-slab prior.
-}
-\details{
+
 Only the slab parameter, random effects covariance prior, and degrees of freedom need
 to be specified by the user. Other hyperparameters are fixed internally.
 }

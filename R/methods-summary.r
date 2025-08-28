@@ -35,6 +35,7 @@ setGeneric(
   }
 )
 
+#' @rdname summary_saemvs
 #' @exportMethod summary_saemvs
 setMethod(
   "summary_saemvs",

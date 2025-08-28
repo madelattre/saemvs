@@ -16,9 +16,10 @@ setClassUnion("numericORNULL", c("numeric", "NULL"))
 #' @keywords internal
 setClassUnion("listORNULL", c("list", "NULL"))
 
-#' Class saemvsData
+
+#' @title saemvsData class
+#' @description A class to store user-provided data for the SAEMVS algorithm.
 #'
-#' A class to store user-provided data for the SAEMVS algorithm.
 #' This is the main entry point for users: responses, time indices,
 #' candidate covariates for selection, and forced covariates.
 #'
@@ -115,8 +116,8 @@ setClass(
 )
 
 
-
-#' Constructor for saemvsData
+#'@rdname saemvsData
+#'@title Constructor for saemvsData
 #'
 #' @param y list of numeric vectors (responses).
 #' @param t list of numeric vectors (time indices).
@@ -250,10 +251,8 @@ saemvsProcessedData <- function(x_phi_to_select = NULL,
   )
 }
 
-
-#' Class saemvsModel
-#'
-#' Represents a model for SAEMVS, including the model function and
+#' @title saemvsModel class
+#' @description Represents a model for SAEMVS, including the model function and
 #' indexing information for variable selection on parameters phi.
 #'
 #' @slot model_func A function of form function(phi, t) returning predicted values.
@@ -326,7 +325,8 @@ setClass(
   }
 )
 
-#' Constructor for saemvsModel
+#' @rdname saemvsModel
+#' @title Constructor for saemvsModel
 #'
 #' @param g Function of form `function(phi, t)` returning predicted values.
 #' @param phi_dim Integer: total number of phi parameters.
@@ -349,9 +349,8 @@ saemvsModel <- function(
 }
 
 
-#' Class saemvsHyperSlab
-#'
-#' Represents the hyperparameters for the slab component in a spike-and-slab prior.
+#' @title saemvsHyperSlab
+#' @description Represents the hyperparameters for the slab component in a spike-and-slab prior.
 #'
 #' Only the slab parameter, random effects covariance prior, and degrees of freedom need
 #' to be specified by the user. Other hyperparameters are fixed internally.
@@ -410,9 +409,10 @@ setClass(
   }
 )
 
-#' Constructor for saemvsHyperSlab
+#' @rdname saemvsHyperSlab
+#' @title Constructor for saemvsHyperSlab
 #'
-#' Create a \code{saemvsHyperSlab} object specifying hyperparameters for
+#' @description Create a \code{saemvsHyperSlab} object specifying hyperparameters for
 #' the slab component in a spike-and-slab prior.
 #'
 #' Only the slab parameter, the scale matrix for the random effects covariance,
@@ -436,7 +436,6 @@ setClass(
 #' }
 #' 
 #' @export
-#' @name saemvsHyperSlab
 saemvsHyperSlab <- function(slab_parameter = 12000,
                             cov_re_prior_scale,
                             cov_re_prior_df = 1) {
@@ -505,11 +504,8 @@ saemvsHyperSpikeAndSlab <- function(spike_parameter,
   )
 }
 
-
-
-#' Class saemvsInit
-#'
-#' Initialization of user-provided parameters
+#' @title saemvsInit class
+#' @description Initialization of user-provided parameters
 #'
 #' Stores the initial values of parameters provided by the user for the SAEMVS algorithm.
 #'
@@ -568,10 +564,10 @@ setClass(
   }
 )
 
-#' Constructor for saemvsInit
+#' @rdname saemvsInit
+#' @title Constructor for saemvsInit
 #'
-#' Create an object of class \code{saemvsInit} specifying initial values
-#' for the SAEMVS algorithm.
+#' @description Create an object of class \code{saemvsInit} specifying initial values for the SAEMVS algorithm.
 #'
 #' @param intercept Numeric vector. Intercepts for each component of phi.
 #' @param beta_forced Numeric matrix or NULL. Coefficients for forced covariates.
@@ -657,9 +653,8 @@ saemvsProcessedInit <- function(beta_to_select = NULL,
   )
 }
 
-#' Class saemvsTuning
-#'
-#' Algorithm tuning parameters for SAEMVS
+#' @title saemvsTuning class
+#' @description Algorithm tuning parameters for SAEMVS
 #'
 #' This class contains all parameters controlling the behavior of the SAEMVS algorithm,
 #' including iteration numbers, Metropolis-Hastings steps, importance sampling, step-size
@@ -801,10 +796,10 @@ setClass(
   }
 )
 
-#' Constructor for saemvsTuning
+#' @rdname saemvsTuning
+#' @title Constructor for saemvsTuning
 #'
-#' Create a \code{saemvsTuning} object specifying algorithm tuning parameters
-#' for SAEMVS.
+#' @description Create a \code{saemvsTuning} object specifying algorithm tuning parameters for SAEMVS.
 #'
 #' @param niter Integer. Total number of SAEM iterations (positive).
 #' @param nburnin Integer. Number of burn-in iterations (non-negative, ≤ niter).

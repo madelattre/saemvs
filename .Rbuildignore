@@ -1,5 +1,6 @@
 
 ^\.vscode$
+^\.Rdata$
 ^compiled_models$
 ^saemvs_doc\.pdf$
 ^saemvs\.Rproj$

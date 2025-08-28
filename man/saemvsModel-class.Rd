@@ -3,7 +3,7 @@
 \docType{class}
 \name{saemvsModel-class}
 \alias{saemvsModel-class}
-\title{Class saemvsModel}
+\title{saemvsModel class}
 \description{
 Represents a model for SAEMVS, including the model function and
 indexing information for variable selection on parameters phi.

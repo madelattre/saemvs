@@ -42,6 +42,5 @@ saemvsTuning(
 An object of class \code{saemvsTuning}.
 }
 \description{
-Create a \code{saemvsTuning} object specifying algorithm tuning parameters
-for SAEMVS.
+Create a \code{saemvsTuning} object specifying algorithm tuning parameters for SAEMVS.
 }

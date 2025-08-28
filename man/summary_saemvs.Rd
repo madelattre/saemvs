@@ -2,9 +2,12 @@
 % Please edit documentation in R/methods-summary.r
 \name{summary_saemvs}
 \alias{summary_saemvs}
+\alias{summary_saemvs,saemvsResults,numeric-method}
 \title{Summary of SAEM Variable Selection Results}
 \usage{
 summary_saemvs(saem_results, digits)
+
+\S4method{summary_saemvs}{saemvsResults,numeric}(saem_results, digits = 3)
 }
 \arguments{
 \item{saem_results}{An object of class \code{saemvsResults} containing

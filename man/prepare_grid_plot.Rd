@@ -2,9 +2,12 @@
 % Please edit documentation in R/methods-plots.r
 \name{prepare_grid_plot}
 \alias{prepare_grid_plot}
+\alias{prepare_grid_plot,saemvsResults-method}
 \title{Prepare Grid Plots for SAEMVS Results}
 \usage{
 prepare_grid_plot(res_saemvs)
+
+\S4method{prepare_grid_plot}{saemvsResults}(res_saemvs)
 }
 \arguments{
 \item{res_saemvs}{An object of class \linkS4class{saemvsResults},

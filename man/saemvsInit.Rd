@@ -27,6 +27,5 @@ saemvsInit(
 An object of class \code{saemvsInit}.
 }
 \description{
-Create an object of class \code{saemvsInit} specifying initial values
-for the SAEMVS algorithm.
+Create an object of class \code{saemvsInit} specifying initial values for the SAEMVS algorithm.
 }

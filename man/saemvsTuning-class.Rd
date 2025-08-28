@@ -3,11 +3,10 @@
 \docType{class}
 \name{saemvsTuning-class}
 \alias{saemvsTuning-class}
-\title{Class saemvsTuning}
+\title{saemvsTuning class}
 \description{
 Algorithm tuning parameters for SAEMVS
-}
-\details{
+
 This class contains all parameters controlling the behavior of the SAEMVS algorithm,
 including iteration numbers, Metropolis-Hastings steps, importance sampling, step-size
 schedule, and the grid of spike values for variable selection.

@@ -2,9 +2,12 @@
 % Please edit documentation in R/methods-saemvs.r
 \name{saemvs}
 \alias{saemvs}
+\alias{saemvs,saemvsData,saemvsModel,saemvsInit,saemvsTuning,saemvsHyperSlab,character-method}
 \title{Sparse Variable Selection with SAEM}
 \usage{
 saemvs(data, model, init, tuning_algo, hyperparam, pen)
+
+\S4method{saemvs}{saemvsData,saemvsModel,saemvsInit,saemvsTuning,saemvsHyperSlab,character}(data, model, init, tuning_algo, hyperparam, pen)
 }
 \arguments{
 \item{data}{An object of class \link[=saemvsData-class]{saemvsData}
@@ -28,7 +31,7 @@ containing the hyperparameters for the slab prior.}
 Must be either \code{"BIC"} or \code{"e-BIC"}.}
 }
 \value{
-An object of class \code{\linkS4class{{saemvsResults}} containing:
+An object of class \code{\linkS4class{saemvsResults}} containing:
 \itemize{
 \item \code{criterion}: The selection criterion used (\code{"BIC"} or \code{"e-BIC"}).
 \item \code{criterion_values}: Values of the criterion for each unique support.
@@ -83,5 +86,5 @@ result <- saemvs(
 
 }
 \seealso{
-\code{\linkS4class{{saemvsResults}}, \code{\link{run_saem}}
+\code{\linkS4class{saemvsResults}}, \code{\link{run_saem}}
 }

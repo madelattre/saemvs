@@ -2,9 +2,12 @@
 % Please edit documentation in R/methods-plots.r
 \name{convergence_plot}
 \alias{convergence_plot}
+\alias{convergence_plot,saemResults,character,character-method}
 \title{Convergence Diagnostic Plot for SAEM Estimation}
 \usage{
 convergence_plot(res_saem, component, sel_components)
+
+\S4method{convergence_plot}{saemResults,character,character}(res_saem, component, sel_components)
 }
 \arguments{
 \item{res_saem}{An object of class \linkS4class{saemResults}.}

@@ -50,6 +50,7 @@ setGeneric(
   }
 )
 
+#' @rdname convergence_plot
 #' @exportMethod convergence_plot
 setMethod(
   "convergence_plot",
@@ -204,6 +205,7 @@ setGeneric(
   function(res_saemvs) standardGeneric("prepare_grid_plot")
 )
 
+#' @rdname prepare_grid_plot
 #' @exportMethod prepare_grid_plot
 setMethod(
   "prepare_grid_plot",

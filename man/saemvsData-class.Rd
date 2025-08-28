@@ -3,12 +3,13 @@
 \docType{class}
 \name{saemvsData-class}
 \alias{saemvsData-class}
-\title{Class saemvsData}
+\title{saemvsData class}
 \value{
 An object of class \code{saemvsData}.
 }
 \description{
 A class to store user-provided data for the SAEMVS algorithm.
+
 This is the main entry point for users: responses, time indices,
 candidate covariates for selection, and forced covariates.
 }

@@ -27,8 +27,7 @@ An object of class \code{saemvsHyperSlab}.
 \description{
 Create a \code{saemvsHyperSlab} object specifying hyperparameters for
 the slab component in a spike-and-slab prior.
-}
-\details{
+
 Only the slab parameter, the scale matrix for the random effects covariance,
 and the degrees of freedom need to be specified by the user. All other
 hyperparameters are fixed internally.

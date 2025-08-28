@@ -3,13 +3,13 @@
 \docType{class}
 \name{saemvsInit-class}
 \alias{saemvsInit-class}
-\title{Class saemvsInit}
+\title{saemvsInit class}
 \description{
 Initialization of user-provided parameters
+
+Stores the initial values of parameters provided by the user for the SAEMVS algorithm.
 }
 \details{
-Stores the initial values of parameters provided by the user for the SAEMVS algorithm.
-
 Validity checks ensure:
 \itemize{
 \item The number of columns in \code{beta_forced} and \code{beta_candidates}

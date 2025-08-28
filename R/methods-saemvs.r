@@ -36,7 +36,7 @@
 #' Parallel execution is handled using the `future` and `furrr` packages.
 #' The model function (C++ code) must be compiled on each worker before execution.
 #'
-#' @return An object of class \code{\linkS4class{{saemvsResults}} containing:
+#' @return An object of class \code{\linkS4class{saemvsResults}} containing:
 #' \itemize{
 #'   \item `criterion`: The selection criterion used (`"BIC"` or `"e-BIC"`).
 #'   \item `criterion_values`: Values of the criterion for each unique support.
@@ -67,7 +67,7 @@
 #' )
 #' }
 #'
-#' @seealso \code{\linkS4class{{saemvsResults}}, \code{\link{run_saem}}
+#' @seealso \code{\linkS4class{saemvsResults}}, \code{\link{run_saem}}
 #' @export
 setGeneric(
   "saemvs",
@@ -76,6 +76,7 @@ setGeneric(
   }
 )
 
+#' @rdname saemvs
 #' @exportMethod saemvs
 setMethod(
   "saemvs",
@@ -465,6 +466,7 @@ setGeneric(
   }
 )
 
+#' @rdname test_saemvs
 #' @exportMethod test_saemvs
 setMethod(
   "test_saemvs",

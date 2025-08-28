@@ -2,9 +2,12 @@
 % Please edit documentation in R/methods-saemvs.r
 \name{test_saemvs}
 \alias{test_saemvs}
+\alias{test_saemvs,saemvsData,saemvsModel,saemvsInit,saemvsTuning,saemvsHyperSlab-method}
 \title{Run a Single SAEMVS Test Fit}
 \usage{
 test_saemvs(data, model, init, tuning_algo, hyperparam)
+
+\S4method{test_saemvs}{saemvsData,saemvsModel,saemvsInit,saemvsTuning,saemvsHyperSlab}(data, model, init, tuning_algo, hyperparam)
 }
 \arguments{
 \item{data}{A \link[=saemvsData-class]{saemvsData} object containing the observed response series.}
