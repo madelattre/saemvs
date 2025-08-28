@@ -1,5 +1,5 @@
 #' Stochastic Approximation Step for parameters subject to selection
-#' 
+#'
 #' Update the stochastic approximation statistics for parameters that are subject to selection.
 #' This function updates s1, s2_to_select, and s3_to_select in the MCMC state for a given iteration.
 #' @param config List containing model configuration, including step sizes, series data, parameter indices, and the model function.
@@ -30,7 +30,7 @@ sa_step_to_select <- function(config, iteration, state) {
 }
 
 #' Stochastic Approximation Step for parameters not subject to selection
-#' 
+#'
 #' Update the stochastic approximation statistics for parameters that are not subject to selection.
 #' This function updates s1, s2_not_to_select, and s3_not_to_select in the MCMC state for a given iteration.
 #' @param config List containing model configuration, including step sizes, series data, parameter indices, and the model function.
@@ -61,7 +61,7 @@ sa_step_not_to_select <- function(config, iteration, state) {
 }
 
 #' Stochastic Approximation Step for All Parameters
-#' 
+#'
 #' Update the stochastic approximation statistics for all parameters simultaneously.
 #' This function updates s1, s2_to_select, s3_to_select, s2_not_to_select, and s3_not_to_select in the MCMC state for a given iteration.
 #' @param config List containing model configuration, including step sizes, series data, parameter indices, and the model function.

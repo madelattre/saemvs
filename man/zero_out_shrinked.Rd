@@ -29,9 +29,10 @@ throws an informative error.
 }
 }
 \examples{
+\dontrun{
 mat <- matrix(1:9, nrow = 3, byrow = TRUE)
 indices <- c(1, 3)
 zero_out_shrinked(mat, indices)
-
+}
 }
 \keyword{internal}

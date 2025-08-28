@@ -1,5 +1,5 @@
 #' Internal M-step: update parameters not subject to selection
-#' 
+#'
 #' Performs the M-step updates for parameters that are not subject to variable selection.
 #'              Updates beta, gamma, and related sufficient statistics for the "not_to_select" parameters.
 #' @param config List containing model configuration, including design matrices and hyperparameters.
@@ -52,7 +52,7 @@ m_step_not_to_select <- function(config, k, state) {
 }
 
 #' Internal M-step: update parameters subject to selection
-#' 
+#'
 #' Performs the M-step updates for parameters that are subject to variable selection.
 #'              Updates beta, gamma, and inclusion probabilities (alpha) for the "to_select" parameters.
 #' @param config List containing model configuration, including design matrices and hyperparameters.
@@ -113,7 +113,7 @@ m_step_to_select <- function(config, k, state) {
 }
 
 #' Internal M-step: update MLE parameters
-#' 
+#'
 #' Updates the residual variance (sigma2) and parameters not subject to selection (MLE case).
 #' @param config List containing model configuration and hyperparameters.
 #' @param k Current iteration index (integer).
@@ -131,7 +131,7 @@ m_step_mle <- function(config, k, state) {
 }
 
 #' Internal M-step: update MAP estimates for parameters subject to selection
-#' 
+#'
 #' Performs MAP update for parameters subject to selection, including beta, gamma, alpha, and sigma2.
 #' @param config List containing model configuration and hyperparameters.
 #' @param k Current iteration index (integer).
@@ -150,7 +150,7 @@ m_step_map_to_select <- function(config, k, state) {
 }
 
 #' Internal M-step: update MAP for all parameters
-#' 
+#'
 #' @description Performs a full MAP update for both parameters subject and not subject to selection,
 #'              combining the updates for beta, gamma, alpha, and sigma2.
 #' @param config List containing model configuration and hyperparameters.

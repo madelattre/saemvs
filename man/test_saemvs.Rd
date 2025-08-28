@@ -7,51 +7,35 @@
 test_saemvs(data, model, init, tuning_algo, hyperparam)
 }
 \arguments{
-\item{data}{A \code{\link{saemvsData}} object containing the observed response series,
-candidate covariates, and any forced covariates.}
+\item{data}{A \link[=saemvsData-class]{saemvsData} object containing the observed response series.}
 
-\item{model}{A \code{\link{saemvsModel}} object defining the model structure, including
-parameter indices, random effects, and the model function.}
+\item{model}{A \link[=saemvsModel-class]{saemvsModel} object defining the model structure.}
 
-\item{init}{A \code{\link{saemvsInit}} object providing initial values for parameters,
-including beta coefficients, covariance matrices, and residual variance.}
+\item{init}{A \link[=saemvsInit-class]{saemvsInit} object providing initial parameter values.}
 
-\item{tuning_algo}{A \code{\link{saemvsTuning}} object specifying algorithm hyperparameters,
-such as number of iterations, step sizes, and spike values for the prior.}
+\item{tuning_algo}{A \link[=saemvsTuning-class]{saemvsTuning} object specifying algorithm hyperparameters.}
 
-\item{hyperparam}{A \code{\link{saemvsHyperSlab}} object defining the slab portion of the spike-and-slab prior.}
+\item{hyperparam}{A \link[=saemvsHyperSlab-class]{saemvsHyperSlab} object defining the slab prior.}
 }
 \value{
-A \code{\link{saemResults}} object containing:
-\item{beta_to_select}{List of beta estimates for parameters subject to selection.}
-\item{beta_not_to_select}{List of beta estimates for parameters not subject to selection.}
-\item{gamma_to_select}{List of covariance matrices for parameters subject to selection.}
-\item{gamma_not_to_select}{List of covariance matrices for parameters not subject to selection.}
-\item{sigma2}{Vector of residual variance estimates across iterations.}
+A \link[=saemResults-class]{saemResults} object containing estimated parameters.
 }
 \description{
-This function executes a simplified SAEMVS (Stochastic Approximation EM for Variable Selection)
-procedure on the provided data and model. It is primarily intended for quick testing or
-validation of the model setup and algorithm configuration.
+Executes a simplified SAEMVS procedure for testing purposes.
 }
 \details{
-This function allows users to quickly fit a model with SAEMVS to inspect the behavior
-of the algorithm and the evolution of parameter estimates. The function performs the following steps:
+This function allows a quick fit of SAEMVS to inspect the evolution of parameter estimates.
+The function performs the following steps:
 \enumerate{
-\item Compile the R model function to C++ using \code{\link{compile_model}} for efficient execution.
-\item Construct a spike-and-slab hyperparameter object using the first spike value and the provided slab prior.
-\item Run the SAEM algorithm using \code{\link{run_saem}}.
-\item Return parameter estimates packaged in a \code{\link{saemResults}} object.
+\item Compile the R model function to C++ using \code{compile_model}.
+\item Construct a spike-and-slab hyperparameter object.
+\item Run the SAEM algorithm using \code{run_saem}.
+\item Return parameter estimates packaged in a \code{saemResults} object.
 }
-}
-\note{
-This function is suitable for testing and inspecting the algorithm’s behavior.
-For full variable selection with EBIC or e-BIC, use \code{\link{saemvs}}.
 }
 \examples{
 \dontrun{
-# Define saemvsData, saemvsModel, saemvsInit, saemvsTuning objects first
-test_results <- test_saemvs(data, model, init, tuning_algo, hyperparam)
+test_results <- test_saemvs(data_obj, model_obj, init_obj, tuning_obj, hyper_obj)
 summary(test_results)
 }
 

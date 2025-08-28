@@ -39,10 +39,12 @@ it is ignored in the combination.
 }
 }
 \examples{
+\dontrun{
 fixed_support <- matrix(c(1, 0, 0, 1), nrow = 2, byrow = TRUE)
 selected_support <- matrix(c(0, 1, 1, 0), nrow = 2, byrow = TRUE)
 inv_perm <- c(2, 1)
 merge_support(fixed_support, selected_support, nb_phi_s = 2, nb_phi_ns = 2, inv_perm)
+}
 
 }
 \keyword{internal}

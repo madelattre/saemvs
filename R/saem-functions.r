@@ -1,5 +1,5 @@
 #' Perform a single SAEM iteration
-#' 
+#'
 #' Executes one iteration of the SAEM algorithm, including the Metropolis step,
 #'              stochastic approximation (SA) step, M-step, and MH update.
 #' @param k Integer. Current iteration index.
@@ -19,7 +19,7 @@ perform_saem_iteration <- function(k, config, state, sa_func, m_func, mh_update_
 }
 
 #' Run full SAEM algorithm
-#' 
+#'
 #' Executes the full SAEM algorithm for all iterations, applying the specified
 #'              SA-step, M-step, and Metropolis-Hastings update functions.
 #' @param config List. Model configuration including number of iterations and algorithm settings.
@@ -37,7 +37,7 @@ run_saem_full <- function(config, state, sa_func, m_func, mh_update_func) {
 }
 
 #' Run SAEM algorithm with fixed parameters
-#' 
+#'
 #' Executes the SAEM algorithm for models with both random and fixed effects.
 #'              Shrinkage is applied to the covariance of fixed parameters after burn-in iterations.
 #' @param config List. Model configuration including number of iterations, burn-in period, and fixed parameter indices.
@@ -55,7 +55,7 @@ run_saem_with_fixed_effects <- function(config, state, sa_func, m_func, mh_updat
 
   index_fixed <- which(config$parameters_not_to_select_indices %in% config$fixed_parameters_indices)
   alphas <- exp((-2 * log(10) - log(diag(state$gamma_not_to_select[[config$num_burnin]])[index_fixed])) /
-                  (config$num_iterations - config$num_burnin))
+    (config$num_iterations - config$num_burnin))
 
   # Post burn-in iterations with shrinkage
   for (k in (config$num_burnin + 1):config$num_iterations) {
@@ -75,4 +75,3 @@ run_saem_with_fixed_effects <- function(config, state, sa_func, m_func, mh_updat
 
   return(state)
 }
-

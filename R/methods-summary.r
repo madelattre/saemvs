@@ -89,11 +89,11 @@ setMethod(
     # --------------------------
     # Row labels for beta coefficients
     row_labels <- character(nrow(beta_est))
-    row_labels[1] <- "\u03BC"  # Intercept always in first row
+    row_labels[1] <- "\u03BC" # Intercept always in first row
 
     # Forced covariates (if any)
     if (length(forced_variables_idx) > 0) {
-      forced_rows <- 1 + seq_along(forced_variables_idx)  # offset by 1 (intercept)
+      forced_rows <- 1 + seq_along(forced_variables_idx) # offset by 1 (intercept)
       for (i in seq_along(forced_rows)) {
         row_labels[forced_rows[i]] <- paste0("forced_", forced_variables_idx[i])
       }

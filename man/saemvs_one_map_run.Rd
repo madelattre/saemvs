@@ -7,20 +7,20 @@
 saemvs_one_map_run(data, model, init, tuning_algo, hyperparam)
 }
 \arguments{
-\item{data}{An object of class \code{\link{saemvsData}}
+\item{data}{An object of class \link[=saemvsData-class]{saemvsData}
 containing the dataset (observations and design matrices).}
 
-\item{model}{An object of class \code{\link{saemvsModel}}
+\item{model}{An object of class \link[=saemvsModel-class]{saemvsModel}
 specifying the model structure and indices of parameters subject
 to selection (\code{phi_to_select_idx}).}
 
-\item{init}{An object of class \code{\link{saemvsInit}}
+\item{init}{An object of class \link[=saemvsInit-class]{saemvsInit}
 providing initial values for the SAEM algorithm.}
 
-\item{tuning_algo}{An object of class \code{\link{saemvsTuning}}
+\item{tuning_algo}{An object of class \link[=saemvsTuning-class]{saemvsTuning}
 defining algorithmic parameters such as the number of iterations (\code{niter}).}
 
-\item{hyperparam}{An object of class \code{\link{saemvsHyperSpikeAndSlab}}
+\item{hyperparam}{An object of class \link[=saemvsHyperSpikeAndSlab-class]{saemvsHyperSpikeAndSlab}
 containing hyperparameters of the spike-and-slab prior
 (spike variance, slab variance, and mixing proportion).}
 }

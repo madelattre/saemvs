@@ -34,12 +34,13 @@ the result is \code{NULL}.
 }
 }
 \examples{
+\dontrun{
 supp <- matrix(c(1, 0, 0, 1, 0, 0), nrow = 2, byrow = TRUE)
 
 extract_sub_support(supp, 1) # Returns matrix with first column
 extract_sub_support(supp, 2:3) # Returns NULL if only zeros
 extract_sub_support(NULL, 1) # Returns NULL
-
+}
 }
 \seealso{
 \code{\link{is_empty_support}}

@@ -1,8 +1,8 @@
 #' Run the SAEM algorithm
-#' 
-#' Internal generic method for running the Stochastic Approximation Expectation-Maximization (SAEM) 
-#' algorithm in the context of variable selection with spike-and-slab priors or maximum likelihood estimation.  
-#' 
+#'
+#' Internal generic method for running the Stochastic Approximation Expectation-Maximization (SAEM)
+#' algorithm in the context of variable selection with spike-and-slab priors or maximum likelihood estimation.
+#'
 #' This method orchestrates the full SAEM procedure, including:
 #' \itemize{
 #'   \item Data validation and preprocessing
@@ -12,11 +12,11 @@
 #'     depending on the model type and presence of fixed effects
 #'   \item Iterative execution of the SAEM algorithm until convergence
 #' }
-#' 
-#' The function is dispatched on specific classes of data, model, initialization, tuning, 
+#'
+#' The function is dispatched on specific classes of data, model, initialization, tuning,
 #' and hyperparameter objects, and should not be called directly by the end-user.
 #'
-#' @param data An object of class \code{saemvsData}. 
+#' @param data An object of class \code{saemvsData}.
 #'   Contains the observed data and related metadata.
 #' @param model An object of class \code{saemvsModel}.
 #'   Describes the statistical model, including covariates and random effect structure.
@@ -31,7 +31,7 @@
 #' including parameter estimates, variances, and posterior inclusion probabilities.
 #'
 #' @details
-#' Depending on the configuration of the model and hyperparameters, the function automatically 
+#' Depending on the configuration of the model and hyperparameters, the function automatically
 #' selects the appropriate SA and M step implementations:
 #' \itemize{
 #'   \item \code{"map_full_select"}: MAP estimation with all parameters subject to selection.
@@ -41,7 +41,7 @@
 #'   \item \code{"mle_fixed"}: MLE with some fixed parameters.
 #' }
 #'
-#' @note This method is internal to the package and not intended to be called directly 
+#' @note This method is internal to the package and not intended to be called directly
 #' by end-users. Instead, high-level user functions should be used to set up and run the algorithm.
 #'
 #' @keywords internal

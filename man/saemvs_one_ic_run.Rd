@@ -12,15 +12,15 @@ saemvs_one_ic_run(k, support, data, model, init, tuning_algo, pen)
 \item{support}{A list of logical or numeric matrices, each encoding a
 candidate support obtained from MAP estimation (\code{saemvs_one_map_run}).}
 
-\item{data}{An object of class \code{\link{saemvsData}}, the dataset.}
+\item{data}{An object of class \link[=saemvsData-class]{saemvsData}, the dataset.}
 
-\item{model}{An object of class \code{\link{saemvsModel}}, specifying
+\item{model}{An object of class \link[=saemvsModel-class]{saemvsModel}, specifying
 model structure and indices of parameters subject to selection.}
 
-\item{init}{An object of class \code{\link{saemvsInit}}, providing
+\item{init}{An object of class \link[=saemvsInit-class]{saemvsInit}, providing
 initialization for SAEM.}
 
-\item{tuning_algo}{An object of class \code{\link{saemvsTuning}},
+\item{tuning_algo}{An object of class \link[=saemvsTuning-class]{saemvsTuning},
 containing algorithmic tuning parameters (e.g. number of iterations).}
 
 \item{pen}{Character string, the information criterion to use.

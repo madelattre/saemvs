@@ -35,7 +35,9 @@ candidate covariates for selection, and forced covariates.
 }
 
 \examples{
+\dontrun{
 y <- list(rnorm(10), rnorm(8))
 t <- list(1:10, 1:8)
 d <- saemvsData(y, t)
+}
 }

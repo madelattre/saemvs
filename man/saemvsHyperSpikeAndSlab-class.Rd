@@ -27,3 +27,4 @@ Ensures that \code{spike_parameter} is strictly positive.
 \seealso{
 \code{\linkS4class{saemvsHyperSlab}}
 }
+\keyword{internal}

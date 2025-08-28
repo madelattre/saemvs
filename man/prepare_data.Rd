@@ -52,8 +52,8 @@ if the forced support structure does not match model dimensions.
 }
 \examples{
 \dontrun{
-data_obj <- new("saemvsData", ...) # create data
-model_obj <- new("saemvsModel", ...) # create model
+data_obj <- methods::new("saemvsData", ...) # create data
+model_obj <- methods::new("saemvsModel", ...) # create model
 processed <- prepare_data(data_obj, model_obj)
 }
 }

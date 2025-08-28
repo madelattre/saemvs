@@ -31,10 +31,11 @@ is \emph{not} considered empty. This function is primarily intended to
 simplify checks in algorithms where empty matrices must be handled explicitly.
 }
 \examples{
+\dontrun{
 is_empty_matrix(NULL) # TRUE
 is_empty_matrix(matrix(nrow = 0)) # TRUE
 is_empty_matrix(matrix(, 2, 0)) # TRUE
 is_empty_matrix(matrix(0, 2, 2)) # FALSE
-
+}
 }
 \keyword{internal}

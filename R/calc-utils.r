@@ -34,7 +34,7 @@ p_star <- function(beta, alpha, nu0, nu1) {
 #' Determine algorithmic case based on model configuration
 #'
 #' Determines the operational case for the algorithm (e.g., MAP vs MLE, full vs partial selection,
-#'              presence of fixed parameters) based on the provided configuration.
+#' presence of fixed parameters) based on the provided configuration.
 #' @param config List. Configuration object containing the following elements:
 #'   \itemize{
 #'     \item \code{method_type} Character. Either "map" or "mle".

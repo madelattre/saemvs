@@ -36,8 +36,9 @@ metropolis_s_step <- function(config, iteration, state) {
   )
 
   state$phi[[iteration + 1]] <- matrix(unlist(sampled_phi),
-                                       nrow = config$num_series,
-                                       byrow = TRUE)
+    nrow = config$num_series,
+    byrow = TRUE
+  )
   return(state)
 }
 
@@ -83,4 +84,3 @@ update_proposal_mh_not_to_select <- function(config, iteration, state) {
 
   return(state)
 }
-

@@ -7,7 +7,7 @@
 convergence_plot(res_saem, component, sel_components)
 }
 \arguments{
-\item{res_saem}{An object of class \code{\link{saemResults}}.}
+\item{res_saem}{An object of class \linkS4class{saemResults}.}
 
 \item{component}{A character string indicating which component to plot.
 Must be one of \code{"sigma2"}, \code{"beta_s"}, \code{"beta_ns"},
@@ -26,7 +26,7 @@ evolution of the requested parameter(s) across SAEM iterations.
 \description{
 The \code{convergence_plot} function provides visual diagnostics
 of convergence for specific components estimated in a
-\code{\link{saemResults}} object. It can be used to monitor the
+\linkS4class{saemResults} object. It can be used to monitor the
 evolution of parameter estimates across SAEM iterations.
 }
 \details{
@@ -54,5 +54,5 @@ convergence_plot(res, component = "beta_s", sel_components = c("(1,1)", "(2,1)")
 
 }
 \seealso{
-\code{\link{saemResults}}
+\linkS4class{saemResults}
 }

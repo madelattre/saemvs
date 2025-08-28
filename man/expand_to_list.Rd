@@ -32,9 +32,10 @@ The function works as follows:
 }
 }
 \examples{
+\dontrun{
 x <- matrix(1:6, nrow = 2, ncol = 3)
 supp <- matrix(c(1, 0, 1, 0, 1, 1), nrow = 2, byrow = TRUE)
 expand_to_list(x, supp, q = 2)
-
+}
 }
 \keyword{internal}

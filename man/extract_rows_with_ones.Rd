@@ -27,6 +27,7 @@ Rows are scanned using \code{\link[base]{apply}} over the first dimension,
 checking for the presence of \code{1} in each row.
 }
 \examples{
+\dontrun{
 m <- matrix(c(0, 1, 0, 0, 1, 0), nrow = 3, byrow = TRUE)
 extract_rows_with_ones(m)
 # Returns: 1 2
@@ -36,7 +37,7 @@ extract_rows_with_ones(matrix(0, 3, 3))
 
 extract_rows_with_ones(NULL)
 # Returns: integer(0)
-
+}
 }
 \seealso{
 \code{\link{is_empty_matrix}}

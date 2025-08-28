@@ -2,7 +2,7 @@
 #'
 #' The \code{convergence_plot} function provides visual diagnostics
 #' of convergence for specific components estimated in a
-#' \code{\link{saemResults}} object. It can be used to monitor the
+#' \linkS4class{saemResults} object. It can be used to monitor the
 #' evolution of parameter estimates across SAEM iterations.
 #'
 #' Supported components are:
@@ -18,7 +18,7 @@
 #'         components not subject to selection.
 #' }
 #'
-#' @param res_saem An object of class \code{\link{saemResults}}.
+#' @param res_saem An object of class \linkS4class{saemResults}.
 #' @param component A character string indicating which component to plot.
 #'   Must be one of \code{"sigma2"}, \code{"beta_s"}, \code{"beta_ns"},
 #'   \code{"gamma_s"}, \code{"gamma_ns"}.
@@ -40,7 +40,7 @@
 #' convergence_plot(res, component = "beta_s", sel_components = c("(1,1)", "(2,1)"))
 #' }
 #'
-#' @seealso \code{\link{saemResults}}
+#' @seealso \linkS4class{saemResults}
 #'
 #' @export
 setGeneric(
@@ -74,15 +74,22 @@ setMethod(
           title = "Evolution of the selected matrix component"
         )
 
-    # --- Handle case: beta/gamma matrices ---
+      # --- Handle case: beta/gamma matrices ---
     } else if (component %in% c("beta_s", "beta_ns", "gamma_s", "gamma_ns")) {
-
       # Select appropriate list of matrices based on requested component
       switch(component,
-        beta_s = { list_est <- res_saem@beta_to_select },
-        beta_ns = { list_est <- res_saem@beta_not_to_select },
-        gamma_s = { list_est <- res_saem@gamma_to_select },
-        gamma_ns = { list_est <- res_saem@gamma_not_to_select }
+        beta_s = {
+          list_est <- res_saem@beta_to_select
+        },
+        beta_ns = {
+          list_est <- res_saem@beta_not_to_select
+        },
+        gamma_s = {
+          list_est <- res_saem@gamma_to_select
+        },
+        gamma_ns = {
+          list_est <- res_saem@gamma_not_to_select
+        }
       )
 
       # Build long-format dataframe of all iterations
@@ -136,7 +143,7 @@ setMethod(
           title = paste("Evolution of each matrix component in", component)
         )
 
-    # --- Handle invalid input ---
+      # --- Handle invalid input ---
     } else {
       stop(
         paste0(
@@ -169,7 +176,7 @@ setMethod(
 #'   together with their threshold bounds.
 #' }
 #'
-#' @param res_saemvs An object of class \code{\link{saemvsResults}},
+#' @param res_saemvs An object of class \linkS4class{saemvsResults},
 #'   typically obtained from a call to \code{\link{saemvs}}.
 #'
 #' @return A list with two elements:
@@ -185,11 +192,11 @@ setMethod(
 #' \dontrun{
 #' # Assuming res is an object of class saemvsResults
 #' plots <- prepare_grid_plot(res)
-#' plots$ebic_plot    # Plot criterion values
-#' plots$reg_plot[[1]]  # Plot first parameter block
+#' plots$ebic_plot # Plot criterion values
+#' plots$reg_plot[[1]] # Plot first parameter block
 #' }
 #'
-#' @seealso \code{\link{saemvs}}, \code{\link{saemvsResults}}
+#' @seealso \code{\link{saemvs}}, \linkS4class{saemvsResults}
 #'
 #' @export
 setGeneric(
@@ -205,18 +212,18 @@ setMethod(
   ),
   function(res_saemvs) {
     # --- Extract key results from saemvsResults ---
-    ebic <- res_saemvs@criterion_values   # Criterion values (BIC/e-BIC)
-    threshold <- simplify2array(res_saemvs@thresholds)  # Thresholds for selection
-    beta <- simplify2array(res_saemvs@beta_map)         # MAP regression estimates
-    support <- res_saemvs@support                      # Support sets
+    ebic <- res_saemvs@criterion_values # Criterion values (BIC/e-BIC)
+    threshold <- simplify2array(res_saemvs@thresholds) # Thresholds for selection
+    beta <- simplify2array(res_saemvs@beta_map) # MAP regression estimates
+    support <- res_saemvs@support # Support sets
     map_to_unique_support <- res_saemvs@support_mapping
-    nu0_grid <- res_saemvs@spike_values_grid            # Spike variances
+    nu0_grid <- res_saemvs@spike_values_grid # Spike variances
     nb_nu0 <- length(nu0_grid)
-    pen <- res_saemvs@criterion                         # Selection criterion used
+    pen <- res_saemvs@criterion # Selection criterion used
 
     # Dimensions of the support matrix
-    p <- dim(support[[1]])[1] - 1   # Number of covariates (excluding intercept)
-    q <- dim(support[[1]])[2]       # Number of parameter blocks
+    p <- dim(support[[1]])[1] - 1 # Number of covariates (excluding intercept)
+    q <- dim(support[[1]])[2] # Number of parameter blocks
 
     # --- Plot criterion values vs log(nu0) ---
     data2 <- data.frame(nu0_grid = nu0_grid, crit = ebic[map_to_unique_support])
@@ -231,7 +238,7 @@ setMethod(
       ggplot2::geom_vline(xintercept = x_min, color = "red", linetype = "dashed")
 
     # --- Plot regression coefficients and thresholds ---
-    id_var <- rep(c(1:(p + 2)), nb_nu0)  # Identifiers for intercept, covariates, and thresholds
+    id_var <- rep(c(1:(p + 2)), nb_nu0) # Identifiers for intercept, covariates, and thresholds
     g <- list()
 
     for (m in 1:q) {
@@ -265,4 +272,3 @@ setMethod(
     return(list(reg_plot = g, ebic_plot = g2))
   }
 )
-

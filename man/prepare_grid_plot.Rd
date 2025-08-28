@@ -7,7 +7,7 @@
 prepare_grid_plot(res_saemvs)
 }
 \arguments{
-\item{res_saemvs}{An object of class \code{\link{saemvsResults}},
+\item{res_saemvs}{An object of class \linkS4class{saemvsResults},
 typically obtained from a call to \code{\link{saemvs}}.}
 }
 \value{
@@ -41,11 +41,11 @@ together with their threshold bounds.
 \dontrun{
 # Assuming res is an object of class saemvsResults
 plots <- prepare_grid_plot(res)
-plots$ebic_plot    # Plot criterion values
-plots$reg_plot[[1]]  # Plot first parameter block
+plots$ebic_plot # Plot criterion values
+plots$reg_plot[[1]] # Plot first parameter block
 }
 
 }
 \seealso{
-\code{\link{saemvs}}, \code{\link{saemvsResults}}
+\code{\link{saemvs}}, \linkS4class{saemvsResults}
 }

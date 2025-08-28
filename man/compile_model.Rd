@@ -53,7 +53,9 @@ generated C++ code.
 }
 \examples{
 \dontrun{
-g_fun <- function(phi, t) { phi[1] + phi[2] * t }
+g_fun <- function(phi, t) {
+  phi[1] + phi[2] * t
+}
 compile_model(g_fun)
 
 # Then call the compiled function

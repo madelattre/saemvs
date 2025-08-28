@@ -42,3 +42,4 @@ hyper_completed <- prepare_hyper(hyper, data_processed, model)
 }
 
 }
+\keyword{internal}

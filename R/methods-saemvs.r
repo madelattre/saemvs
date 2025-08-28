@@ -1,56 +1,56 @@
 #' Sparse Variable Selection with SAEM
 #'
-#' The \code{saemvs} function performs stochastic approximation EM (SAEM)
+#' The `saemvs` function performs stochastic approximation EM (SAEM)
 #' combined with variable selection using a spike-and-slab prior.
 #' It supports both BIC and extended BIC (e-BIC) as model selection criteria.
 #'
-#' This method explores a grid of spike variances (\eqn{\nu_0}) in parallel,
+#' This method explores a grid of spike variances (`nu0`) in parallel,
 #' fits MAP estimates for each candidate support, and then evaluates unique
 #' supports with the chosen information criterion to select the best model.
 #'
-#' @param data An object of class \code{\link{saemvsData}}
+#' @param data An object of class \link[=saemvsData-class]{saemvsData}
 #'   containing the dataset (observations and design matrices).
-#' @param model An object of class \code{\link{saemvsModel}}
+#' @param model An object of class \link[=saemvsModel-class]{saemvsModel}
 #'   specifying the model structure and the indices of parameters
-#'   that are candidates for selection (\code{phi_to_select_idx}).
-#' @param init An object of class \code{\link{saemvsInit}}
+#'   that are candidates for selection (`phi_to_select_idx`).
+#' @param init An object of class \link[=saemvsInit-class]{saemvsInit}
 #'   providing the initialization for the SAEM algorithm.
-#' @param tuning_algo An object of class \code{\link{saemvsTuning}}
+#' @param tuning_algo An object of class \link[=saemvsTuning-class]{saemvsTuning}
 #'   containing algorithmic tuning parameters such as
-#'   the spike grid (\code{spike_values_grid}), number of workers, and random seed.
-#' @param hyperparam An object of class \code{\link{saemvsHyperSlab}}
+#'   the spike grid (`spike_values_grid`), number of workers, and random seed.
+#' @param hyperparam An object of class \link[=saemvsHyperSlab-class]{saemvsHyperSlab}
 #'   containing the hyperparameters for the slab prior.
 #' @param pen Character string indicating the model selection criterion.
-#'   Must be either \code{"BIC"} or \code{"e-BIC"}.
+#'   Must be either `"BIC"` or `"e-BIC"`.
 #'
 #' @details
 #' The procedure is carried out in two steps:
 #' \enumerate{
-#'   \item For each spike variance candidate (\eqn{\nu_0}), a MAP estimation
+#'   \item For each spike variance candidate (`nu0`), a MAP estimation
 #'   is performed in parallel, producing supports, thresholds, and MAP estimates.
 #'   \item Unique supports are identified, and each support is re-evaluated
-#'   with the chosen information criterion (\code{pen}) to select the most
+#'   with the chosen information criterion (`pen`) to select the most
 #'   appropriate model.
 #' }
 #'
-#' Parallel execution is handled using the \pkg{future} and \pkg{furrr} packages.
+#' Parallel execution is handled using the `future` and `furrr` packages.
 #' The model function (C++ code) must be compiled on each worker before execution.
 #'
-#' @return An object of class \code{\link{saemvsResults}} containing:
+#' @return An object of class \code{\linkS4class{{saemvsResults}} containing:
 #' \itemize{
-#'   \item \code{criterion} The selection criterion used (\code{"BIC"} or \code{"e-BIC"}).
-#'   \item \code{criterion_values} Values of the criterion for each unique support.
-#'   \item \code{thresholds} Thresholds computed for each spike value.
-#'   \item \code{beta_map} MAP estimates of regression parameters for each spike value.
-#'   \item \code{mle_estimates} MLE estimates for each unique support.
-#'   \item \code{support} List of supports obtained across spike values.
-#'   \item \code{unique_support} List of unique supports identified.
-#'   \item \code{support_mapping} Mapping from each run to the corresponding unique support.
-#'   \item \code{spike_values_grid} The grid of spike variances used.
-#'   \item \code{phi_fixed_idx} Indices of fixed parameters (not subject to selection).
-#'   \item \code{forced_variables_idx} For each unique support, indices of covariates
+#'   \item `criterion`: The selection criterion used (`"BIC"` or `"e-BIC"`).
+#'   \item `criterion_values`: Values of the criterion for each unique support.
+#'   \item `thresholds`: Thresholds computed for each spike value.
+#'   \item `beta_map`: MAP estimates of regression parameters for each spike value.
+#'   \item `mle_estimates`: MLE estimates for each unique support.
+#'   \item `support`: List of supports obtained across spike values.
+#'   \item `unique_support`: List of unique supports identified.
+#'   \item `support_mapping`: Mapping from each run to the corresponding unique support.
+#'   \item `spike_values_grid`: The grid of spike variances used.
+#'   \item `phi_fixed_idx`: Indices of fixed parameters (not subject to selection).
+#'   \item `forced_variables_idx`: For each unique support, indices of covariates
 #'     that were forced into the model (always included).
-#'   \item \code{selected_variables_idx} For each unique support, indices of covariates
+#'   \item `selected_variables_idx`: For each unique support, indices of covariates
 #'     that were actively selected by the algorithm (excluding forced ones).
 #' }
 #'
@@ -67,8 +67,7 @@
 #' )
 #' }
 #'
-#' @seealso \code{\link{saemvsResults}}, \code{\link{run_saem}}
-#'
+#' @seealso \code{\linkS4class{{saemvsResults}}, \code{\link{run_saem}}
 #' @export
 setGeneric(
   "saemvs",
@@ -223,7 +222,6 @@ setMethod(
 
 
 
-
 #' Internal: Single MAP Run of SAEMVS
 #'
 #' Performs one MAP estimation run of the SAEM algorithm for a given
@@ -231,16 +229,16 @@ setMethod(
 #' This function is used internally by \code{\link{saemvs}} to explore
 #' different spike variances and extract candidate supports.
 #'
-#' @param data An object of class \code{\link{saemvsData}}
+#' @param data An object of class \link[=saemvsData-class]{saemvsData}
 #'   containing the dataset (observations and design matrices).
-#' @param model An object of class \code{\link{saemvsModel}}
+#' @param model An object of class \link[=saemvsModel-class]{saemvsModel}
 #'   specifying the model structure and indices of parameters subject
 #'   to selection (\code{phi_to_select_idx}).
-#' @param init An object of class \code{\link{saemvsInit}}
+#' @param init An object of class \link[=saemvsInit-class]{saemvsInit}
 #'   providing initial values for the SAEM algorithm.
-#' @param tuning_algo An object of class \code{\link{saemvsTuning}}
+#' @param tuning_algo An object of class \link[=saemvsTuning-class]{saemvsTuning}
 #'   defining algorithmic parameters such as the number of iterations (\code{niter}).
-#' @param hyperparam An object of class \code{\link{saemvsHyperSpikeAndSlab}}
+#' @param hyperparam An object of class \link[=saemvsHyperSpikeAndSlab-class]{saemvsHyperSpikeAndSlab}
 #'   containing hyperparameters of the spike-and-slab prior
 #'   (spike variance, slab variance, and mixing proportion).
 #'
@@ -333,12 +331,12 @@ setMethod(
 #' @param k Integer index of the candidate support to be evaluated.
 #' @param support A list of logical or numeric matrices, each encoding a
 #'   candidate support obtained from MAP estimation (\code{saemvs_one_map_run}).
-#' @param data An object of class \code{\link{saemvsData}}, the dataset.
-#' @param model An object of class \code{\link{saemvsModel}}, specifying
+#' @param data An object of class \link[=saemvsData-class]{saemvsData}, the dataset.
+#' @param model An object of class \link[=saemvsModel-class]{saemvsModel}, specifying
 #'   model structure and indices of parameters subject to selection.
-#' @param init An object of class \code{\link{saemvsInit}}, providing
+#' @param init An object of class \link[=saemvsInit-class]{saemvsInit}, providing
 #'   initialization for SAEM.
-#' @param tuning_algo An object of class \code{\link{saemvsTuning}},
+#' @param tuning_algo An object of class \link[=saemvsTuning-class]{saemvsTuning},
 #'   containing algorithmic tuning parameters (e.g. number of iterations).
 #' @param pen Character string, the information criterion to use.
 #'   Must be either \code{"BIC"} or \code{"e-BIC"}.
@@ -433,44 +431,29 @@ setMethod(
 
 #' Run a Single SAEMVS Test Fit
 #'
-#' This function executes a simplified SAEMVS (Stochastic Approximation EM for Variable Selection)
-#' procedure on the provided data and model. It is primarily intended for quick testing or
-#' validation of the model setup and algorithm configuration.
+#' Executes a simplified SAEMVS procedure for testing purposes.
 #'
-#' @param data A \code{\link{saemvsData}} object containing the observed response series,
-#'   candidate covariates, and any forced covariates.
-#' @param model A \code{\link{saemvsModel}} object defining the model structure, including
-#'   parameter indices, random effects, and the model function.
-#' @param init A \code{\link{saemvsInit}} object providing initial values for parameters,
-#'   including beta coefficients, covariance matrices, and residual variance.
-#' @param tuning_algo A \code{\link{saemvsTuning}} object specifying algorithm hyperparameters,
-#'   such as number of iterations, step sizes, and spike values for the prior.
-#' @param hyperparam A \code{\link{saemvsHyperSlab}} object defining the slab portion of the spike-and-slab prior.
+#' @param data A \link[=saemvsData-class]{saemvsData} object containing the observed response series.
+#' @param model A \link[=saemvsModel-class]{saemvsModel} object defining the model structure.
+#' @param init A \link[=saemvsInit-class]{saemvsInit} object providing initial parameter values.
+#' @param tuning_algo A \link[=saemvsTuning-class]{saemvsTuning} object specifying algorithm hyperparameters.
+#' @param hyperparam A \link[=saemvsHyperSlab-class]{saemvsHyperSlab} object defining the slab prior.
 #'
-#' @return A \code{\link{saemResults}} object containing:
-#'   \item{beta_to_select}{List of beta estimates for parameters subject to selection.}
-#'   \item{beta_not_to_select}{List of beta estimates for parameters not subject to selection.}
-#'   \item{gamma_to_select}{List of covariance matrices for parameters subject to selection.}
-#'   \item{gamma_not_to_select}{List of covariance matrices for parameters not subject to selection.}
-#'   \item{sigma2}{Vector of residual variance estimates across iterations.}
+#' @return A \link[=saemResults-class]{saemResults} object containing estimated parameters.
 #'
 #' @details
-#' This function allows users to quickly fit a model with SAEMVS to inspect the behavior
-#' of the algorithm and the evolution of parameter estimates. The function performs the following steps:
+#' This function allows a quick fit of SAEMVS to inspect the evolution of parameter estimates.
+#' The function performs the following steps:
 #' \enumerate{
-#'   \item Compile the R model function to C++ using \code{\link{compile_model}} for efficient execution.
-#'   \item Construct a spike-and-slab hyperparameter object using the first spike value and the provided slab prior.
-#'   \item Run the SAEM algorithm using \code{\link{run_saem}}.
-#'   \item Return parameter estimates packaged in a \code{\link{saemResults}} object.
+#'   \item Compile the R model function to C++ using `compile_model`.
+#'   \item Construct a spike-and-slab hyperparameter object.
+#'   \item Run the SAEM algorithm using `run_saem`.
+#'   \item Return parameter estimates packaged in a `saemResults` object.
 #' }
-#'
-#' @note This function is suitable for testing and inspecting the algorithm’s behavior.
-#'   For full variable selection with EBIC or e-BIC, use \code{\link{saemvs}}.
 #'
 #' @examples
 #' \dontrun{
-#' # Define saemvsData, saemvsModel, saemvsInit, saemvsTuning objects first
-#' test_results <- test_saemvs(data, model, init, tuning_algo, hyperparam)
+#' test_results <- test_saemvs(data_obj, model_obj, init_obj, tuning_obj, hyper_obj)
 #' summary(test_results)
 #' }
 #'

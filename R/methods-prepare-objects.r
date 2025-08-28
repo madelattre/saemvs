@@ -4,14 +4,13 @@
 #' required for fitting a \code{saemvsModel} to a \code{saemvsData} object.
 #'
 #' Specifically, it:
-#' \itemize{
+#'\itemize{
 #'   \item separates covariates for parameters subject to selection from those for parameters not subject to selection,
 #'   \item builds corresponding design matrices (with intercept),
 #'   \item computes Gram matrices and block-diagonal expansions for covariates related to parameters subject to selection,
 #'   \item constructs a list representation of design matrices for parameters not subject to selection for efficient use in SAEM updates,
 #'   \item and returns a \code{saemvsProcessedData} object encapsulating all results.
 #' }
-#'
 #' @param data A \code{\linkS4class{saemvsData}} object.
 #'   Contains observed time series \code{y_series}, covariates
 #'   to be selected (\code{x_candidates}), and forced covariates
@@ -161,7 +160,6 @@ setMethod(
     return(data_processed)
   }
 )
-
 
 #' Prepare initial values for the SAEMVS algorithm
 #'
@@ -346,7 +344,7 @@ setMethod(
 #' hyper_completed <- prepare_hyper(hyper, data_processed, model)
 #' }
 #'
-#' @export
+#' @keywords internal
 setGeneric(
   "prepare_hyper",
   function(hyper, data, model) {

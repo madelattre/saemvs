@@ -28,8 +28,10 @@ A support is empty if it is \code{NULL}, has zero length, or contains only zeros
 }
 }
 \examples{
+\dontrun{
 is_empty_support(NULL) # TRUE
 is_empty_support(matrix(0, nrow = 2, ncol = 2)) # TRUE
 is_empty_support(matrix(c(0, 1), nrow = 1)) # FALSE
+}
 }
 \keyword{internal}

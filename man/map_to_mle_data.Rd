@@ -43,7 +43,7 @@ Robustness checks are performed to ensure:
 }
 \examples{
 \dontrun{
-  new_data <- from_map_to_mle_data(saemvsData_obj, cand_support)
+new_data <- from_map_to_mle_data(saemvsData_obj, cand_support)
 }
 }
 \keyword{internal}

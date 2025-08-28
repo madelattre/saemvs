@@ -7,42 +7,42 @@
 saemvs(data, model, init, tuning_algo, hyperparam, pen)
 }
 \arguments{
-\item{data}{An object of class \code{\link{saemvsData}}
+\item{data}{An object of class \link[=saemvsData-class]{saemvsData}
 containing the dataset (observations and design matrices).}
 
-\item{model}{An object of class \code{\link{saemvsModel}}
+\item{model}{An object of class \link[=saemvsModel-class]{saemvsModel}
 specifying the model structure and the indices of parameters
 that are candidates for selection (\code{phi_to_select_idx}).}
 
-\item{init}{An object of class \code{\link{saemvsInit}}
+\item{init}{An object of class \link[=saemvsInit-class]{saemvsInit}
 providing the initialization for the SAEM algorithm.}
 
-\item{tuning_algo}{An object of class \code{\link{saemvsTuning}}
+\item{tuning_algo}{An object of class \link[=saemvsTuning-class]{saemvsTuning}
 containing algorithmic tuning parameters such as
 the spike grid (\code{spike_values_grid}), number of workers, and random seed.}
 
-\item{hyperparam}{An object of class \code{\link{saemvsHyperSlab}}
+\item{hyperparam}{An object of class \link[=saemvsHyperSlab-class]{saemvsHyperSlab}
 containing the hyperparameters for the slab prior.}
 
 \item{pen}{Character string indicating the model selection criterion.
 Must be either \code{"BIC"} or \code{"e-BIC"}.}
 }
 \value{
-An object of class \code{\link{saemvsResults}} containing:
+An object of class \code{\linkS4class{{saemvsResults}} containing:
 \itemize{
-\item \code{criterion} The selection criterion used (\code{"BIC"} or \code{"e-BIC"}).
-\item \code{criterion_values} Values of the criterion for each unique support.
-\item \code{thresholds} Thresholds computed for each spike value.
-\item \code{beta_map} MAP estimates of regression parameters for each spike value.
-\item \code{mle_estimates} MLE estimates for each unique support.
-\item \code{support} List of supports obtained across spike values.
-\item \code{unique_support} List of unique supports identified.
-\item \code{support_mapping} Mapping from each run to the corresponding unique support.
-\item \code{spike_values_grid} The grid of spike variances used.
-\item \code{phi_fixed_idx} Indices of fixed parameters (not subject to selection).
-\item \code{forced_variables_idx} For each unique support, indices of covariates
+\item \code{criterion}: The selection criterion used (\code{"BIC"} or \code{"e-BIC"}).
+\item \code{criterion_values}: Values of the criterion for each unique support.
+\item \code{thresholds}: Thresholds computed for each spike value.
+\item \code{beta_map}: MAP estimates of regression parameters for each spike value.
+\item \code{mle_estimates}: MLE estimates for each unique support.
+\item \code{support}: List of supports obtained across spike values.
+\item \code{unique_support}: List of unique supports identified.
+\item \code{support_mapping}: Mapping from each run to the corresponding unique support.
+\item \code{spike_values_grid}: The grid of spike variances used.
+\item \code{phi_fixed_idx}: Indices of fixed parameters (not subject to selection).
+\item \code{forced_variables_idx}: For each unique support, indices of covariates
 that were forced into the model (always included).
-\item \code{selected_variables_idx} For each unique support, indices of covariates
+\item \code{selected_variables_idx}: For each unique support, indices of covariates
 that were actively selected by the algorithm (excluding forced ones).
 }
 }
@@ -52,20 +52,20 @@ combined with variable selection using a spike-and-slab prior.
 It supports both BIC and extended BIC (e-BIC) as model selection criteria.
 }
 \details{
-This method explores a grid of spike variances (\eqn{\nu_0}) in parallel,
+This method explores a grid of spike variances (\code{nu0}) in parallel,
 fits MAP estimates for each candidate support, and then evaluates unique
 supports with the chosen information criterion to select the best model.
 
 The procedure is carried out in two steps:
 \enumerate{
-\item For each spike variance candidate (\eqn{\nu_0}), a MAP estimation
+\item For each spike variance candidate (\code{nu0}), a MAP estimation
 is performed in parallel, producing supports, thresholds, and MAP estimates.
 \item Unique supports are identified, and each support is re-evaluated
 with the chosen information criterion (\code{pen}) to select the most
 appropriate model.
 }
 
-Parallel execution is handled using the \pkg{future} and \pkg{furrr} packages.
+Parallel execution is handled using the \code{future} and \code{furrr} packages.
 The model function (C++ code) must be compiled on each worker before execution.
 }
 \examples{
@@ -83,5 +83,5 @@ result <- saemvs(
 
 }
 \seealso{
-\code{\link{saemvsResults}}, \code{\link{run_saem}}
+\code{\linkS4class{{saemvsResults}}, \code{\link{run_saem}}
 }

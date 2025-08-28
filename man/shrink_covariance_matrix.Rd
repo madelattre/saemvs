@@ -44,11 +44,12 @@ Elements not affected by shrinkage are copied from \code{sigma_temp}.
 }
 }
 \examples{
+\dontrun{
 sigma_old <- diag(3)
 sigma_temp <- matrix(1, 3, 3)
 shrink_indices <- c(1, 3)
 alphas <- c(0.5, 0.2)
 shrink_covariance_matrix(sigma_old, sigma_temp, shrink_indices, alphas)
-
+}
 }
 \keyword{internal}

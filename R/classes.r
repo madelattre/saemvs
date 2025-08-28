@@ -1,5 +1,19 @@
+#' @title Class Union: matrix or NULL
+#' @description Internal union class used in slots that may contain
+#' a numeric matrix or be \code{NULL}.
+#' @keywords internal
 setClassUnion("matrixORNULL", c("matrix", "NULL"))
+
+#' @title Class Union: numeric or NULL
+#' @description Internal union class used in slots that may contain
+#' a numeric vector or be \code{NULL}.
+#' @keywords internal
 setClassUnion("numericORNULL", c("numeric", "NULL"))
+
+#' @title Class Union: list or NULL
+#' @description Internal union class used in slots that may contain
+#' a list or be \code{NULL}.
+#' @keywords internal
 setClassUnion("listORNULL", c("list", "NULL"))
 
 #' Class saemvsData
@@ -218,7 +232,8 @@ setClass(
   }
 )
 
-# Internal constructor
+#' Internal constructor for saemvsProcessedData
+#' @keywords internal
 saemvsProcessedData <- function(x_phi_to_select = NULL,
                                 x_phi_not_to_select = NULL,
                                 tx_x_phi_to_select = NULL,
@@ -311,7 +326,15 @@ setClass(
   }
 )
 
-# Constructor
+#' Constructor for saemvsModel
+#'
+#' @param g Function of form `function(phi, t)` returning predicted values.
+#' @param phi_dim Integer: total number of phi parameters.
+#' @param phi_to_select_idx Integer vector (optional): indices of phi parameters for variable selection.
+#' @param phi_fixed_idx Integer vector (optional): indices of phi parameters fixed (no random variability).
+#' @param x_forced_support Numeric matrix or NULL: design matrix for forced covariates (phi_dim columns).
+#'
+#' @return An object of class \code{saemvsModel}.
 #' @export
 saemvsModel <- function(
     g, phi_dim, phi_to_select_idx = c(), phi_fixed_idx = c(),
@@ -387,8 +410,33 @@ setClass(
   }
 )
 
-# Constructor
+#' Constructor for saemvsHyperSlab
+#'
+#' Create a \code{saemvsHyperSlab} object specifying hyperparameters for
+#' the slab component in a spike-and-slab prior.
+#'
+#' Only the slab parameter, the scale matrix for the random effects covariance,
+#' and the degrees of freedom need to be specified by the user. All other
+#' hyperparameters are fixed internally.
+#'
+#' @param slab_parameter Numeric, positive. Controls the variance of the slab prior.
+#'   Default is 12000.
+#' @param cov_re_prior_scale Numeric matrix. Scale matrix of the Inverse-Wishart
+#'   prior for the random effects covariance. Must be square with dimension matching
+#'   the number of phi parameters.
+#' @param cov_re_prior_df Numeric, positive. Degrees of freedom of the Inverse-Wishart
+#'   prior for the random effects covariance. Default is 1.
+#'
+#' @return An object of class \code{saemvsHyperSlab}.
+#' 
+#' @examples
+#' \dontrun{
+#' cov_scale <- diag(2)
+#' h <- saemvsHyperSlab(slab_parameter = 1000, cov_re_prior_scale = cov_scale, cov_re_prior_df = 3)
+#' }
+#' 
 #' @export
+#' @name saemvsHyperSlab
 saemvsHyperSlab <- function(slab_parameter = 12000,
                             cov_re_prior_scale,
                             cov_re_prior_df = 1) {
@@ -419,7 +467,7 @@ saemvsHyperSlab <- function(slab_parameter = 12000,
 #'
 #' @seealso \code{\linkS4class{saemvsHyperSlab}}
 #'
-#' @exportClass saemvsHyperSpikeAndSlab
+#' @keywords internal
 setClass(
   "saemvsHyperSpikeAndSlab",
   slots = list(
@@ -435,8 +483,13 @@ setClass(
   }
 )
 
-# Constructor
-#' @export
+#' Internal constructor for saemvsHyperSpikeAndSlab
+#'
+#' @param spike_parameter numeric, strictly positive
+#' @param hyper_slab an object of class \code{saemvsHyperSlab}
+#' @keywords internal
+#' @return An object of class \code{saemvsHyperSpikeAndSlab}
+#' @name saemvsHyperSpikeAndSlab
 saemvsHyperSpikeAndSlab <- function(spike_parameter,
                                     hyper_slab) {
   methods::new("saemvsHyperSpikeAndSlab",
@@ -515,7 +568,18 @@ setClass(
   }
 )
 
-# Constructor
+#' Constructor for saemvsInit
+#'
+#' Create an object of class \code{saemvsInit} specifying initial values
+#' for the SAEMVS algorithm.
+#'
+#' @param intercept Numeric vector. Intercepts for each component of phi.
+#' @param beta_forced Numeric matrix or NULL. Coefficients for forced covariates.
+#' @param beta_candidates Numeric matrix or NULL. Coefficients for candidate covariates.
+#' @param cov_re Numeric square matrix. Initial covariance of random effects.
+#' @param sigma2 Numeric, positive. Initial residual variance (default = 1).
+#'
+#' @return An object of class \code{saemvsInit}.
 #' @export
 saemvsInit <- function(intercept,
                        beta_forced = NULL,
@@ -568,7 +632,15 @@ setClass(
   # No validity: objects created automatically in the code
 )
 
-# Constructor
+#' Internal constructor for saemvsProcessedInit
+#' @keywords internal
+#' @param beta_to_select Numeric matrix or NULL. Coefficients for phi components subject to selection.
+#' @param beta_not_to_select Numeric matrix or NULL. Coefficients for phi components not subject to selection.
+#' @param gamma_to_select Numeric matrix or NULL. Covariance matrix for phi components to select.
+#' @param gamma_not_to_select Numeric matrix or NULL. Covariance matrix for phi components not to select.
+#' @param sigma2 Numeric. Residual variance.
+#' @param inclusion_prob Numeric vector or NULL. Inclusion probabilities for phi components.
+#' @return An object of class \code{saemvsProcessedInit}.
 saemvsProcessedInit <- function(beta_to_select = NULL,
                                 beta_not_to_select = NULL,
                                 gamma_to_select = NULL,
@@ -729,6 +801,23 @@ setClass(
   }
 )
 
+#' Constructor for saemvsTuning
+#'
+#' Create a \code{saemvsTuning} object specifying algorithm tuning parameters
+#' for SAEMVS.
+#'
+#' @param niter Integer. Total number of SAEM iterations (positive).
+#' @param nburnin Integer. Number of burn-in iterations (non-negative, ≤ niter).
+#' @param niter_mh Integer. Number of Metropolis-Hastings iterations per S-step (positive).
+#' @param kernel_mh Character. Type of MH kernel: "random_walk" or "pop".
+#' @param covariance_decay Numeric between 0 and 1. Decay factor for covariance adaptation.
+#' @param mh_proposal_scale Positive numeric. Scaling factor for MH proposal variance.
+#' @param spike_values_grid Numeric vector, strictly positive and non-empty.
+#' @param n_is_samples Integer. Number of importance sampling iterations (positive).
+#' @param seed Integer. Random seed for reproducibility.
+#' @param nb_workers Integer. Number of parallel workers (positive).
+#'
+#' @return An object of class \code{saemvsTuning}.
 #' @export
 saemvsTuning <- function(niter = 500,
                          nburnin = 350,
@@ -814,8 +903,6 @@ saemvsTuning <- function(niter = 500,
 #' \code{\link{summary_saemvs}} make use of these slots for reporting.
 #'
 #' @keywords internal
-#' @exportClass saemvsResults
-
 setClass(
   "saemvsResults",
   slots = list(
@@ -897,7 +984,6 @@ setClass(
 #' @slot sigma2 A numeric vector of estimated residual variances at each iteration.
 #'
 #' @keywords internal
-#' @exportClass saemResults
 setClass(
   "saemResults",
   slots = list(
