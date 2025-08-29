@@ -17,10 +17,10 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  echo = TRUE,       # montre le code
-  results = "markup",# montre les sorties console
-  message = TRUE,    # garde les messages R
-  warning = FALSE,    # garde les warnings
+  echo = TRUE, # montre le code
+  results = "markup", # montre les sorties console
+  message = TRUE, # garde les messages R
+  warning = FALSE, # garde les warnings
   fig.show = "hold", # affiche les graphiques
   fig.align = "center",
   fig.width = 6,
@@ -51,7 +51,7 @@ This section demonstrates a simple workflow using `saemvs` with the included exa
 
 ```{r}
 library(saemvs)
-data("small_example_data") 
+data("small_example_data")
 ```
 
 The dataset `small_example_data` included in the package was simulated for demonstration purposes. Users interested in the generation procedure can find the script in `inst/scripts`.
@@ -106,7 +106,7 @@ The `saemvsTuning` object specifies algorithm tuning parameters, here `niter`: t
 tuning <- saemvsTuning(
   niter = 1000,
   nburnin = 800,
-  spike_values_grid = exp(-3+seq(1,8)) #/3
+  spike_values_grid = exp(-3 + seq(1, 8)) # /3
 )
 ```
 
@@ -133,14 +133,14 @@ init_values <- saemvsInit(
 
 Once all objects are prepared (`saemvsData`, `saemvsModel`, `saemvsHyperSlab`, `saemvsTuning`, `saemvsInit`), you can run the main `saemvs` function to perform variable selection.
 
-```{r run_saemvs, cache = TRUE}
+```{r run_saemvs, cache = FALSE}
 # Run the SAEMVS algorithm
 result <- saemvs(
   data = saemvs_input,
-  model = model, 
-  init = init_values, 
-  tuning_algo = tuning, 
-  hyperparam = hyper_slab, 
+  model = model,
+  init = init_values,
+  tuning_algo = tuning,
+  hyperparam = hyper_slab,
   pen = "e-BIC"
 )
 ```
@@ -201,14 +201,14 @@ init_values_with_fixed_effects <- saemvsInit(
 )
 ```
 
-```{r run_saemvs_fixed_effects, cache = TRUE}
+```{r run_saemvs_fixed_effects, cache = FALSE}
 # Run the SAEMVS algorithm
 result_with_fixed_effects <- saemvs(
   data = saemvs_input,
-  model = model_with_fixed_effects, 
-  init = init_values_with_fixed_effects, 
-  tuning_algo = tuning, 
-  hyperparam = hyper_slab, 
+  model = model_with_fixed_effects,
+  init = init_values_with_fixed_effects,
+  tuning_algo = tuning,
+  hyperparam = hyper_slab,
   pen = "e-BIC"
 )
 
@@ -231,8 +231,8 @@ In the example below, we force the inclusion of the first covariate (column 1 of
 saemvs_input_with_forced_covariates <- saemvsData(
   y = small_example_data$y_list,
   t = small_example_data$t_list,
-  x_candidates = small_example_data$x[,-1],
-  x_forced = small_example_data$x[,1, drop = FALSE]
+  x_candidates = small_example_data$x[, -1],
+  x_forced = small_example_data$x[, 1, drop = FALSE]
 )
 
 model_with_forced_covariates <- saemvsModel(
@@ -253,7 +253,8 @@ init_values_with_forced_covariates <- saemvsInit(
     ncol = 3
   ),
   beta_forced = matrix(
-    c(80, 0, 15), ncol = 3, nrow = 1
+    c(80, 0, 15),
+    ncol = 3, nrow = 1
   ),
   cov_re = diag(c(400, 200, 200)),
   sigma2 = 100
@@ -262,13 +263,13 @@ init_values_with_forced_covariates <- saemvsInit(
 
 Running the algorithm shows how the forced covariate is always retained, while selection is only performed among the candidate covariates:
 
-```{r run_saemvs_forced_covariates, cache = TRUE}
+```{r run_saemvs_forced_covariates, cache = FALSE}
 result_with_forced_covariates <- saemvs(
   data = saemvs_input_with_forced_covariates,
-  model = model_with_forced_covariates, 
-  init = init_values_with_forced_covariates, 
-  tuning_algo = tuning, 
-  hyperparam = hyper_slab, 
+  model = model_with_forced_covariates,
+  init = init_values_with_forced_covariates,
+  tuning_algo = tuning,
+  hyperparam = hyper_slab,
   pen = "e-BIC"
 )
 
@@ -289,14 +290,14 @@ It is important to note that:
 
 In the example below, we run the SAEMVS algorithm using the BIC criterion instead of e-BIC. The output shows the selected covariates, parameter estimates, and diagnostic plots.
 
-```{r run_saemvs_bic, cache = TRUE}
+```{r run_saemvs_bic, cache = FALSE}
 # Run the SAEMVS algorithm
 result_with_bic <- saemvs(
   data = saemvs_input,
-  model = model, 
-  init = init_values, 
-  tuning_algo = tuning, 
-  hyperparam = hyper_slab, 
+  model = model,
+  init = init_values,
+  tuning_algo = tuning,
+  hyperparam = hyper_slab,
   pen = "BIC"
 )
 
@@ -321,7 +322,7 @@ In the example below, we use 8 workers to parallelize the algorithm:
 tuning_workers <- saemvsTuning(
   niter = 1000,
   nburnin = 800,
-  spike_values_grid = exp(-3+seq(1,8)),
+  spike_values_grid = exp(-3 + seq(1, 8)),
   nb_workers = 8
 )
 ```
