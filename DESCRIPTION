@@ -14,7 +14,6 @@ LinkingTo:
 Imports: 
     Rcpp,
     mvnfast,
-    psych,
     Matrix,
     digest,
     future,
