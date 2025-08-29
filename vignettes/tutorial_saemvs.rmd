@@ -1,0 +1,331 @@
+---
+title: "A quick tutorial on SAEMVS"
+author: "Maud Delattre"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+vignette: >
+  %\VignetteIndexEntry{A quick tutorial on SAEMVS}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  echo = TRUE,       # montre le code
+  results = "markup",# montre les sorties console
+  message = TRUE,    # garde les messages R
+  warning = FALSE,    # garde les warnings
+  fig.show = "hold", # affiche les graphiques
+  fig.align = "center",
+  fig.width = 6,
+  fig.height = 4
+)
+```
+
+# Introduction
+
+The **`saemvs`** package is designed for users of nonlinear mixed-effects models who want to perform **variable selection**, especially when the number of available covariates is very large (high-dimensional variable selection).
+
+`saemvs` implements the first algorithm that performs this task in a **fully automatic and principled way**, unlike existing methods that are largely empirical or manual.
+
+The package leverages **C++ code via Rcpp** to ensure efficient computation even for high-dimensional data.
+
+
+# Installation
+
+To use the `saemvs` package, first ensure it is installed. Once installed, load the package with:
+
+```{r}
+library(saemvs)
+```
+
+# Getting started
+
+This section demonstrates a simple workflow using `saemvs` with the included example dataset `small_example_data`.
+
+```{r}
+library(saemvs)
+data("small_example_data") 
+```
+
+The dataset `small_example_data` included in the package was simulated for demonstration purposes. Users interested in the generation procedure can find the script in `inst/scripts`.
+
+## Preparation 
+
+First, it is necessary to specify the data structure, the model, and various settings that are useful for running the SAEMVS procedure.
+
+The `saemvsData` object contains the observed responses (`y`), the measurement time points (`t`) and the candidate covariates for variable selection (`x_candidates`). 
+
+```{r}
+# Create saemvsData object
+saemvs_input <- saemvsData(
+  y = small_example_data$y_list,
+  t = small_example_data$t_list,
+  x_candidates = small_example_data$x
+)
+```
+
+The `saemvsModel` object specifies the structural model. For this example, we consider a 3-parameter logistic-type model.
+
+```{r}
+# Define the model function
+g <- function(phi, t) {
+  phi[2] + phi[1] / (1 + exp(-(t - phi[3])))
+}
+
+# Create saemvsModel object
+model <- saemvsModel(
+  g = g,
+  phi_dim = 3,
+  phi_to_select_idx = c(1, 3)
+)
+```
+
+`g`, the user-defined model function, `phi_dim`, the dimension of the vector of individual parameters and `phi_to_select_idx`, the indices of parameters subject to selection are necessary information assembled in the `saemvsModel` object.
+
+The minimum hyperparameters to be declared in the object are those of the inverse Wishart distribution on the covariance matrix of random effects (*i.e* its scale matrix `cov_re_prior_scale` and degrees of freedom `cov_re_prior_df`.).
+
+```{r}
+# Define hyperparameters for the slab
+hyper_slab <- saemvsHyperSlab(
+  cov_re_prior_scale = diag(rep(0.2, 2)),
+  cov_re_prior_df = 4
+)
+```
+
+The `saemvsTuning` object specifies algorithm tuning parameters, here `niter`: total number of iterations, `nburnin`: number of burn-in iterations and `spike_values_grid`: grid of spike values for variable selection.
+
+```{r}
+# Define tuning parameters
+tuning <- saemvsTuning(
+  niter = 1000,
+  nburnin = 800,
+  spike_values_grid = exp(-3+seq(1,8)) #/3
+)
+```
+
+Finally, the `saemvsInit` object specifies initial values for the algorithm.
+
+```{r}
+# Define initial values
+init_values <- saemvsInit(
+  intercept = c(1300, 350, 250),
+  beta_candidates = matrix(
+    c(
+      80, 20, 20, 0,
+      0, 0, 0, 0,
+      15, 0, 0, 0
+    ),
+    ncol = 3
+  ),
+  cov_re = diag(c(400, 200, 200)),
+  sigma2 = 100
+)
+```
+
+## Running SAEMVS
+
+Once all objects are prepared (`saemvsData`, `saemvsModel`, `saemvsHyperSlab`, `saemvsTuning`, `saemvsInit`), you can run the main `saemvs` function to perform variable selection.
+
+```{r run_saemvs, cache = TRUE}
+# Run the SAEMVS algorithm
+result <- saemvs(
+  data = saemvs_input,
+  model = model, 
+  init = init_values, 
+  tuning_algo = tuning, 
+  hyperparam = hyper_slab, 
+  pen = "e-BIC"
+)
+```
+
+## Inspect the results
+
+You can get a summary of the selected variables and parameter estimates in the best model:
+
+```{r}
+summary_saemvs(result, digits = 3)
+```
+
+## Diagnostic plots
+
+Visual diagnostics can help evaluate the algorithm's variable selection process.
+
+```{r}
+plots <- prepare_grid_plot(result)
+plots$reg_plot[[1]]
+plots$reg_plot[[2]]
+
+plots$ebic_plot
+```
+
+# Advanced statistical options
+
+## Considering models with fixed-effects
+
+In some situations, one or more parameters are not assumed to vary between individuals, but are instead modeled as fixed effects.
+In saemvs, this can be specified using the argument `phi_fixed_idx` in the `saemvsModel` constructor.
+
+In the example below, parameter 2 is treated as a fixed effect:
+
+- Fixed effects cannot be subject to variable selection (`phi_fixed_idx` must be disjoint from `phi_to_select_idx`).
+<!-- - When defining the initial values in `saemvsInit`, the corresponding variance in the random-effects covariance matrix (`cov_re`) must be set to 0, to indicate that this parameter does not vary between individuals. -->
+- The intercept (population mean) is still initialized in `intercept`, but without inter-individual variability.
+
+```{r}
+model_with_fixed_effects <- saemvsModel(
+  g = g,
+  phi_dim = 3,
+  phi_to_select_idx = c(1, 3),
+  phi_fixed_idx = 2
+)
+
+init_values_with_fixed_effects <- saemvsInit(
+  intercept = c(1300, 350, 250),
+  beta_candidates = matrix(
+    c(
+      80, 20, 20, 0,
+      0, 0, 0, 0,
+      15, 0, 0, 0
+    ),
+    ncol = 3
+  ),
+  cov_re = diag(c(400, 200, 200)),
+  sigma2 = 100
+)
+```
+
+```{r run_saemvs_fixed_effects, cache = TRUE}
+# Run the SAEMVS algorithm
+result_with_fixed_effects <- saemvs(
+  data = saemvs_input,
+  model = model_with_fixed_effects, 
+  init = init_values_with_fixed_effects, 
+  tuning_algo = tuning, 
+  hyperparam = hyper_slab, 
+  pen = "e-BIC"
+)
+
+summary_saemvs(result_with_fixed_effects, digits = 3)
+```
+
+## Forcing inclusion of variables
+
+In some applications, it is necessary to force the inclusion of certain covariates in the model, regardless of their statistical support in the selection procedure. For example, one may want to always adjust for a baseline covariate such as treatment group or sex, while allowing other covariates to be selected or discarded.
+
+In `saemvs`, this is done by:
+
+- Passing the covariates to be always included in the argument `x_forced` of `saemvsData`.
+- Specifying how these covariates enter each individual parameter through the `x_forced_support` matrix in `saemvsModel`. Each row corresponds to a forced covariate, ach column corresponds to a parameter. A value of 1 indicates that the covariate affects the corresponding parameter, 0 otherwise.
+- Providing initial values for their coefficients in beta_forced within saemvsInit.
+
+In the example below, we force the inclusion of the first covariate (column 1 of `x`), and specify that it affects parameters 1 and 3 of the model:
+
+```{r}
+saemvs_input_with_forced_covariates <- saemvsData(
+  y = small_example_data$y_list,
+  t = small_example_data$t_list,
+  x_candidates = small_example_data$x[,-1],
+  x_forced = small_example_data$x[,1, drop = FALSE]
+)
+
+model_with_forced_covariates <- saemvsModel(
+  g = g,
+  phi_dim = 3,
+  phi_to_select_idx = c(1, 3),
+  x_forced_support = matrix(c(1, 0, 1), ncol = 3, nrow = 1)
+)
+
+init_values_with_forced_covariates <- saemvsInit(
+  intercept = c(1300, 350, 250),
+  beta_candidates = matrix(
+    c(
+      20, 20, 0,
+      0, 0, 0,
+      0, 0, 0
+    ),
+    ncol = 3
+  ),
+  beta_forced = matrix(
+    c(80, 0, 15), ncol = 3, nrow = 1
+  ),
+  cov_re = diag(c(400, 200, 200)),
+  sigma2 = 100
+)
+```
+
+Running the algorithm shows how the forced covariate is always retained, while selection is only performed among the candidate covariates:
+
+```{r run_saemvs_forced_covariates, cache = TRUE}
+result_with_forced_covariates <- saemvs(
+  data = saemvs_input_with_forced_covariates,
+  model = model_with_forced_covariates, 
+  init = init_values_with_forced_covariates, 
+  tuning_algo = tuning, 
+  hyperparam = hyper_slab, 
+  pen = "e-BIC"
+)
+
+summary_saemvs(result_with_forced_covariates, digits = 3)
+```
+
+## Using BIC instead of e-BIC
+
+By default, saemvs uses the extended BIC (e-BIC) as the selection criterion. The e-BIC is particularly suitable for high-dimensional settings, where the number of candidate covariates is large compared to the sample size.
+
+In situations where the covariate set is moderate in size (not high-dimensional), users may prefer to use the classical BIC. This can be done simply by setting `pen = "BIC"` in the `saemvs` function.
+
+It is important to note that:
+
+- The selected model may differ depending on the criterion used (BIC vs e-BIC).
+- BIC tends to favor slightly larger models because its penalty for complexity is smaller than that of e-BIC.
+- e-BIC includes an additional term to penalize high-dimensional covariate spaces, which helps avoid overfitting when p is large.
+
+In the example below, we run the SAEMVS algorithm using the BIC criterion instead of e-BIC. The output shows the selected covariates, parameter estimates, and diagnostic plots.
+
+```{r run_saemvs_bic, cache = TRUE}
+# Run the SAEMVS algorithm
+result_with_bic <- saemvs(
+  data = saemvs_input,
+  model = model, 
+  init = init_values, 
+  tuning_algo = tuning, 
+  hyperparam = hyper_slab, 
+  pen = "BIC"
+)
+
+summary_saemvs(result_with_bic, digits = 3)
+```
+
+```{r}
+plots <- prepare_grid_plot(result_with_bic)
+plots$reg_plot[[1]]
+plots$reg_plot[[2]]
+
+plots$ebic_plot
+```
+
+# Technical options for computation
+
+In addition to statistical settings, `saemvs` provides technical options to optimize computation time and efficiency. The main way to speed up computation is to run the algorithm in parallel across multiple cores. This is particularly useful when the number of candidate covariates is large and the grid of spike values is wide. By default, saemvs uses 4 workers (`nb_workers = 4`). Users can increase this number to take advantage of additional CPU cores. The number of cores used is controlled by the `nb_workers` argument in the `saemvsTuning` object.
+
+In the example below, we use 8 workers to parallelize the algorithm:
+
+```{r}
+tuning_workers <- saemvsTuning(
+  niter = 1000,
+  nburnin = 800,
+  spike_values_grid = exp(-3+seq(1,8)),
+  nb_workers = 8
+)
+```
+
+Running SAEMVS with this tuning object will distribute computation across the specified number of workers, significantly reducing runtime in high-dimensional or computationally intensive settings.
+
+<!-- Note: Parallelisation gains are most noticeable when the number of covariates or spike values is large. For small datasets, using multiple workers may not provide a speed-up and can even add overhead. -->
