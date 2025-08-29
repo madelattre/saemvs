@@ -20,7 +20,7 @@ saemvsTuning(
 \arguments{
 \item{niter}{Integer. Total number of SAEM iterations (positive).}
 
-\item{nburnin}{Integer. Number of burn-in iterations (non-negative, ≤ niter).}
+\item{nburnin}{Integer. Number of burn-in iterations (non-negative, less than niter).}
 
 \item{niter_mh}{Integer. Number of Metropolis-Hastings iterations per S-step (positive).}
 
