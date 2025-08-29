@@ -4,7 +4,7 @@
 #' required for fitting a \code{saemvsModel} to a \code{saemvsData} object.
 #'
 #' Specifically, it:
-#'\itemize{
+#' \itemize{
 #'   \item separates covariates for parameters subject to selection from those for parameters not subject to selection,
 #'   \item builds corresponding design matrices (with intercept),
 #'   \item computes Gram matrices and block-diagonal expansions for covariates related to parameters subject to selection,
@@ -293,11 +293,24 @@ setMethod(
       }
 
       # gamma_not_to_select
+
+      # replace fixed effect variances with strictly positive values for sampling (exponentialization trick)
+      cov_re <- init@cov_re
+      phi_idx <- model@phi_fixed_idx
+
+      if (length(phi_idx) > 0) {
+        cov_re[cbind(phi_idx, phi_idx)] <-
+          pmax(0.5 * (init@intercept[phi_idx])**2, 1)
+      }
+
+
+
       gamma_not_to_select <- matrix(
         init@cov_re[phi_not_to_select_idx, phi_not_to_select_idx, drop = FALSE],
         ncol = length(phi_not_to_select_idx)
       )
     }
+
 
     ## === 3. Construct processed init object ===
     init_processed <- methods::new("saemvsProcessedInit",

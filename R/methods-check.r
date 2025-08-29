@@ -128,6 +128,20 @@ setMethod(
       ))
     }
 
+    phi_idx <- model@phi_fixed_idx
+    if (length(phi_idx) > 0) {
+      diag_vals <- diag(init@cov_re[phi_idx, phi_idx, drop = FALSE])
+
+      if (any(diag_vals != 0)) {
+        warning(sprintf(
+          "Diagonal components of 'cov_re' at phi_fixed_idx (%s) are not zero (%s).
+       According to the model specification they should be zero, and will be ignored in the procedure.",
+          paste(phi_idx[diag_vals != 0], collapse = ", "),
+          paste(diag_vals[diag_vals != 0], collapse = ", ")
+        ))
+      }
+    }
+
     if (!is.numeric(init@sigma2) || length(init@sigma2) != 1 || init@sigma2 <= 0) {
       stop("'sigma2' must be a single strictly positive number.")
     }
