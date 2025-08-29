@@ -381,6 +381,13 @@ setMethod(
   function(k, support, data, model, init, tuning_algo, pen) {
     p <- dim(data@x_candidates)[2]
 
+    if (!is_empty_support(model@x_forced_support)) {
+      nb_forced_beta <- sum(model@x_forced_support)
+    } else {
+      nb_forced_beta <- 0
+    }
+
+
     forced_support <- extract_sub_support(
       model@x_forced_support,
       model@phi_to_select_idx
@@ -391,7 +398,6 @@ setMethod(
         nrow = nrow(support[[k]])
       )
       forced_rows <- integer(0) # no forced covariates
-      # selected_rows <- seq_len(nrow(cand_support))
       active_candidate_idx <- which(rowSums(cand_support[-1, , drop = FALSE]) > 0)
       selected_rows <- active_candidate_idx
     } else {
@@ -422,7 +428,7 @@ setMethod(
       sigma2 = mle$sigma2[tuning_algo@niter + 1]
     )
 
-    ll <- loglik(new_data, new_model, tuning_algo, mle_param, pen, p)
+    ll <- loglik(new_data, new_model, tuning_algo, mle_param, pen, p, model@phi_to_select_idx, nb_forced_beta)
 
 
     return(list(ll = ll, mle_param = mle_param, forced_variables_idx = forced_rows, selected_variables_idx = selected_rows))

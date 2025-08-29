@@ -15,18 +15,16 @@
 #'   }
 #' @param pen Character string specifying the penalty. One of "BIC", "e-BIC", or no penalty.
 #' @param p Numeric, number of candidate covariates (for e-BIC computation). Consider renaming to \code{num_covariates} for clarity.
+#' @param phi_to_select_idx Integer vector indicating which covariates (columns of the design matrix) are subject to selection. Used for computing the penalization term in BIC/e-BIC.
+#' @param nb_forced_beta Integer specifying the number of covariates that are forced to be included in the model. This is used to adjust the penalization term in the e-BIC computation.
 #' @return Numeric value of the penalized log-likelihood (BIC or e-BIC).
 #' @keywords internal
-loglik <- function(data, model, tuning_algo, param, pen, p) {
+loglik <- function(data, model, tuning_algo, param, pen, p, phi_to_select_idx, nb_forced_beta) {
   # Prepare the data
   data <- prepare_data(data, model)
 
   # Number of Monte Carlo samples for marginal likelihood approximation
   num_samples <- tuning_algo@n_is_samples
-
-  # Forced support for phi parameters
-  support_matrix <- model@x_forced_support
-  supp_index <- which(c(t(support_matrix)) == 1)
 
   yi <- data@y_series # List of response vectors for each individual
   ti <- data@t_series # List of time vectors for each individual
@@ -60,13 +58,13 @@ loglik <- function(data, model, tuning_algo, param, pen, p) {
   # Sum over individuals
   loglike <- sum(sapply(seq_along(yi), log_lik_i))
 
-  nb_beta <- length(supp_index)
+  nb_selected_beta <- sum(model@x_forced_support[, phi_to_select_idx])
 
   # Apply penalty if requested
   biclike <- switch(pen,
-    "e-BIC" = -2 * loglike + (nb_beta - model@phi_dim) * log(n) +
-      2 * log(choose(p * model@phi_dim, nb_beta - model@phi_dim)),
-    "BIC" = -2 * loglike + nb_beta * log(n),
+    "e-BIC" = -2 * loglike + (nb_selected_beta) * log(n) +
+      2 * log(choose(p * length(phi_to_select_idx), (nb_selected_beta - nb_forced_beta))),
+    "BIC" = -2 * loglike + nb_selected_beta * log(n),
     -2 * loglike
   )
 
