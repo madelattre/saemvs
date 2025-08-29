@@ -2,18 +2,17 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 x_per_indiv_rcpp <- function(x_list, index_list) {
-    .Call(`_saemvs_x_per_indiv_rcpp`, x_list, index_list)
+  .Call(`_saemvs_x_per_indiv_rcpp`, x_list, index_list)
 }
 
 mat_inv <- function(A) {
-    .Call(`_saemvs_mat_inv`, A)
+  .Call(`_saemvs_mat_inv`, A)
 }
 
 solve_linear_syst <- function(A, B) {
-    .Call(`_saemvs_solve_linear_syst`, A, B)
+  .Call(`_saemvs_solve_linear_syst`, A, B)
 }
 
 kronecker_gamma_diag_mult <- function(gamma, d_diag, p) {
-    .Call(`_saemvs_kronecker_gamma_diag_mult`, gamma, d_diag, p)
+  .Call(`_saemvs_kronecker_gamma_diag_mult`, gamma, d_diag, p)
 }
-

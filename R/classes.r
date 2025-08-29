@@ -45,7 +45,6 @@ setClassUnion("listORNULL", c("list", "NULL"))
 #' t <- list(1:10, 1:8)
 #' d <- saemvsData(y, t)
 #' }
-
 setClass(
   "saemvsData",
   slots = list(
@@ -116,8 +115,8 @@ setClass(
 )
 
 
-#'@rdname saemvsData
-#'@title Constructor for saemvsData
+#' @rdname saemvsData
+#' @title Constructor for saemvsData
 #'
 #' @param y list of numeric vectors (responses).
 #' @param t list of numeric vectors (time indices).
@@ -428,13 +427,13 @@ setClass(
 #'   prior for the random effects covariance. Default is 1.
 #'
 #' @return An object of class \code{saemvsHyperSlab}.
-#' 
+#'
 #' @examples
 #' \dontrun{
 #' cov_scale <- diag(2)
 #' h <- saemvsHyperSlab(slab_parameter = 1000, cov_re_prior_scale = cov_scale, cov_re_prior_df = 3)
 #' }
-#' 
+#'
 #' @export
 saemvsHyperSlab <- function(slab_parameter = 12000,
                             cov_re_prior_scale,
@@ -802,7 +801,7 @@ setClass(
 #' @description Create a \code{saemvsTuning} object specifying algorithm tuning parameters for SAEMVS.
 #'
 #' @param niter Integer. Total number of SAEM iterations (positive).
-#' @param nburnin Integer. Number of burn-in iterations (non-negative, ≤ niter).
+#' @param nburnin Integer. Number of burn-in iterations (non-negative, less than niter).
 #' @param niter_mh Integer. Number of Metropolis-Hastings iterations per S-step (positive).
 #' @param kernel_mh Character. Type of MH kernel: "random_walk" or "pop".
 #' @param covariance_decay Numeric between 0 and 1. Decay factor for covariance adaptation.

@@ -23,7 +23,7 @@
 #' x <- matrix(1:6, nrow = 2, ncol = 3)
 #' supp <- matrix(c(1, 0, 1, 0, 1, 1), nrow = 2, byrow = TRUE)
 #' expand_to_list(x, supp, q = 2)
-#'}
+#' }
 #' @keywords internal
 expand_to_list <- function(x_mat, support, q) {
   fun_name <- "expand_to_list"
@@ -96,7 +96,7 @@ expand_to_list <- function(x_mat, support, q) {
 #' shrink_indices <- c(1, 3)
 #' alphas <- c(0.5, 0.2)
 #' shrink_covariance_matrix(sigma_old, sigma_temp, shrink_indices, alphas)
-#'}
+#' }
 #' @keywords internal
 shrink_covariance_matrix <- function(
     sigma_old, sigma_temp, shrink_indices, alphas) {
@@ -169,7 +169,7 @@ shrink_covariance_matrix <- function(
 #' mat <- matrix(1:9, nrow = 3, byrow = TRUE)
 #' indices <- c(1, 3)
 #' zero_out_shrinked(mat, indices)
-#'}
+#' }
 #' @keywords internal
 zero_out_shrinked <- function(mat, indices) {
   if (is.null(mat) || !is.matrix(mat)) {
@@ -335,7 +335,7 @@ is_empty_support <- function(support) {
 #' is_empty_matrix(matrix(nrow = 0)) # TRUE
 #' is_empty_matrix(matrix(, 2, 0)) # TRUE
 #' is_empty_matrix(matrix(0, 2, 2)) # FALSE
-#'}
+#' }
 #' @keywords internal
 is_empty_matrix <- function(mat) {
   if (is.null(mat)) {
@@ -381,7 +381,7 @@ is_empty_matrix <- function(mat) {
 #'
 #' extract_rows_with_ones(NULL)
 #' # Returns: integer(0)
-#'}
+#' }
 #' @seealso \code{\link{is_empty_matrix}}
 #' @keywords internal
 extract_rows_with_ones <- function(mat) {
@@ -424,7 +424,7 @@ extract_rows_with_ones <- function(mat) {
 #' extract_sub_support(supp, 1) # Returns matrix with first column
 #' extract_sub_support(supp, 2:3) # Returns NULL if only zeros
 #' extract_sub_support(NULL, 1) # Returns NULL
-#'}
+#' }
 #' @seealso \code{\link{is_empty_support}}
 #' @keywords internal
 extract_sub_support <- function(support, idx) {

@@ -44,6 +44,9 @@ m_step_not_to_select <- function(config, k, state) {
   gamma_proposed <- (s2 + sum_bx - sum_xbs3 - t(sum_xbs3)) / config$num_series
   gamma_proposed <- (gamma_proposed + t(gamma_proposed)) / 2 # enforce symmetry
   gamma_scaled <- config$covariance_decay * old_gamma
+
+  # diag(gamma_proposed) <- pmax(diag(gamma_proposed), 0.001)
+
   use_scaled <- sum(gamma_scaled^2) > sum(gamma_proposed^2)
 
   state$gamma_not_to_select[[k + 1]] <- if (use_scaled) gamma_scaled else gamma_proposed
@@ -105,6 +108,9 @@ m_step_to_select <- function(config, k, state) {
     (config$num_series + config$cov_re_prior_df + config$num_parameters_to_select + 1)
   gamma_proposed <- (gamma_proposed + t(gamma_proposed)) / 2 # enforce symmetry
   gamma_scaled <- config$covariance_decay * old_gamma
+
+  # diag(gamma_proposed) <- pmax(diag(gamma_proposed), 0.001)
+
   use_scaled <- sum(gamma_scaled^2) > sum(gamma_proposed^2)
 
   state$gamma_to_select[[k + 1]] <- if (use_scaled) gamma_scaled else gamma_proposed

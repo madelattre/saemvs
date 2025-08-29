@@ -3,7 +3,7 @@
 # Declare global variable names to suppress R CMD check notes
 if (getRversion() >= "2.15.1") {
   utils::globalVariables(
-    c("iteration", "value", "crit")  # variables used in ggplot or data.table
+    c("iteration", "value", "crit") # variables used in ggplot or data.table
   )
 }
 
