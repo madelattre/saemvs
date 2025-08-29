@@ -144,7 +144,7 @@ m_step_map_to_select <- function(config, k, state) {
   state$sigma2[k + 1] <- max(
     config$covariance_decay * old_sigma2,
     (config$residual_variance_prior_shape * config$residual_variance_prior_rate + state$s1[k + 1]) /
-      (config$total_observations + config$residual_variance_prior_rate + 2)
+      (config$total_observations + config$residual_variance_prior_shape + 2)
   )
   return(state)
 }
@@ -165,7 +165,7 @@ m_step_map_all <- function(config, k, state) {
   state$sigma2[k + 1] <- max(
     config$covariance_decay * old_sigma2,
     (config$residual_variance_prior_shape * config$residual_variance_prior_rate + state$s1[k + 1]) /
-      (config$total_observations + config$residual_variance_prior_rate + 2)
+      (config$total_observations + config$residual_variance_prior_shape + 2)
   )
   return(state)
 }
