@@ -1,4 +1,7 @@
-
+^vignettes/.*_cache
+^vignettes/.*\\.html$
+^vignettes/.*\\.RData$
+^\.Rd2pdf
 ^\.vscode$
 ^\.Rdata$
 ^compiled_models$

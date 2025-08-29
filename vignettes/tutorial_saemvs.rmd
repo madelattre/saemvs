@@ -14,6 +14,7 @@ vignette: >
 ---
 
 ```{r setup, include = FALSE}
+library(saemvs)
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -133,7 +134,7 @@ init_values <- saemvsInit(
 
 Once all objects are prepared (`saemvsData`, `saemvsModel`, `saemvsHyperSlab`, `saemvsTuning`, `saemvsInit`), you can run the main `saemvs` function to perform variable selection.
 
-```{r run_saemvs, cache = FALSE}
+```{r run_saemvs, cache = FALSE, eval = FALSE}
 # Run the SAEMVS algorithm
 result <- saemvs(
   data = saemvs_input,
@@ -149,7 +150,7 @@ result <- saemvs(
 
 You can get a summary of the selected variables and parameter estimates in the best model:
 
-```{r}
+```{r saemvs_summary, eval = FALSE}
 summary_saemvs(result, digits = 3)
 ```
 
@@ -157,7 +158,7 @@ summary_saemvs(result, digits = 3)
 
 Visual diagnostics can help evaluate the algorithm's variable selection process.
 
-```{r}
+```{r saemvs_plot, eval = FALSE}
 plots <- prepare_grid_plot(result)
 plots$reg_plot[[1]]
 plots$reg_plot[[2]]
@@ -201,7 +202,7 @@ init_values_with_fixed_effects <- saemvsInit(
 )
 ```
 
-```{r run_saemvs_fixed_effects, cache = FALSE}
+```{r run_saemvs_fixed_effects, cache = FALSE, eval = FALSE}
 # Run the SAEMVS algorithm
 result_with_fixed_effects <- saemvs(
   data = saemvs_input,
@@ -263,7 +264,7 @@ init_values_with_forced_covariates <- saemvsInit(
 
 Running the algorithm shows how the forced covariate is always retained, while selection is only performed among the candidate covariates:
 
-```{r run_saemvs_forced_covariates, cache = FALSE}
+```{r run_saemvs_forced_covariates, cache = FALSE, eval = FALSE}
 result_with_forced_covariates <- saemvs(
   data = saemvs_input_with_forced_covariates,
   model = model_with_forced_covariates,
@@ -290,7 +291,7 @@ It is important to note that:
 
 In the example below, we run the SAEMVS algorithm using the BIC criterion instead of e-BIC. The output shows the selected covariates, parameter estimates, and diagnostic plots.
 
-```{r run_saemvs_bic, cache = FALSE}
+```{r run_saemvs_bic, cache = FALSE, eval = FALSE}
 # Run the SAEMVS algorithm
 result_with_bic <- saemvs(
   data = saemvs_input,
@@ -304,7 +305,7 @@ result_with_bic <- saemvs(
 summary_saemvs(result_with_bic, digits = 3)
 ```
 
-```{r}
+```{r bic_plot, eval = FALSE}
 plots <- prepare_grid_plot(result_with_bic)
 plots$reg_plot[[1]]
 plots$reg_plot[[2]]
