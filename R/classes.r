@@ -99,16 +99,30 @@ setClass(
       }
     }
 
-    # # Warning if overlap between to_select and not_to_select
-    # if (!is.null(object@x_phi_to_select) &&
-    # !is.null(object@x_phi_not_to_select)) {
-    #   common_cols <- intersect(
-    #     colnames(object@x_phi_to_select), colnames(object@x_phi_not_to_select)
-    #     )
-    #   if (length(common_cols) > 0) {
-    #     warning("Some columns appear both in 'x_phi_to_select' and 'x_phi_not_to_select'.")
-    #   }
-    # }
+    # Check that there are no identical columns between x_candidates and x_forced
+    if (!is.null(object@x_candidates) && !is.null(object@x_forced)) {
+      candidates <- object@x_candidates
+      forced <- object@x_forced
+
+      # Loop over each column in x_forced
+      for (j in seq_len(ncol(forced))) {
+        col_forced <- forced[, j, drop = FALSE] # Extract the j-th column of x_forced
+
+        # Compare with each column in x_candidates
+        for (i in seq_len(ncol(candidates))) {
+          col_candidate <- candidates[, i, drop = FALSE] # Extract the i-th column of x_candidates
+
+          # Check if all values are identical
+          if (all(col_forced == col_candidate)) {
+            return(sprintf(
+              "Column %d of 'x_forced' is identical to column %d of 'x_candidates'.",
+              j, i
+            ))
+          }
+        }
+      }
+    }
+
 
     TRUE
   }
@@ -163,14 +177,14 @@ saemvsData <- function(y, t, x_candidates = NULL, x_forced = NULL) {
 #'   t = rep(1:5, 2),
 #'   y = rnorm(10)
 #' )
-#' 
+#'
 #' # Example covariate data
 #' covar_df <- data.frame(
 #'   id = 1:2,
 #'   x1 = rnorm(2),
 #'   x2 = rnorm(2)
 #' )
-#' 
+#'
 #' # Create saemvsData object
 #' d <- saemvsDataFromDFs(
 #'   long_df, covar_df,
