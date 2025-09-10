@@ -134,6 +134,116 @@ saemvsData <- function(y, t, x_candidates = NULL, x_forced = NULL) {
   )
 }
 
+#' @title Constructor from data.frames for saemvsData
+#'
+#' @description
+#' Creates a \code{saemvsData} object from a longitudinal dataset and a covariate dataset.
+#' The function splits the longitudinal data by individual to build \code{y_series} and \code{t_series},
+#' and constructs \code{x_candidates} and \code{x_forced} matrices from the covariate data.
+#'
+#' @param long_df data.frame containing the longitudinal measurements. Must include columns for ID, response, and time.
+#' @param covar_df data.frame containing fixed covariates (one row per individual).
+#' @param id_col name of the column identifying individuals (must exist in both dataframes).
+#' @param y_col name of the response column in \code{long_df}.
+#' @param t_col name of the time column in \code{long_df}.
+#' @param x_candidates_cols vector of column names in \code{covar_df} to use as candidate covariates (optional).
+#'   If NULL, all columns except \code{id_col} and forced covariates are used.
+#' @param x_forced_cols vector of column names in \code{covar_df} to use as forced covariates (optional).
+#'
+#' @return An object of class \code{saemvsData}.
+#'
+#' @details
+#' The function ensures that the order of individuals in \code{y_series} matches the order of rows in
+#' \code{x_candidates} and \code{x_forced}. Candidate covariates are assumed to be fixed per individual.
+#'
+#' @examples
+#' # Example longitudinal data
+#' long_df <- data.frame(
+#'   id = rep(1:2, each = 5),
+#'   t = rep(1:5, 2),
+#'   y = rnorm(10)
+#' )
+#' 
+#' # Example covariate data
+#' covar_df <- data.frame(
+#'   id = 1:2,
+#'   x1 = rnorm(2),
+#'   x2 = rnorm(2)
+#' )
+#' 
+#' # Create saemvsData object
+#' d <- saemvsDataFromDFs(
+#'   long_df, covar_df,
+#'   id_col = "id", y_col = "y", t_col = "t",
+#'   x_candidates_cols = c("x1"),
+#'   x_forced_cols = c("x2")
+#' )
+#'
+#' @export
+saemvsDataFromDFs <- function(long_df,
+                              covar_df,
+                              id_col,
+                              y_col,
+                              t_col,
+                              x_candidates_cols = NULL,
+                              x_forced_cols = NULL) {
+  # Check that required columns exist
+  for (nm in c(id_col, y_col, t_col)) {
+    if (!nm %in% names(long_df)) {
+      stop(sprintf("Column '%s' is missing in long_df.", nm))
+    }
+  }
+  if (!id_col %in% names(covar_df)) {
+    stop(sprintf("Column '%s' is missing in covar_df.", id_col))
+  }
+
+  # Split longitudinal data by individual
+  split_data <- split(long_df, long_df[[id_col]])
+  ids_long <- names(split_data)
+
+  # Create y_series and t_series as lists
+  y_series <- lapply(split_data, function(df) df[[y_col]])
+  t_series <- lapply(split_data, function(df) df[[t_col]])
+
+  n <- length(y_series)
+
+  # Reorder covariate dataframe to match the order of individuals in long_df
+  covar_df_ordered <- covar_df[match(ids_long, covar_df[[id_col]]), ]
+  if (any(is.na(covar_df_ordered[[id_col]]))) {
+    stop("Some individuals in long_df are not present in covar_df.")
+  }
+
+  # Determine forced covariates
+  if (!is.null(x_forced_cols)) {
+    x_forced <- as.matrix(covar_df_ordered[, x_forced_cols, drop = FALSE])
+    if (!is.numeric(x_forced)) stop("x_forced must be numeric.")
+  } else {
+    x_forced <- NULL
+    x_forced_cols <- character(0)
+  }
+
+  # Determine candidate covariates
+  if (is.null(x_candidates_cols)) {
+    # Use all columns except id and forced covariates
+    x_candidates_cols <- setdiff(colnames(covar_df_ordered), c(id_col, x_forced_cols))
+  }
+  if (length(x_candidates_cols) > 0) {
+    x_candidates <- as.matrix(covar_df_ordered[, x_candidates_cols, drop = FALSE])
+    if (!is.numeric(x_candidates)) stop("x_candidates must be numeric.")
+  } else {
+    x_candidates <- NULL
+  }
+
+  # Build the final saemvsData object
+  saemvsData(
+    y = y_series,
+    t = t_series,
+    x_candidates = x_candidates,
+    x_forced = x_forced
+  )
+}
+
+
 
 
 #' Internal class: saemvsProcessedData
