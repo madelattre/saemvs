@@ -759,7 +759,10 @@ setClass(
         'intercept'.")
       }
     }
-    check_covariance(object@cov_re, "cov_re")
+    msg <- check_covariance(object@cov_re, "cov_re")
+    if (!is.null(msg)) {
+      return(msg)
+    }
     if (length(object@sigma2) != 1 || object@sigma2 <= 0) {
       return("'sigma2' must be a single strictly positive value.")
     }
