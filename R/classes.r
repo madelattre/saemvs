@@ -23,16 +23,22 @@ setClassUnion("listORNULL", c("list", "NULL"))
 #' This is the main entry point for users: responses, time indices,
 #' candidate covariates for selection, and forced covariates.
 #'
-#' @slot y_series list of numeric vectors. Each element contains observed responses for one individual.
-#' @slot t_series list of numeric vectors. Each element contains corresponding time indices.
-#' @slot x_candidates matrix or NULL. Optional matrix of candidate covariates (rows = individuals, columns = covariates).
-#' @slot x_forced matrix or NULL. Optional matrix of forced covariates (rows = individuals, columns = covariates).
+#' @slot y_series list of numeric vectors. Each element contains observed
+#' responses for one individual.
+#' @slot t_series list of numeric vectors. Each element contains corresponding
+#' time indices.
+#' @slot x_candidates matrix or NULL. Optional matrix of candidate covariates
+#' (rows = individuals, columns = covariates).
+#' @slot x_forced matrix or NULL. Optional matrix of forced covariates
+#' (rows = individuals, columns = covariates).
 #'
 #' @section Validity:
 #' \itemize{
 #'   \item \code{y_series} and \code{t_series} must have the same length.
-#'   \item Each element of \code{y_series} and \code{t_series} must be numeric vectors of the same length.
-#'   \item If provided, \code{x_candidates} and \code{x_forced} must each have as many rows as the length of \code{y_series}.
+#'   \item Each element of \code{y_series} and \code{t_series} must be numeric
+#'  vectors of the same length.
+#'   \item If provided, \code{x_candidates} and \code{x_forced} must each have
+#'  as many rows as the length of \code{y_series}.
 #'   \item All matrices must be numeric.
 #' }
 #'
@@ -76,7 +82,8 @@ setClass(
         return(sprintf("t_series[[%d]] must be numeric.", i))
       }
       if (length(object@y_series[[i]]) != length(object@t_series[[i]])) {
-        return(sprintf("y_series[[%d]] and t_series[[%d]] do not have the same length.", i, i))
+        return(sprintf("y_series[[%d]] and t_series[[%d]] do not have the same
+        length.", i, i))
       }
     }
 
@@ -99,24 +106,22 @@ setClass(
       }
     }
 
-    # Check that there are no identical columns between x_candidates and x_forced
+    # Check that there are no identical columns between x_candidates and
+    # x_forced
     if (!is.null(object@x_candidates) && !is.null(object@x_forced)) {
       candidates <- object@x_candidates
       forced <- object@x_forced
 
       # Loop over each column in x_forced
       for (j in seq_len(ncol(forced))) {
-        col_forced <- forced[, j, drop = FALSE] # Extract the j-th column of x_forced
-
-        # Compare with each column in x_candidates
+        col_forced <- forced[, j, drop = FALSE]
         for (i in seq_len(ncol(candidates))) {
-          col_candidate <- candidates[, i, drop = FALSE] # Extract the i-th column of x_candidates
-
-          # Check if all values are identical
+          col_candidate <- candidates[, i, drop = FALSE]
           if (all(col_forced == col_candidate)) {
-            return(sprintf(
-              "Column %d of 'x_forced' is identical to column %d of 'x_candidates'.",
-              j, i
+            return(paste0(
+              "Column ", j,
+              " of 'x_forced' is identical to column ", i,
+              " of 'x_candidates'."
             ))
           }
         }
@@ -151,24 +156,31 @@ saemvsData <- function(y, t, x_candidates = NULL, x_forced = NULL) {
 #' @title Constructor from data.frames for saemvsData
 #'
 #' @description
-#' Creates a \code{saemvsData} object from a longitudinal dataset and a covariate dataset.
-#' The function splits the longitudinal data by individual to build \code{y_series} and \code{t_series},
-#' and constructs \code{x_candidates} and \code{x_forced} matrices from the covariate data.
-#'
-#' @param long_df data.frame containing the longitudinal measurements. Must include columns for ID, response, and time.
-#' @param covar_df data.frame containing fixed covariates (one row per individual).
-#' @param id_col name of the column identifying individuals (must exist in both dataframes).
+#' Creates a \code{saemvsData} object from a longitudinal dataset and a
+#' covariate dataset.
+#' The function splits the longitudinal data by individual to build
+#' \code{y_series} and \code{t_series}, and constructs \code{x_candidates}
+#' and \code{x_forced} matrices from the covariate data.
+#' @param long_df data.frame containing the longitudinal measurements.
+#' Must include columns for ID, response, and time.
+#' @param covar_df data.frame containing fixed covariates (one row per
+#' individual).
+#' @param id_col name of the column identifying individuals (must exist in
+#' both dataframes).
 #' @param y_col name of the response column in \code{long_df}.
 #' @param t_col name of the time column in \code{long_df}.
-#' @param x_candidates_cols vector of column names in \code{covar_df} to use as candidate covariates (optional).
-#'   If NULL, all columns except \code{id_col} and forced covariates are used.
-#' @param x_forced_cols vector of column names in \code{covar_df} to use as forced covariates (optional).
+#' @param x_candidates_cols vector of column names in \code{covar_df} to use as
+#' candidate covariates (optional). If NULL, all columns except \code{id_col}
+#' and forced covariates are used.
+#' @param x_forced_cols vector of column names in \code{covar_df} to use as
+#' forced covariates (optional).
 #'
 #' @return An object of class \code{saemvsData}.
 #'
 #' @details
-#' The function ensures that the order of individuals in \code{y_series} matches the order of rows in
-#' \code{x_candidates} and \code{x_forced}. Candidate covariates are assumed to be fixed per individual.
+#' The function ensures that the order of individuals in \code{y_series}
+#' matches the order of rows in \code{x_candidates} and \code{x_forced}.
+#' Candidate covariates are assumed to be fixed per individual.
 #'
 #' @examples
 #' # Example longitudinal data
@@ -219,8 +231,6 @@ saemvsDataFromDFs <- function(long_df,
   y_series <- lapply(split_data, function(df) df[[y_col]])
   t_series <- lapply(split_data, function(df) df[[t_col]])
 
-  n <- length(y_series)
-
   # Reorder covariate dataframe to match the order of individuals in long_df
   covar_df_ordered <- covar_df[match(ids_long, covar_df[[id_col]]), ]
   if (any(is.na(covar_df_ordered[[id_col]]))) {
@@ -239,10 +249,14 @@ saemvsDataFromDFs <- function(long_df,
   # Determine candidate covariates
   if (is.null(x_candidates_cols)) {
     # Use all columns except id and forced covariates
-    x_candidates_cols <- setdiff(colnames(covar_df_ordered), c(id_col, x_forced_cols))
+    x_candidates_cols <- setdiff(
+      colnames(covar_df_ordered),
+      c(id_col, x_forced_cols)
+    )
   }
   if (length(x_candidates_cols) > 0) {
-    x_candidates <- as.matrix(covar_df_ordered[, x_candidates_cols, drop = FALSE])
+    x_candidates <-
+      as.matrix(covar_df_ordered[, x_candidates_cols, drop = FALSE])
     if (!is.numeric(x_candidates)) stop("x_candidates must be numeric.")
   } else {
     x_candidates <- NULL
@@ -266,22 +280,25 @@ saemvsDataFromDFs <- function(long_df,
 #' This class is internal to the package and is not intended to be
 #' directly created or manipulated by the user.
 #' It inherits from \code{saemvsData} and contains additional slots
-#' representing design matrices of covariates associated with the model parameters \code{phi},
-#' split into components subject to selection and components that are not subject to selection.
+#' representing design matrices of covariates associated with the model
+#' parameters \code{phi}, split into components subject to selection and
+#' components that are not subject to selection.
 #'
-#' @slot x_phi_to_select matrix or NULL.
-#'   Design matrix of covariates for \code{phi} parameters on which variable
-#'   selection will be performed. Rows correspond to individuals; columns to covariates.
+#' @slot x_phi_to_select matrix or NULL. Design matrix of covariates for
+#' \code{phi} parameters on which variable selection will be performed.
+#' Rows correspond to individuals; columns to covariates.
 #'
 #' @slot x_phi_not_to_select matrix or NULL.
-#'   Design matrix of covariates for \code{phi} parameters that are not
-#'   subject to selection. Rows correspond to individuals; columns to covariates.
+#' Design matrix of covariates for \code{phi} parameters that are not
+#' subject to selection. Rows correspond to individuals; columns to
+#' covariates.
 #'
 #' @slot tx_x_phi_to_select matrix or NULL.
-#'   Transformation of \code{x_phi_to_select} (e.g., multiplied by its transpose) required for algorithm computations.
+#' Transformation of \code{x_phi_to_select} (e.g., multiplied by its transpose)
+#' required for algorithm computations.
 #'
-#' @slot kron_tx_x_phi_to_select matrix or NULL.
-#'   Kronecker product of \code{tx_x_phi_to_select} used for vectorized calculations.
+#' @slot kron_tx_x_phi_to_select matrix or NULL. Kronecker product of
+#' \code{tx_x_phi_to_select} used for vectorized calculations.
 #'
 #' @slot x_phi_not_to_select_list list or NULL.
 #'   List of \code{x_phi_not_to_select} entries per individual. Each element
@@ -290,9 +307,12 @@ saemvsDataFromDFs <- function(long_df,
 #' @section Validity:
 #'   \itemize{
 #'     \item All matrices must be numeric if not NULL.
-#'     \item \code{x_phi_not_to_select_list}, if not NULL, must have length equal to the number of individuals.
-#'     \item Columns in \code{x_phi_to_select} and \code{x_phi_not_to_select} should not overlap (warning issued if they do).
-#'     \item Inherits all validity checks from \code{saemvsData} (e.g., length and type checks for y_series, t_series, x_candidates, x_forced).
+#'     \item \code{x_phi_not_to_select_list}, if not NULL, must have length
+#'  equal to the number of individuals.
+#'     \item Columns in \code{x_phi_to_select} and \code{x_phi_not_to_select}
+#'  should not overlap (warning issued if they do).
+#'     \item Inherits all validity checks from \code{saemvsData} (e.g., length
+#'  and type checks for y_series, t_series, x_candidates, x_forced).
 #'   }
 #'
 #' @keywords internal
@@ -378,7 +398,8 @@ saemvsProcessedData <- function(x_phi_to_select = NULL,
 #' @description Represents a model for SAEMVS, including the model function and
 #' indexing information for variable selection on parameters phi.
 #'
-#' @slot model_func A function of form function(phi, t) returning predicted values.
+#' @slot model_func A function of form function(phi, t) returning predicted
+#'  values.
 #' @slot phi_dim Integer: total number of phi parameters.
 #' @slot phi_to_select_idx Integer vector or NULL: indices of phi parameters
 #'   on which variable selection will be performed.
@@ -419,13 +440,19 @@ setClass(
 
     # Check indices
     if (!(is.null(object@phi_to_select_idx) ||
-      all(object@phi_to_select_idx >= 1 & object@phi_to_select_idx <= object@phi_dim))) {
-      return("'phi_to_select_idx' must contain integers between 1 and 'phi_dim'.")
+      all(object@phi_to_select_idx >= 1 &
+        object@phi_to_select_idx <= object@phi_dim))) {
+      return("
+      'phi_to_select_idx' must contain integers between 1 and 'phi_dim'.
+      ")
     }
 
     if (!(is.null(object@phi_fixed_idx) ||
-      all(object@phi_fixed_idx >= 1 & object@phi_fixed_idx <= object@phi_dim))) {
-      return("'phi_not_to_select_idx' must contain integers between 1 and 'phi_dim'.")
+      all(object@phi_fixed_idx >= 1 &
+        object@phi_fixed_idx <= object@phi_dim))) {
+      return("
+      'phi_not_to_select_idx' must contain integers between 1 and 'phi_dim'.
+      ")
     }
 
     # No overlap
@@ -440,7 +467,10 @@ setClass(
         return("'x_forced_support' must be a matrix or NULL.")
       }
       if (ncol(supp) != object@phi_dim) {
-        return(paste0("'x_forced_support' must have ", object@phi_dim, " columns (one per phi)."))
+        return(paste0(
+          "'x_forced_support' must have ", object@phi_dim,
+          " columns (one per phi)."
+        ))
       }
     }
 
@@ -453,9 +483,12 @@ setClass(
 #'
 #' @param g Function of form `function(phi, t)` returning predicted values.
 #' @param phi_dim Integer: total number of phi parameters.
-#' @param phi_to_select_idx Integer vector (optional): indices of phi parameters for variable selection.
-#' @param phi_fixed_idx Integer vector (optional): indices of phi parameters fixed (no random variability).
-#' @param x_forced_support Numeric matrix or NULL: design matrix for forced covariates (phi_dim columns).
+#' @param phi_to_select_idx Integer vector (optional): indices of phi
+#'  parameters for variable selection.
+#' @param phi_fixed_idx Integer vector (optional): indices of phi parameters
+#'  fixed (no random variability).
+#' @param x_forced_support Numeric matrix or NULL: design matrix for forced
+#'  covariates (phi_dim columns).
 #'
 #' @return An object of class \code{saemvsModel}.
 #' @export
@@ -473,19 +506,29 @@ saemvsModel <- function(
 
 
 #' @title saemvsHyperSlab
-#' @description Represents the hyperparameters for the slab component in a spike-and-slab prior.
+#' @description Represents the hyperparameters for the slab component in a
+#'  spike-and-slab prior.
 #'
-#' Only the slab parameter, random effects covariance prior, and degrees of freedom need
-#' to be specified by the user. Other hyperparameters are fixed internally.
+#' Only the slab parameter, random effects covariance prior, and degrees of
+#'  freedom need to be specified by the user. Other hyperparameters are fixed
+#'  internally.
 #'
-#' @slot slab_parameter Numeric: positive slab parameter (controls the slab prior).
-#' @slot cov_re_prior_scale Numeric matrix: scale matrix of the Inverse-Wishart prior for random effects covariance.
-#' @slot cov_re_prior_df Numeric: degrees of freedom of the Inverse-Wishart prior for random effects covariance.
-#' @slot residual_variance_prior_shape Numeric: shape parameter of the inverse-gamma prior on residual variance (fixed internally).
-#' @slot residual_variance_prior_rate Numeric: rate parameter of the inverse-gamma prior on residual variance (fixed internally).
-#' @slot phi_intercept_prior_variance Numeric: variance of the Gaussian prior on each intercept of phi (fixed internally).
-#' @slot inclusion_prob_prior_a Numeric or NULL: alpha parameter of the Beta prior on covariate inclusion probabilities.
-#' @slot inclusion_prob_prior_b Numeric or NULL: beta parameter of the Beta prior on covariate inclusion probabilities.
+#' @slot slab_parameter Numeric: positive slab parameter (controls the slab
+#'  prior).
+#' @slot cov_re_prior_scale Numeric matrix: scale matrix of the Inverse-Wishart
+#'  prior for random effects covariance.
+#' @slot cov_re_prior_df Numeric: degrees of freedom of the Inverse-Wishart
+#'  prior for random effects covariance.
+#' @slot residual_variance_prior_shape Numeric: shape parameter of the
+#'  inverse-gamma prior on residual variance (fixed internally).
+#' @slot residual_variance_prior_rate Numeric: rate parameter of the
+#'  inverse-gamma prior on residual variance (fixed internally).
+#' @slot phi_intercept_prior_variance Numeric: variance of the Gaussian prior
+#'  on each intercept of phi (fixed internally).
+#' @slot inclusion_prob_prior_a Numeric or NULL: alpha parameter of the Beta
+#'  prior on covariate inclusion probabilities.
+#' @slot inclusion_prob_prior_b Numeric or NULL: beta parameter of the Beta
+#'  prior on covariate inclusion probabilities.
 #'
 #' @exportClass saemvsHyperSlab
 setClass(
@@ -511,51 +554,76 @@ setClass(
     inclusion_prob_prior_b = NULL
   ),
   validity = function(object) {
-    check_positive_or_null_slot(object@slab_parameter, "slab_parameter")
-    check_positive_or_null_slot(object@cov_re_prior_df, "cov_re_prior_df")
-    check_positive_or_null_slot(
-      object@residual_variance_prior_shape,
-      "residual_variance_prior_shape"
+    errors <- c()
+
+    errors <- c(
+      errors,
+      check_positive_or_null_slot(object@slab_parameter, "slab_parameter")
     )
-    check_positive_or_null_slot(
-      object@residual_variance_prior_rate,
-      "residual_variance_prior_rate"
+    errors <- c(
+      errors,
+      check_positive_or_null_slot(object@cov_re_prior_df, "cov_re_prior_df")
     )
-    check_positive_or_null_slot(
-      object@phi_intercept_prior_variance,
-      "phi_intercept_prior_variance"
+    errors <- c(
+      errors,
+      check_positive_or_null_slot(
+        object@residual_variance_prior_shape,
+        "residual_variance_prior_shape"
+      )
     )
+    errors <- c(
+      errors,
+      check_positive_or_null_slot(
+        object@residual_variance_prior_rate,
+        "residual_variance_prior_rate"
+      )
+    )
+    errors <- c(
+      errors,
+      check_positive_or_null_slot(
+        object@phi_intercept_prior_variance,
+        "phi_intercept_prior_variance"
+      )
+    )
+
     if (!is.null(object@cov_re_prior_scale)) {
-      check_covariance(object@cov_re_prior_scale, "cov_re_prior_scale")
+      errors <- c(
+        errors,
+        check_covariance(object@cov_re_prior_scale, "cov_re_prior_scale")
+      )
     }
-    TRUE
+
+    if (length(errors) == 0) TRUE else errors
   }
 )
 
 #' @rdname saemvsHyperSlab
 #' @title Constructor for saemvsHyperSlab
 #'
-#' @description Create a \code{saemvsHyperSlab} object specifying hyperparameters for
-#' the slab component in a spike-and-slab prior.
+#' @description Create a \code{saemvsHyperSlab} object specifying
+#'  hyperparameters for the slab component in a spike-and-slab prior.
 #'
 #' Only the slab parameter, the scale matrix for the random effects covariance,
 #' and the degrees of freedom need to be specified by the user. All other
 #' hyperparameters are fixed internally.
 #'
-#' @param slab_parameter Numeric, positive. Controls the variance of the slab prior.
-#'   Default is 12000.
+#' @param slab_parameter Numeric, positive. Controls the variance of the slab
+#' prior. Default is 12000.
 #' @param cov_re_prior_scale Numeric matrix. Scale matrix of the Inverse-Wishart
-#'   prior for the random effects covariance. Must be square with dimension matching
-#'   the number of phi parameters.
-#' @param cov_re_prior_df Numeric, positive. Degrees of freedom of the Inverse-Wishart
-#'   prior for the random effects covariance. Default is 1.
+#'  prior for the random effects covariance. Must be square with dimension
+#'  matching the number of phi parameters.
+#' @param cov_re_prior_df Numeric, positive. Degrees of freedom of the
+#'  Inverse-Wishart prior for the random effects covariance. Default is 1.
 #'
 #' @return An object of class \code{saemvsHyperSlab}.
 #'
 #' @examples
 #' \dontrun{
 #' cov_scale <- diag(2)
-#' h <- saemvsHyperSlab(slab_parameter = 1000, cov_re_prior_scale = cov_scale, cov_re_prior_df = 3)
+#' h <- saemvsHyperSlab(
+#'   slab_parameter = 1000,
+#'   cov_re_prior_scale = cov_scale, cov_re_prior_df = 3
+#' )
 #' }
 #'
 #' @export
@@ -579,7 +647,8 @@ saemvsHyperSlab <- function(slab_parameter = 12000,
 #' An S4 class that extends \code{\linkS4class{saemvsHyperSlab}} by adding
 #' a spike hyperparameter for the spike-and-slab prior.
 #'
-#' @slot spike_parameter \code{numeric}. The spike parameter, must be strictly positive.
+#' @slot spike_parameter \code{numeric}. The spike parameter, must be strictly
+#'  positive.
 #'
 #' @section Prototype:
 #' Defaults to \code{spike_parameter = 0.1}.
@@ -600,8 +669,14 @@ setClass(
   ),
   contains = "saemvsHyperSlab",
   validity = function(object) {
-    check_positive_or_null_slot(object@spike_parameter, "spike_parameter")
-    TRUE
+    errors <- c()
+
+    errors <- c(
+      errors,
+      check_positive_or_null_slot(object@spike_parameter, "spike_parameter")
+    )
+
+    if (length(errors) == 0) TRUE else errors
   }
 )
 
@@ -630,22 +705,25 @@ saemvsHyperSpikeAndSlab <- function(spike_parameter,
 #' @title saemvsInit class
 #' @description Initialization of user-provided parameters
 #'
-#' Stores the initial values of parameters provided by the user for the SAEMVS algorithm.
+#' Stores the initial values of parameters provided by the user for the SAEMVS
+#'  algorithm.
 #'
 #' @slot intercept Numeric vector of intercepts for each component of phi.
 #'   Must have length equal to \code{phi_dim} in the model.
-#' @slot beta_forced Optional matrix of regression coefficients for forced covariates
-#'   (from \code{x_forced}). Each column corresponds to a component of phi.
-#' @slot beta_candidates Optional matrix of regression coefficients for candidate covariates
-#'   (from \code{x_candidates}). Same structure as \code{beta_forced}.
+#' @slot beta_forced Optional matrix of regression coefficients for forced
+#'  covariates (from \code{x_forced}). Each column corresponds to a component
+#'  of phi.
+#' @slot beta_candidates Optional matrix of regression coefficients for
+#'  candidate covariates (from \code{x_candidates}). Same structure as
+#' \code{beta_forced}.
 #' @slot cov_re Initial covariance matrix of the random effects.
 #' @slot sigma2 Numeric. Initial residual variance (must be strictly positive).
 #'
 #' @details
 #' Validity checks ensure:
 #' \itemize{
-#'   \item The number of columns in \code{beta_forced} and \code{beta_candidates}
-#'         matches the length of \code{intercept}.
+#'   \item The number of columns in \code{beta_forced} and
+#' \code{beta_candidates} matches the length of \code{intercept}.
 #'   \item \code{cov_re} is a valid covariance matrix.
 #'   \item \code{sigma2} is strictly positive.
 #' }
@@ -671,12 +749,14 @@ setClass(
     n_phi <- length(object@intercept)
     if (!is.null(object@beta_candidates)) {
       if (ncol(object@beta_candidates) != n_phi) {
-        return("Number of columns in 'beta_candidates' must equal length of 'intercept'.")
+        return("Number of columns in 'beta_candidates' must equal length of
+         'intercept'.")
       }
     }
     if (!is.null(object@beta_forced)) {
       if (ncol(object@beta_forced) != n_phi) {
-        return("Number of columns in 'beta_forced' must equal length of 'intercept'.")
+        return("Number of columns in 'beta_forced' must equal length of
+        'intercept'.")
       }
     }
     check_covariance(object@cov_re, "cov_re")
@@ -690,11 +770,14 @@ setClass(
 #' @rdname saemvsInit
 #' @title Constructor for saemvsInit
 #'
-#' @description Create an object of class \code{saemvsInit} specifying initial values for the SAEMVS algorithm.
+#' @description Create an object of class \code{saemvsInit} specifying initial
+#'  values for the SAEMVS algorithm.
 #'
 #' @param intercept Numeric vector. Intercepts for each component of phi.
-#' @param beta_forced Numeric matrix or NULL. Coefficients for forced covariates.
-#' @param beta_candidates Numeric matrix or NULL. Coefficients for candidate covariates.
+#' @param beta_forced Numeric matrix or NULL. Coefficients for forced
+#'  covariates.
+#' @param beta_candidates Numeric matrix or NULL. Coefficients for candidate
+#'  covariates.
 #' @param cov_re Numeric square matrix. Initial covariance of random effects.
 #' @param sigma2 Numeric, positive. Initial residual variance (default = 1).
 #'
@@ -718,16 +801,22 @@ saemvsInit <- function(intercept,
 #'
 #' Internal processed initialization of parameters
 #'
-#' Stores processed initial values of parameters transformed into a format compatible with the SAEMVS algorithm.
+#' Stores processed initial values of parameters transformed into a format
+#'  compatible with the SAEMVS algorithm.
 #'
-#' @slot beta_to_select Matrix of regression coefficients for phi components subject to variable selection.
-#' @slot beta_not_to_select Matrix of regression coefficients for phi components not subject to variable selection.
+#' @slot beta_to_select Matrix of regression coefficients for phi components
+#'  subject to variable selection.
+#' @slot beta_not_to_select Matrix of regression coefficients for phi
+#'  components not subject to variable selection.
 #' @slot gamma_to_select Covariance_matrix associated with phi_to_select.
-#' @slot gamma_not_to_select Covariance_matrix associated with phi_not_to_select.
+#' @slot gamma_not_to_select Covariance_matrix associated with
+#'  phi_not_to_select.
 #' @slot sigma2 Numeric. Residual variance.
-#' @slot inclusion_prob Numeric vector of inclusion probabilities, consistent with the processed dimension of phi.
+#' @slot inclusion_prob Numeric vector of inclusion probabilities, consistent
+#'  with the processed dimension of phi.
 #'
-#' @note This class is created internally by the package. Users should not create or modify objects of this class directly.
+#' @note This class is created internally by the package. Users should not
+#'  create or modify objects of this class directly.
 #'
 #' @keywords internal
 setClass(
@@ -753,12 +842,17 @@ setClass(
 
 #' Internal constructor for saemvsProcessedInit
 #' @keywords internal
-#' @param beta_to_select Numeric matrix or NULL. Coefficients for phi components subject to selection.
-#' @param beta_not_to_select Numeric matrix or NULL. Coefficients for phi components not subject to selection.
-#' @param gamma_to_select Numeric matrix or NULL. Covariance matrix for phi components to select.
-#' @param gamma_not_to_select Numeric matrix or NULL. Covariance matrix for phi components not to select.
+#' @param beta_to_select Numeric matrix or NULL. Coefficients for phi
+#'  components subject to selection.
+#' @param beta_not_to_select Numeric matrix or NULL. Coefficients for phi
+#'  components not subject to selection.
+#' @param gamma_to_select Numeric matrix or NULL. Covariance matrix for phi
+#'  components to select.
+#' @param gamma_not_to_select Numeric matrix or NULL. Covariance matrix for phi
+#'  components not to select.
 #' @param sigma2 Numeric. Residual variance.
-#' @param inclusion_prob Numeric vector or NULL. Inclusion probabilities for phi components.
+#' @param inclusion_prob Numeric vector or NULL. Inclusion probabilities for
+#'  phi components.
 #' @return An object of class \code{saemvsProcessedInit}.
 saemvsProcessedInit <- function(beta_to_select = NULL,
                                 beta_not_to_select = NULL,
@@ -779,21 +873,27 @@ saemvsProcessedInit <- function(beta_to_select = NULL,
 #' @title saemvsTuning class
 #' @description Algorithm tuning parameters for SAEMVS
 #'
-#' This class contains all parameters controlling the behavior of the SAEMVS algorithm,
-#' including iteration numbers, Metropolis-Hastings steps, importance sampling, step-size
-#' schedule, and the grid of spike values for variable selection.
+#' This class contains all parameters controlling the behavior of the SAEMVS
+#'  algorithm, including iteration numbers, Metropolis-Hastings steps,
+#'  importance sampling, step-size schedule, and the grid of spike values for
+#'  variable selection.
 #'
 #' @slot niter Total number of SAEM iterations.
 #' @slot nburnin Number of burn-in iterations.
-#' @slot step Step-size schedule vector for stochastic approximation (automatically computed).
+#' @slot step Step-size schedule vector for stochastic approximation
+#'  (automatically computed).
 #' @slot niter_mh Number of Metropolis-Hastings iterations per S-step.
 #' @slot kernel_mh Type of MH kernel: either "random_walk" or "pop".
-#' @slot covariance_decay Decay factor controlling how quickly variance and covariance estimates
-#'   are updated during the SAEMVS iterations. Values close to 1 lead to slow updates, ensuring
-#'   stability of the Metropolis-Hastings kernel, while lower values increase the adaptation rate.
-#' @slot mh_proposal_scale Scaling factor for the MH proposal variance (strictly positive).
-#' @slot spike_values_grid Numeric vector of spike values (must be positive and non-empty).
-#' @slot n_is_samples Number of importance sampling iterations for log-likelihood estimation.
+#' @slot covariance_decay Decay factor controlling how quickly variance and
+#'  covariance estimates are updated during the SAEMVS iterations. Values close
+#'  to 1 lead to slow updates, ensuring stability of the Metropolis-Hastings
+#'  kernel, while lower values increase the adaptation rate.
+#' @slot mh_proposal_scale Scaling factor for the MH proposal variance
+#'  (strictly positive).
+#' @slot spike_values_grid Numeric vector of spike values (must be positive and
+#'  non-empty).
+#' @slot n_is_samples Number of importance sampling iterations for
+#'  log-likelihood estimation.
 #' @slot seed Integer random seed for reproducibility.
 #' @slot nb_workers Number of parallel workers for SAEMVS.
 #'
@@ -855,7 +955,8 @@ setClass(
     if (!is.numeric(object@niter_mh) || length(object@niter_mh) != 1) {
       return("'niter_mh' must be a single numeric value.")
     }
-    if (object@niter_mh <= 0 || object@niter_mh != as.integer(object@niter_mh)) {
+    if (object@niter_mh <= 0 ||
+      object@niter_mh != as.integer(object@niter_mh)) {
       return("'niter_mh' must be a positive integer.")
     }
 
@@ -868,7 +969,8 @@ setClass(
     }
 
     # covariance_decay
-    if (!is.numeric(object@covariance_decay) || length(object@covariance_decay) != 1) {
+    if (!is.numeric(object@covariance_decay) ||
+      length(object@covariance_decay) != 1) {
       return("'covariance_decay' must be a single numeric value.")
     }
     if (object@covariance_decay <= 0 || object@covariance_decay >= 1) {
@@ -876,7 +978,8 @@ setClass(
     }
 
     # mh_proposal_scale
-    if (!is.numeric(object@mh_proposal_scale) || length(object@mh_proposal_scale) != 1) {
+    if (!is.numeric(object@mh_proposal_scale) ||
+      length(object@mh_proposal_scale) != 1) {
       return("'mh_proposal_scale' must be a single numeric value.")
     }
     if (object@mh_proposal_scale <= 0) {
@@ -884,7 +987,8 @@ setClass(
     }
 
     # spike_values_grid
-    if (!is.numeric(object@spike_values_grid) || length(object@spike_values_grid) == 0) {
+    if (!is.numeric(object@spike_values_grid) ||
+      length(object@spike_values_grid) == 0) {
       return("'spike_values_grid' must be a non-empty numeric vector.")
     }
     if (any(object@spike_values_grid <= 0)) {
@@ -911,7 +1015,8 @@ setClass(
     if (!is.numeric(object@nb_workers) || length(object@nb_workers) != 1) {
       return("'nb_workers' must be a single numeric value.")
     }
-    if (object@nb_workers <= 0 || object@nb_workers != as.integer(object@nb_workers)) {
+    if (object@nb_workers <= 0 ||
+      object@nb_workers != as.integer(object@nb_workers)) {
       return("'nb_workers' must be a positive integer.")
     }
 
@@ -922,16 +1027,22 @@ setClass(
 #' @rdname saemvsTuning
 #' @title Constructor for saemvsTuning
 #'
-#' @description Create a \code{saemvsTuning} object specifying algorithm tuning parameters for SAEMVS.
+#' @description Create a \code{saemvsTuning} object specifying algorithm tuning
+#'  parameters for SAEMVS.
 #'
 #' @param niter Integer. Total number of SAEM iterations (positive).
-#' @param nburnin Integer. Number of burn-in iterations (non-negative, less than niter).
-#' @param niter_mh Integer. Number of Metropolis-Hastings iterations per S-step (positive).
+#' @param nburnin Integer. Number of burn-in iterations (non-negative, less
+#'  than niter).
+#' @param niter_mh Integer. Number of Metropolis-Hastings iterations per S-step
+#'  (positive).
 #' @param kernel_mh Character. Type of MH kernel: "random_walk" or "pop".
-#' @param covariance_decay Numeric between 0 and 1. Decay factor for covariance adaptation.
-#' @param mh_proposal_scale Positive numeric. Scaling factor for MH proposal variance.
+#' @param covariance_decay Numeric between 0 and 1. Decay factor for covariance
+#'  adaptation.
+#' @param mh_proposal_scale Positive numeric. Scaling factor for MH proposal
+#'  variance.
 #' @param spike_values_grid Numeric vector, strictly positive and non-empty.
-#' @param n_is_samples Integer. Number of importance sampling iterations (positive).
+#' @param n_is_samples Integer. Number of importance sampling iterations
+#'  (positive).
 #' @param seed Integer. Random seed for reproducibility.
 #' @param nb_workers Integer. Number of parallel workers (positive).
 #'
@@ -1057,7 +1168,8 @@ setClass(
     }
 
     if (length(object@criterion_values) != length(object@unique_support)) {
-      return("The number of 'criterion_values' must match the number of 'unique_support' entries.")
+      return("The number of 'criterion_values' must match the number of
+       'unique_support' entries.")
     }
 
 
@@ -1089,17 +1201,17 @@ setClass(
 #'
 #' @slot beta_to_select A list of matrices containing the estimated regression
 #'   coefficients for covariates that are related with the components of
-#' `phi` that are subject to selection
-#'   (\code{phi_to_select}) at each iteration.
-#' @slot beta_not_to_select A list of matrices containing the estimated regression
-#'   coefficients for covariates that are related with the components of
-#' `phi` that are not subject to selection
-#'   (\code{phi_not_to_select}) at each iteration.
-#' @slot gamma_to_select A list of covariance matrices estimated at each iteration
-#'   for the random effects associated with \code{phi_to_select}.
-#' @slot gamma_not_to_select A list of covariance matrices estimated at each iteration
-#'   for the random effects associated with \code{phi_not_to_select}.
-#' @slot sigma2 A numeric vector of estimated residual variances at each iteration.
+#' `phi` that are subject to selection (\code{phi_to_select}) at each iteration.
+#' @slot beta_not_to_select A list of matrices containing the estimated
+#'  regression coefficients for covariates that are related with the components
+#'  of `phi` that are not subject to selection (\code{phi_not_to_select}) at
+#'  each iteration.
+#' @slot gamma_to_select A list of covariance matrices estimated at each
+#' iteration for the random effects associated with \code{phi_to_select}.
+#' @slot gamma_not_to_select A list of covariance matrices estimated at each
+#'  iteration for the random effects associated with \code{phi_not_to_select}.
+#' @slot sigma2 A numeric vector of estimated residual variances at each
+#'  iteration.
 #'
 #' @keywords internal
 setClass(
