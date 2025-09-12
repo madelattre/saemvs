@@ -5,6 +5,9 @@
 #' @return NULL if valid; a character string with an error description otherwise.
 #' @keywords internal
 check_covariance <- function(mat, name_mat) {
+  if (!is.numeric(mat)) {
+    return(sprintf("%s must be a numeric matrix.", name_mat))
+  }
   if (ncol(mat) != nrow(mat)) {
     return(sprintf("%s must be a square matrix.", name_mat))
   }
