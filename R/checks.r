@@ -11,7 +11,7 @@ check_covariance <- function(mat, name_mat) {
   if (ncol(mat) != nrow(mat)) {
     return(sprintf("%s must be a square matrix.", name_mat))
   }
-  if (!all.equal(mat, t(mat), tolerance = 1e-8)) {
+  if (!isTRUE(all.equal(mat, t(mat), tolerance = 1e-8))) {
     return(sprintf("%s must be symmetric.", name_mat))
   }
   eigenvalues <- eigen(mat, symmetric = TRUE)$values
@@ -20,6 +20,7 @@ check_covariance <- function(mat, name_mat) {
   }
   return(NULL)
 }
+
 
 #' Check consistency of beta and gamma matrices
 #'
