@@ -71,7 +71,7 @@ m_step_to_select <- function(config, k, state) {
   s3 <- state$s3_to_select[[k + 1]]
 
   p_star_k <- p_star(
-    old_beta[-1, ],
+    old_beta[-1, , drop = FALSE],
     old_alpha,
     config$spike_parameter,
     config$slab_parameter
