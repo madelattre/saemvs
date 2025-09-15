@@ -131,7 +131,8 @@ setMethod(
     if (ncol(x_not_to_select_design) == 1) {
       x_not_to_select_list <- lapply(
         seq_len(length(data@y_series)),
-        function(i) matrix(1, nrow = 1, ncol = 1)
+        function(i) matrix(1, nrow = length(phi_not_to_select_indices), ncol = 1)
+        # function(i) matrix(1, nrow = 1, ncol = 1)
       )
     } else {
       if (is.null(forced_support_params_not_to_select)) {
@@ -380,6 +381,7 @@ setMethod(
     if (n_selected == 0) {
       return(saemvsHyperSlab(NULL, NULL, NULL))
     }
+
 
     # MAP case: parameters are selected
     n_candidates <- ncol(data@x_candidates)
