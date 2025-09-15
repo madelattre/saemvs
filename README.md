@@ -1,62 +1,53 @@
----
-output: github_document
----
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.path = "man/figures/README-",
-  out.width = "100%"
-)
-```
 
 # saemvs
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
-The goal of saemvs is to ...
+The goal of saemvs is to …
 
 ## Installation
 
-This package contains C++ code using **Rcpp** and **RcppArmadillo**, which requires a working C++ and Fortran toolchain. Please follow the instructions for your operating system:
+This package contains C++ code using **Rcpp** and **RcppArmadillo**,
+which requires a working C++ and Fortran toolchain. Please follow the
+instructions for your operating system:
 
 ### macOS
 
 - R ≥ 4.5 is required.
 - gfortran ≥ 14.x must be installed for compiling C++ code.  
   Download the official gfortran 14.x installer here:  
-  [https://mac.r-project.org/tools/](https://mac.r-project.org/tools/)  
+  <https://mac.r-project.org/tools/>  
 - Verify your installation:
 
-```bash
+``` bash
 gfortran --version
-````
+```
 
 ### Windows
 
-`Rtools` must be installed for compiling packages with C++ and Fortran code.
-Make sure to use the version of `Rtools` corresponding to your R version:
-[https://cran.r-project.org/bin/windows/Rtools/](https://cran.r-project.org/bin/windows/Rtools/)
+`Rtools` must be installed for compiling packages with C++ and Fortran
+code. Make sure to use the version of `Rtools` corresponding to your R
+version: <https://cran.r-project.org/bin/windows/Rtools/>
 
 ### Linux
 
-Ensure gfortran and a C++ compiler are installed via your package manager.
-Example for Debian/Ubuntu:
+Ensure gfortran and a C++ compiler are installed via your package
+manager. Example for Debian/Ubuntu:
 
-```bash
+``` bash
 sudo apt update
 sudo apt install gfortran build-essential
-````
+```
 
 ### Installing the package
 
 After ensuring your system meets the requirements:
 
-```r
+``` r
 # Install dependencies first
 install.packages(c("Rcpp", "RcppArmadillo"), dependencies = TRUE)
 
@@ -67,8 +58,8 @@ remotes::install_local("path/to/your_package.tar.gz", dependencies = TRUE)
 
 This is a basic example which shows you how to solve a common problem:
 
-```{r example}
+
+``` r
 library(saemvs)
 ## basic example code
 ```
-
