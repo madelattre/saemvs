@@ -215,7 +215,7 @@ setMethod(
   function(res_saemvs) {
     # --- Extract key results from saemvsResults ---
     ebic <- res_saemvs@criterion_values # Criterion values (BIC/e-BIC)
-    threshold <- simplify2array(res_saemvs@thresholds) # Thresholds for selection
+    threshold <- as.matrix(simplify2array(res_saemvs@thresholds)) # Thresholds for selection
     beta <- simplify2array(res_saemvs@beta_map) # MAP regression estimates
     support <- res_saemvs@support # Support sets
     map_to_unique_support <- res_saemvs@support_mapping

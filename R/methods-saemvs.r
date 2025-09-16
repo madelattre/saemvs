@@ -293,7 +293,7 @@ setMethod(
     }
 
 
-    beta_map <- map$beta_to_select[[niter + 1]][-1, ]
+    beta_map <- map$beta_to_select[[niter + 1]][-1, , drop = FALSE]
     alpha_map <- map$alpha[[niter + 1]]
     threshold_matrix <- matrix(
       rep(threshold(
