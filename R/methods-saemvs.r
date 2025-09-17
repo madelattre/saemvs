@@ -76,6 +76,152 @@ setGeneric(
   }
 )
 
+# ' @rdname saemvs
+# ' @exportMethod saemvs
+# setMethod(
+#   "saemvs",
+#   signature(
+#     data = "saemvsData", model = "saemvsModel", init = "saemvsInit",
+#     tuning_algo = "saemvsTuning", hyperparam = "saemvsHyperSlab",
+#     pen = "character"
+#   ),
+#   function(data, model, init, tuning_algo, hyperparam, pen) {
+#     # --- Step 1: Argument checks ---
+#     if (!pen %in% c("e-BIC", "BIC")) {
+#       stop(
+#         paste0(
+#           "Criterion ", pen, " is not supported. ",
+#           "'pen' must be either 'e-BIC' or 'BIC'."
+#         )
+#       )
+#     }
+
+#     if (is.null(model@phi_to_select_idx) || (length(model@phi_to_select_idx) == 0)) {
+#       stop(
+#         paste0(
+#           "'phi_to_select_idx' must contain at least one parameter index",
+#           " for variable selection."
+#         )
+#       )
+#     }
+
+#     # --- Step 2: Parallelization setup ---
+#     future::plan(future::multisession, workers = tuning_algo@nb_workers)
+
+#     spike_values_grid <- tuning_algo@spike_values_grid
+
+#     # --- Step 3: First SAEMVS phase (MAP estimation) ---
+#     message("SAEMVS: step 1/2")
+#     progressr::with_progress({
+#       p <- progressr::progressor(along = spike_values_grid)
+
+#       map_runs <- furrr::future_map(
+#         spike_values_grid,
+#         function(nu0) {
+#           # C++ model must be compiled on each worker
+#           compile_model(model@model_func)
+#           fh <- saemvsHyperSpikeAndSlab(nu0, hyperparam)
+#           res <- saemvs_one_map_run(data, model, init, tuning_algo, fh)
+#           p()
+#           res
+#         },
+#         .options = furrr::furrr_options(seed = tuning_algo@seed)
+#       )
+#     })
+
+#     # Extract MAP results
+#     support <- lapply(
+#       seq_along(map_runs),
+#       function(x) map_runs[[x]]$support
+#     )
+
+#     thresholds <- lapply(
+#       seq_along(map_runs),
+#       function(x) map_runs[[x]]$threshold
+#     )
+
+#     beta_map <- lapply(
+#       seq_along(map_runs),
+#       function(x) map_runs[[x]]$beta
+#     )
+
+#     # Deduplicate supports
+#     support_hashes <- sapply(support, digest::digest)
+#     unique_support_indices <- which(!duplicated(support_hashes) == TRUE)
+#     hash_to_compact_index <- stats::setNames(
+#       seq_along(unique_support_indices),
+#       support_hashes[unique_support_indices]
+#     )
+
+
+#     support_index_mapping <- unname(sapply(
+#       support_hashes,
+#       function(h) hash_to_compact_index[[h]]
+#     ))
+
+
+#     # --- Step 4: Second SAEMVS phase (criterion evaluation: BIC/e-BIC) ---
+#     message("SAEMVS: step 2/2")
+#     progressr::with_progress({
+#       p <- progressr::progressor(along = length(unique_support_indices))
+#       criterion_results <- furrr::future_map(
+#         unique_support_indices,
+#         function(k) {
+#           compile_model(model@model_func)
+#           res <- saemvs_one_ic_run(
+#             k, support, data, model, init, tuning_algo, pen
+#           )
+#           p()
+#           res
+#         },
+#         .options = furrr::furrr_options(seed = tuning_algo@seed)
+#       )
+#     })
+
+#     # Extract evaluation results
+#     criterion_values <- unlist(lapply(
+#       seq_along(criterion_results),
+#       function(x) criterion_results[[x]]$ll
+#     ))
+
+#     mle <- lapply(
+#       seq_along(criterion_results),
+#       function(x) criterion_results[[x]]$mle_param
+#     )
+
+#     forced_variables_idx <- lapply(
+#       seq_along(criterion_results),
+#       function(x) criterion_results[[x]]$forced_variables_idx
+#     )
+
+#     selected_variables_idx <- lapply(
+#       seq_along(criterion_results),
+#       function(x) criterion_results[[x]]$selected_variables_idx
+#     )
+
+#     # --- Step 5: Assemble results object including forced and selected variable indices ---
+
+#     res <- methods::new(
+#       "saemvsResults",
+#       criterion = pen,
+#       criterion_values = criterion_values,
+#       thresholds = thresholds,
+#       beta_map = beta_map,
+#       mle_estimates = mle,
+#       support = support,
+#       unique_support = support[unique_support_indices],
+#       support_mapping = support_index_mapping,
+#       spike_values_grid = tuning_algo@spike_values_grid,
+#       phi_fixed_idx = model@phi_fixed_idx,
+#       forced_variables_idx = forced_variables_idx,
+#       selected_variables_idx = selected_variables_idx
+#     )
+
+#     return(res)
+#   }
+# )
+
+
 #' @rdname saemvs
 #' @exportMethod saemvs
 setMethod(
@@ -105,102 +251,69 @@ setMethod(
       )
     }
 
-    # --- Step 2: Parallelization setup ---
-    future::plan(future::multisession, workers = tuning_algo@nb_workers)
-
     spike_values_grid <- tuning_algo@spike_values_grid
 
-    # --- Step 3: First SAEMVS phase (MAP estimation) ---
+    # --- Step 2: First SAEMVS phase (MAP estimation) ---
     message("SAEMVS: step 1/2")
     progressr::with_progress({
       p <- progressr::progressor(along = spike_values_grid)
 
-      map_runs <- furrr::future_map(
+      map_runs <- safe_future_map(
         spike_values_grid,
         function(nu0) {
-          # C++ model must be compiled on each worker
           compile_model(model@model_func)
           fh <- saemvsHyperSpikeAndSlab(nu0, hyperparam)
           res <- saemvs_one_map_run(data, model, init, tuning_algo, fh)
           p()
           res
         },
-        .options = furrr::furrr_options(seed = tuning_algo@seed)
+        workers = tuning_algo@nb_workers,
+        seed = tuning_algo@seed
       )
     })
 
     # Extract MAP results
-    support <- lapply(
-      seq_along(map_runs),
-      function(x) map_runs[[x]]$support
-    )
-
-    thresholds <- lapply(
-      seq_along(map_runs),
-      function(x) map_runs[[x]]$threshold
-    )
-
-    beta_map <- lapply(
-      seq_along(map_runs),
-      function(x) map_runs[[x]]$beta
-    )
+    support    <- lapply(map_runs, `[[`, "support")
+    thresholds <- lapply(map_runs, `[[`, "threshold")
+    beta_map   <- lapply(map_runs, `[[`, "beta")
 
     # Deduplicate supports
-    support_hashes <- sapply(support, digest::digest)
-    unique_support_indices <- which(!duplicated(support_hashes) == TRUE)
+    support_hashes <- vapply(support, digest::digest, character(1))
+    unique_support_indices <- which(!duplicated(support_hashes))
     hash_to_compact_index <- stats::setNames(
       seq_along(unique_support_indices),
       support_hashes[unique_support_indices]
     )
-
-
-    support_index_mapping <- unname(sapply(
+    support_index_mapping <- unname(vapply(
       support_hashes,
-      function(h) hash_to_compact_index[[h]]
+      function(h) hash_to_compact_index[[h]],
+      integer(1)
     ))
 
-
-    # --- Step 4: Second SAEMVS phase (criterion evaluation: BIC/e-BIC) ---
+    # --- Step 3: Second SAEMVS phase (criterion evaluation: BIC/e-BIC) ---
     message("SAEMVS: step 2/2")
     progressr::with_progress({
       p <- progressr::progressor(along = length(unique_support_indices))
-      criterion_results <- furrr::future_map(
+
+      criterion_results <- safe_future_map(
         unique_support_indices,
         function(k) {
           compile_model(model@model_func)
-          res <- saemvs_one_ic_run(
-            k, support, data, model, init, tuning_algo, pen
-          )
-          p()
-          res
+          saemvs_one_ic_run(k, support, data, model, init, tuning_algo, pen)
         },
-        .options = furrr::furrr_options(seed = tuning_algo@seed)
+        workers = tuning_algo@nb_workers,
+        seed = tuning_algo@seed
       )
+      for (i in seq_along(criterion_results)) p()
     })
 
     # Extract evaluation results
-    criterion_values <- unlist(lapply(
-      seq_along(criterion_results),
-      function(x) criterion_results[[x]]$ll
-    ))
+    criterion_values      <- vapply(criterion_results, `[[`, numeric(1), "ll")
+    mle                   <- lapply(criterion_results, `[[`, "mle_param")
+    forced_variables_idx  <- lapply(criterion_results, `[[`, "forced_variables_idx")
+    selected_variables_idx<- lapply(criterion_results, `[[`, "selected_variables_idx")
 
-    mle <- lapply(
-      seq_along(criterion_results),
-      function(x) criterion_results[[x]]$mle_param
-    )
-
-    forced_variables_idx <- lapply(
-      seq_along(criterion_results),
-      function(x) criterion_results[[x]]$forced_variables_idx
-    )
-
-    selected_variables_idx <- lapply(
-      seq_along(criterion_results),
-      function(x) criterion_results[[x]]$selected_variables_idx
-    )
-
-    # --- Step 5: Assemble results object including forced and selected variable indices ---
-
+    # --- Step 4: Assemble results object ---
     res <- methods::new(
       "saemvsResults",
       criterion = pen,
@@ -220,6 +333,68 @@ setMethod(
     return(res)
   }
 )
+
+# # Petit utilitaire interne au package
+safe_future_map <- function(.x, .f, ..., workers = 1, seed = NULL) {
+  old_plan <- future::plan()
+  on.exit(future::plan(old_plan), add = TRUE)
+
+  if (workers > 1) {
+    future::plan(future::multisession, workers = workers)
+  } else {
+    future::plan(future::sequential)
+  }
+
+  tryCatch(
+    {
+      furrr::future_map(
+        .x,
+        .f,
+        ...,
+        .options = furrr::furrr_options(seed = seed)
+      )
+    },
+    error = function(e) {
+      # Extraire et nettoyer le message
+      msg <- conditionMessage(e)
+      msg <- sub("^Progress interrupted by [^:]+: ?", "", msg)
+
+      # Relancer proprement une seule erreur
+      stop(paste0("Parallelization interrupted: ", msg), call. = FALSE)
+    }
+  )
+}
+
+
+
+# safe_future_map <- function(.x, .f, ..., workers = 1, seed = NULL) {
+#   tryCatch(
+#     {
+#       # Sauvegarder le plan courant
+#       old_plan <- future::plan()
+#       on.exit(future::plan(old_plan), add = TRUE)
+
+#       # Nouveau plan temporaire
+#       if (workers > 1) {
+#         future::plan(future::multisession, workers = workers)
+#       } else {
+#         future::plan(future::sequential)
+#       }
+
+#       furrr::future_map(
+#         .x,
+#         .f,
+#         ...,
+#         .options = furrr::furrr_options(seed = seed)
+#       )
+#     },
+#     error = function(e) {
+#       future::plan("sequential")
+#       gc()
+#       stop("Parallel processing interrupted: ", conditionMessage(e), call. = FALSE)
+#     }
+#   )
+# }
 
 
 
@@ -295,6 +470,7 @@ setMethod(
 
     beta_map <- map$beta_to_select[[niter + 1]][-1, , drop = FALSE]
     alpha_map <- map$alpha[[niter + 1]]
+    # print(alpha_map)
     threshold_matrix <- matrix(
       rep(threshold(
         hyperparam@slab_parameter,
