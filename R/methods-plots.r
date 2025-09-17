@@ -215,8 +215,6 @@ setMethod(
   function(res_saemvs) {
     # --- Extract key results from saemvsResults ---
     ebic <- res_saemvs@criterion_values # Criterion values (BIC/e-BIC)
-    threshold <- as.matrix(simplify2array(res_saemvs@thresholds)) # Thresholds for selection
-    beta <- simplify2array(res_saemvs@beta_map) # MAP regression estimates
     support <- res_saemvs@support # Support sets
     map_to_unique_support <- res_saemvs@support_mapping
     nu0_grid <- res_saemvs@spike_values_grid # Spike variances
@@ -226,6 +224,9 @@ setMethod(
     # Dimensions of the support matrix
     p <- dim(support[[1]])[1] - 1 # Number of covariates (excluding intercept)
     q <- dim(support[[1]])[2] # Number of parameter blocks
+
+    threshold <- matrix(simplify2array(res_saemvs@thresholds), nrow = q) # Thresholds for selection
+    beta <- simplify2array(res_saemvs@beta_map) # MAP regression estimates
 
     # --- Plot criterion values vs log(nu0) ---
     data2 <- data.frame(nu0_grid = nu0_grid, crit = ebic[map_to_unique_support])
