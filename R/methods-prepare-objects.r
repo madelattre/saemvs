@@ -131,8 +131,7 @@ setMethod(
     if (ncol(x_not_to_select_design) == 1) {
       x_not_to_select_list <- lapply(
         seq_len(length(data@y_series)),
-        function(i) matrix(1, nrow = length(phi_not_to_select_indices), ncol = 1)
-        # function(i) matrix(1, nrow = 1, ncol = 1)
+        function(i) diag(1, length(phi_not_to_select_indices))
       )
     } else {
       if (is.null(forced_support_params_not_to_select)) {
@@ -502,8 +501,8 @@ setMethod(
       fixed_parameter_indices = model@phi_fixed_idx,
       model_function = model@model_func,
       x_support_phi_not_to_select = x_support_phi_not_to_select,
-      forced_covariates_indices = if (!is.null(x_support_phi_not_to_select)) which(rbind(1, x_support_phi_not_to_select) == 1) else matrix(1, ncol = length(phi_not_to_select_idx), nrow = 1),
-
+      forced_covariates_indices = if (!is.null(x_support_phi_not_to_select)) which(rbind(1, x_support_phi_not_to_select) == 1) else seq(1, length(phi_not_to_select_idx)),
+      
 
       # === Initialization ===
       init_parameters = init,

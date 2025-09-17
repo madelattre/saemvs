@@ -75,6 +75,10 @@ setMethod(
     # Restricted candidate design matrix
     restricted_candidates <- data@x_candidates[, active_candidate_idx, drop = FALSE]
 
+    if (dim(restricted_candidates)[2] == 0) {
+      restricted_candidates <- NULL
+    }
+
 
     # New forced design matrix = old forced + restricted candidates
     new_x_forced <- cbind(data@x_forced, restricted_candidates)
