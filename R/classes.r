@@ -747,28 +747,108 @@ setClass(
   ),
   validity = function(object) {
     n_phi <- length(object@intercept)
+
+    ## Vérification beta_candidates
     if (!is.null(object@beta_candidates)) {
       if (ncol(object@beta_candidates) != n_phi) {
-        return("Number of columns in 'beta_candidates' must equal length of
-         'intercept'.")
+        return("Number of columns in 'beta_candidates' must equal length of 'intercept'.")
       }
     }
+
+    ## Vérification beta_forced
     if (!is.null(object@beta_forced)) {
       if (ncol(object@beta_forced) != n_phi) {
-        return("Number of columns in 'beta_forced' must equal length of
-        'intercept'.")
+        return("Number of columns in 'beta_forced' must equal length of 'intercept'.")
       }
     }
-    msg <- check_covariance(object@cov_re, "cov_re")
-    if (!is.null(msg)) {
-      return(msg)
+
+    ## Vérification cov_re (matrice de covariance éventuellement dégénérée)
+    if (length(object@cov_re) > 0) {
+      if (!is.matrix(object@cov_re)) {
+        return("'cov_re' must be a matrix.")
+      }
+      if (nrow(object@cov_re) != ncol(object@cov_re)) {
+        return("'cov_re' must be square.")
+      }
+
+      diag_vals <- diag(object@cov_re)
+
+      if (any(diag_vals < 0)) {
+        return("Diagonal entries of 'cov_re' must be non-negative.")
+      }
+
+      ## indices des variables "actives"
+      idx_active <- which(diag_vals > 0)
+      if (length(idx_active) > 0) {
+        submat <- object@cov_re[idx_active, idx_active, drop = FALSE]
+
+        ## Appel à ta fonction de vérification
+        msg <- check_covariance(submat, "cov_re (reduced)")
+        if (!is.null(msg)) {
+          return(msg)
+        }
+      }
+
+      ## Vérification cohérence : si diag=0, ligne/colonne doivent être nulles
+      idx_zero <- which(diag_vals == 0)
+      if (length(idx_zero) > 0) {
+        for (i in idx_zero) {
+          if (any(object@cov_re[i, ] != 0) || any(object@cov_re[, i] != 0)) {
+            return(paste0("Row/column ", i, " of 'cov_re' must be all zeros if diagonal entry is zero."))
+          }
+        }
+      }
     }
+
+    ## Vérification sigma2
     if (length(object@sigma2) != 1 || object@sigma2 <= 0) {
       return("'sigma2' must be a single strictly positive value.")
     }
+
     TRUE
   }
 )
+
+# setClass(
+#   "saemvsInit",
+#   slots = list(
+#     intercept = "numeric",
+#     beta_forced = "matrixORNULL",
+#     beta_candidates = "matrixORNULL",
+#     cov_re = "matrix",
+#     sigma2 = "numeric"
+#   ),
+#   prototype = list(
+#     intercept = numeric(0),
+#     beta_forced = NULL,
+#     beta_candidates = NULL,
+#     cov_re = matrix(numeric(0), nrow = 0, ncol = 0),
+#     sigma2 = 1
+#   ),
+#   validity = function(object) {
+#     n_phi <- length(object@intercept)
+#     if (!is.null(object@beta_candidates)) {
+#       if (ncol(object@beta_candidates) != n_phi) {
+#         return("Number of columns in 'beta_candidates' must equal length of
+#          'intercept'.")
+#       }
+#     }
+#     if (!is.null(object@beta_forced)) {
+#       if (ncol(object@beta_forced) != n_phi) {
+#         return("Number of columns in 'beta_forced' must equal length of
+#         'intercept'.")
+#       }
+#     }
+#     msg <- check_covariance(object@cov_re, "cov_re")
+#     if (!is.null(msg)) {
+#       return(msg)
+#     }
+#     if (length(object@sigma2) != 1 || object@sigma2 <= 0) {
+#       return("'sigma2' must be a single strictly positive value.")
+#     }
+#     TRUE
+#   }
+# )
 
 #' @rdname saemvsInit
 #' @title Constructor for saemvsInit
@@ -1056,7 +1136,7 @@ saemvsTuning <- function(niter = 500,
                          niter_mh = 5,
                          kernel_mh = "random_walk",
                          covariance_decay = 0.98,
-                         mh_proposal_scale = 1.5,
+                         mh_proposal_scale = 1.0,
                          spike_values_grid,
                          n_is_samples = 10000,
                          seed = 220916,

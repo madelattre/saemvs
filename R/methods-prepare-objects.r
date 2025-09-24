@@ -258,6 +258,11 @@ setMethod(
         ncol = length(phi_to_select_idx)
       )
 
+      # gamma_to_select <- matrix(
+      #   cov_re[phi_to_select_idx, phi_to_select_idx, drop = FALSE],
+      #   ncol = length(phi_to_select_idx)
+      # )
+
       # inclusion probabilities (default 0.5)
       inclusion_prob <- rep(0.5, length(phi_to_select_idx))
     }
@@ -305,10 +310,16 @@ setMethod(
 
 
 
+      # gamma_not_to_select <- matrix(
+      #   init@cov_re[phi_not_to_select_idx, phi_not_to_select_idx, drop = FALSE],
+      #   ncol = length(phi_not_to_select_idx)
+      # )
+
       gamma_not_to_select <- matrix(
-        init@cov_re[phi_not_to_select_idx, phi_not_to_select_idx, drop = FALSE],
+        cov_re[phi_not_to_select_idx, phi_not_to_select_idx, drop = FALSE],
         ncol = length(phi_not_to_select_idx)
       )
+
     }
 
 
@@ -502,7 +513,7 @@ setMethod(
       model_function = model@model_func,
       x_support_phi_not_to_select = x_support_phi_not_to_select,
       forced_covariates_indices = if (!is.null(x_support_phi_not_to_select)) which(rbind(1, x_support_phi_not_to_select) == 1) else seq(1, length(phi_not_to_select_idx)),
-      
+
 
       # === Initialization ===
       init_parameters = init,
