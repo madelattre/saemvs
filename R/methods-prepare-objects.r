@@ -339,7 +339,12 @@ setMethod(
       gamma_to_select     = gamma_to_select,
       gamma_not_to_select = gamma_not_to_select,
       beta_to_select      = beta_to_select,
-      beta_not_to_select  = beta_not_to_select
+      beta_not_to_select  = beta_not_to_select,
+      intercept = init@intercept,
+      beta_forced = init@beta_forced,
+      beta_candidates = init@beta_candidates,
+      cov_re = init@cov_re,
+      default = init@default      
     )
 
     return(init_processed)

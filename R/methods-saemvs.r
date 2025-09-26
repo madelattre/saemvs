@@ -108,6 +108,12 @@ setMethod(
 
     spike_values_grid <- tuning_algo@spike_values_grid
 
+    # Order of checks is critical: data → init → hyperparams
+    check_data(data, model)
+    data_processed <- prepare_data(data, model)
+    check_init(init, data_processed, model)
+    init_alg <- prepare_init(init, model, data_processed)
+
     # --- Step 2: First SAEMVS phase (MAP estimation) ---
     message("SAEMVS: step 1/2")
     progressr::with_progress({
@@ -118,7 +124,7 @@ setMethod(
         function(nu0) {
           compile_model(model@model_func)
           fh <- saemvsHyperSpikeAndSlab(nu0, hyperparam)
-          res <- saemvs_one_map_run(data, model, init, tuning_algo, fh)
+          res <- saemvs_one_map_run(data_processed, model, init_alg, tuning_algo, fh)
           p()
           res
         },
@@ -128,9 +134,9 @@ setMethod(
     })
 
     # Extract MAP results
-    support    <- lapply(map_runs, `[[`, "support")
+    support <- lapply(map_runs, `[[`, "support")
     thresholds <- lapply(map_runs, `[[`, "threshold")
-    beta_map   <- lapply(map_runs, `[[`, "beta")
+    beta_map <- lapply(map_runs, `[[`, "beta")
 
     # Deduplicate supports
     support_hashes <- vapply(support, digest::digest, character(1))
@@ -154,7 +160,7 @@ setMethod(
         unique_support_indices,
         function(k) {
           compile_model(model@model_func)
-          saemvs_one_ic_run(k, support, data, model, init, tuning_algo, pen)
+          saemvs_one_ic_run(k, support, data_processed, model, init_alg, tuning_algo, pen)
         },
         workers = tuning_algo@nb_workers,
         seed = tuning_algo@seed
@@ -163,11 +169,11 @@ setMethod(
     })
 
     # Extract evaluation results
-    criterion_values      <- vapply(criterion_results, `[[`, numeric(1), "ll")
-    mle                   <- lapply(criterion_results, `[[`, "mle_param")
-    forced_variables_idx  <- lapply(criterion_results, `[[`, "forced_variables_idx")
-    selected_variables_idx<- lapply(criterion_results, `[[`, "selected_variables_idx")
-  
+    criterion_values <- vapply(criterion_results, `[[`, numeric(1), "ll")
+    mle <- lapply(criterion_results, `[[`, "mle_param")
+    forced_variables_idx <- lapply(criterion_results, `[[`, "forced_variables_idx")
+    selected_variables_idx <- lapply(criterion_results, `[[`, "selected_variables_idx")
+
     # --- Step 4: Assemble results object ---
     res <- methods::new(
       "saemvsResults",
@@ -272,7 +278,7 @@ setGeneric(
 setMethod(
   "saemvs_one_map_run",
   signature(
-    data = "saemvsData", model = "saemvsModel", init = "saemvsInit",
+    data = "saemvsProcessedData", model = "saemvsModel", init = "saemvsProcessedInit",
     tuning_algo = "saemvsTuning", hyperparam = "saemvsHyperSpikeAndSlab"
   ),
   function(data, model, init, tuning_algo, hyperparam) {
@@ -374,7 +380,7 @@ setMethod(
   "saemvs_one_ic_run",
   signature(
     k = "integer", support = "list",
-    data = "saemvsData", model = "saemvsModel", init = "saemvsInit",
+    data = "saemvsProcessedData", model = "saemvsModel", init = "saemvsProcessedInit",
     tuning_algo = "saemvsTuning", pen = "character"
   ),
   function(k, support, data, model, init, tuning_algo, pen) {
@@ -413,12 +419,14 @@ setMethod(
 
     new_data <- map_to_mle_data(data, cand_support)
     new_model <- map_to_mle_model(model, cand_support)
+    new_data_processed <- prepare_data(new_data, new_model)
     new_init <- map_to_mle_init(init, model, cand_support)
+    new_processed_init <- prepare_init(new_init, new_model, new_data_processed)
     new_hyperparam <- saemvsHyperSlab(NULL, NULL, NULL)
     new_full_hyperparam <- saemvsHyperSpikeAndSlab(NULL, new_hyperparam)
 
     mle <- run_saem(
-      new_data, new_model, new_init, tuning_algo, new_full_hyperparam
+      new_data_processed, new_model, new_processed_init, tuning_algo, new_full_hyperparam
     )
 
     mle_param <- list(

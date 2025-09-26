@@ -902,7 +902,8 @@ setClass(
     gamma_not_to_select = NULL,
     sigma2 = 1,
     inclusion_prob = numeric(0)
-  )
+  ),
+  contains = "saemvsInit"
   # No validity: objects created automatically in the code
 )
 
@@ -925,14 +926,24 @@ saemvsProcessedInit <- function(beta_to_select = NULL,
                                 gamma_to_select = NULL,
                                 gamma_not_to_select = NULL,
                                 sigma2 = 1,
-                                inclusion_prob = numeric(0)) {
+                                inclusion_prob = numeric(0),
+                                intercept,
+                                beta_forced,
+                                beta_candidates,
+                                cov_re,
+                                default) {
   methods::new("saemvsProcessedInit",
     beta_to_select = beta_to_select,
     beta_not_to_select = beta_not_to_select,
     gamma_to_select = gamma_to_select,
     gamma_not_to_select = gamma_not_to_select,
     sigma2 = sigma2,
-    inclusion_prob = inclusion_prob
+    inclusion_prob = inclusion_prob,
+    intercept = intercept,
+    beta_forced = beta_forced,
+    beta_candidates = beta_candidates,
+    cov_re = cov_re,
+    default = default
   )
 }
 

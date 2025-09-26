@@ -62,22 +62,22 @@ setGeneric(
 setMethod(
   "run_saem",
   signature(
-    data = "saemvsData", model = "saemvsModel", init = "saemvsInit",
+    data = "saemvsProcessedData", model = "saemvsModel", init = "saemvsProcessedInit",
     tuning_algo = "saemvsTuning", hyperparam = "saemvsHyperSpikeAndSlab"
   ),
   function(data, model, init, tuning_algo, hyperparam) {
     # --- Step 1: Input checking and preparation ---
-    # Order of checks is critical: data → init → hyperparams
-    check_data(data, model)
-    data_processed <- prepare_data(data, model)
-    check_init(init, data_processed, model)
-    init_alg <- prepare_init(init, model, data_processed)
+    # # Order of checks is critical: data → init → hyperparams
+    # check_data(data, model)
+    # data_processed <- prepare_data(data, model)
+    # check_init(init, data_processed, model)
+    # init_alg <- prepare_init(init, model, data_processed)
     check_hyper(hyperparam, model, tuning_algo)
-    hyperparam <- prepare_hyper(hyperparam, data_processed, model)
+    hyperparam <- prepare_hyper(hyperparam, data, model)
 
     # --- Step 2: Configuration and initial state ---
     config <- make_config(
-      data_processed, model, tuning_algo, init_alg, hyperparam
+      data, model, tuning_algo, init, hyperparam
     )
     state <- init_state(config)
     case <- get_case(config)
