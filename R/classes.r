@@ -718,7 +718,7 @@ saemvsHyperSpikeAndSlab <- function(spike_parameter,
 #' \code{beta_forced}.
 #' @slot cov_re Initial covariance matrix of the random effects.
 #' @slot sigma2 Numeric. Initial residual variance (must be strictly positive).
-#'
+#' @slot default Logical. If TRUE, all slots except intercept must be "empty".
 #' @details
 #' Validity checks ensure:
 #' \itemize{
@@ -736,119 +736,100 @@ setClass(
     beta_forced = "matrixORNULL",
     beta_candidates = "matrixORNULL",
     cov_re = "matrix",
-    sigma2 = "numeric"
+    sigma2 = "numeric",
+    default = "logical"
   ),
   prototype = list(
     intercept = numeric(0),
     beta_forced = NULL,
     beta_candidates = NULL,
     cov_re = matrix(numeric(0), nrow = 0, ncol = 0),
-    sigma2 = 1
+    sigma2 = 1,
+    default = FALSE
   ),
   validity = function(object) {
     n_phi <- length(object@intercept)
 
-    ## Vérification beta_candidates
-    if (!is.null(object@beta_candidates)) {
-      if (ncol(object@beta_candidates) != n_phi) {
-        return("Number of columns in 'beta_candidates' must equal length of 'intercept'.")
-      }
+    if (n_phi == 0) {
+      return("'intercept' must be provided and non-empty.")
     }
-
-    ## Vérification beta_forced
-    if (!is.null(object@beta_forced)) {
-      if (ncol(object@beta_forced) != n_phi) {
-        return("Number of columns in 'beta_forced' must equal length of 'intercept'.")
+    if (object@default) {
+      # If default = TRUE, every slot except intercept must be empty or NULL
+      if (!is.null(object@beta_forced)) {
+        return("'beta_forced' must be NULL when default = TRUE.")
       }
-    }
-
-    ## Vérification cov_re (matrice de covariance éventuellement dégénérée)
-    if (length(object@cov_re) > 0) {
-      if (!is.matrix(object@cov_re)) {
-        return("'cov_re' must be a matrix.")
+      if (!is.null(object@beta_candidates)) {
+        return("'beta_candidates' must be NULL when default = TRUE.")
       }
-      if (nrow(object@cov_re) != ncol(object@cov_re)) {
-        return("'cov_re' must be square.")
-      }
-
-      diag_vals <- diag(object@cov_re)
-
-      if (any(diag_vals < 0)) {
-        return("Diagonal entries of 'cov_re' must be non-negative.")
-      }
-
-      ## indices des variables "actives"
-      idx_active <- which(diag_vals > 0)
-      if (length(idx_active) > 0) {
-        submat <- object@cov_re[idx_active, idx_active, drop = FALSE]
-
-        ## Appel à ta fonction de vérification
-        msg <- check_covariance(submat, "cov_re (reduced)")
-        if (!is.null(msg)) {
-          return(msg)
+      # if (length(object@cov_re) > 0) {
+      #   return("'cov_re' must be empty when default = TRUE.")
+      # }
+      # if (is.na(object@sigma2) && object@sigma2 != 1) {
+      #   return("'sigma2' must remain at its default when default = TRUE.")
+      #   ## A revoir
+      # }
+    } else {
+      ## Check beta_candidates
+      if (!is.null(object@beta_candidates)) {
+        if (ncol(object@beta_candidates) != n_phi) {
+          return("Number of columns in 'beta_candidates' must equal length of 'intercept'.")
         }
       }
 
-      ## Vérification cohérence : si diag=0, ligne/colonne doivent être nulles
-      idx_zero <- which(diag_vals == 0)
-      if (length(idx_zero) > 0) {
-        for (i in idx_zero) {
-          if (any(object@cov_re[i, ] != 0) || any(object@cov_re[, i] != 0)) {
-            return(paste0("Row/column ", i, " of 'cov_re' must be all zeros if diagonal entry is zero."))
+      ## Check beta_forced
+      if (!is.null(object@beta_forced)) {
+        if (ncol(object@beta_forced) != n_phi) {
+          return("Number of columns in 'beta_forced' must equal length of 'intercept'.")
+        }
+      }
+
+      ## Check cov_re (possibly degenerated covariance matrix)
+      if (length(object@cov_re) > 0) {
+        if (!is.matrix(object@cov_re)) {
+          return("'cov_re' must be a matrix.")
+        }
+        if (nrow(object@cov_re) != ncol(object@cov_re)) {
+          return("'cov_re' must be square.")
+        }
+
+        diag_vals <- diag(object@cov_re)
+
+        if (any(diag_vals < 0)) {
+          return("Diagonal entries of 'cov_re' must be non-negative.")
+        }
+
+        ## Random components with positive variance
+        idx_active <- which(diag_vals > 0)
+        if (length(idx_active) > 0) {
+          submat <- object@cov_re[idx_active, idx_active, drop = FALSE]
+
+          msg <- check_covariance(submat, "cov_re (reduced)")
+          if (!is.null(msg)) {
+            return(msg)
+          }
+        }
+
+        ## Check that if diag=0, raw and column are all zero too
+        idx_zero <- which(diag_vals == 0)
+        if (length(idx_zero) > 0) {
+          for (i in idx_zero) {
+            if (any(object@cov_re[i, ] != 0) || any(object@cov_re[, i] != 0)) {
+              return(paste0("Row/column ", i, " of 'cov_re' must be all zeros if diagonal entry is zero."))
+            }
           }
         }
       }
-    }
 
-    ## Vérification sigma2
-    if (length(object@sigma2) != 1 || object@sigma2 <= 0) {
-      return("'sigma2' must be a single strictly positive value.")
+      ## Check sigma2
+      if (length(object@sigma2) != 1 || object@sigma2 <= 0) {
+        return("'sigma2' must be a single strictly positive value.")
+      }
     }
 
     TRUE
   }
 )
 
-# setClass(
-#   "saemvsInit",
-#   slots = list(
-#     intercept = "numeric",
-#     beta_forced = "matrixORNULL",
-#     beta_candidates = "matrixORNULL",
-#     cov_re = "matrix",
-#     sigma2 = "numeric"
-#   ),
-#   prototype = list(
-#     intercept = numeric(0),
-#     beta_forced = NULL,
-#     beta_candidates = NULL,
-#     cov_re = matrix(numeric(0), nrow = 0, ncol = 0),
-#     sigma2 = 1
-#   ),
-#   validity = function(object) {
-#     n_phi <- length(object@intercept)
-#     if (!is.null(object@beta_candidates)) {
-#       if (ncol(object@beta_candidates) != n_phi) {
-#         return("Number of columns in 'beta_candidates' must equal length of
-#          'intercept'.")
-#       }
-#     }
-#     if (!is.null(object@beta_forced)) {
-#       if (ncol(object@beta_forced) != n_phi) {
-#         return("Number of columns in 'beta_forced' must equal length of
-#         'intercept'.")
-#       }
-#     }
-#     msg <- check_covariance(object@cov_re, "cov_re")
-#     if (!is.null(msg)) {
-#       return(msg)
-#     }
-#     if (length(object@sigma2) != 1 || object@sigma2 <= 0) {
-#       return("'sigma2' must be a single strictly positive value.")
-#     }
-#     TRUE
-#   }
-# )
 
 #' @rdname saemvsInit
 #' @title Constructor for saemvsInit
@@ -863,20 +844,22 @@ setClass(
 #'  covariates.
 #' @param cov_re Numeric square matrix. Initial covariance of random effects.
 #' @param sigma2 Numeric, positive. Initial residual variance (default = 1).
-#'
+#' @param default Logical. If TRUE, ignore all slots except intercept.
 #' @return An object of class \code{saemvsInit}.
 #' @export
 saemvsInit <- function(intercept,
                        beta_forced = NULL,
                        beta_candidates = NULL,
-                       cov_re,
-                       sigma2 = 1) {
+                       cov_re = matrix(numeric(0), nrow = 0, ncol = 0),
+                       sigma2 = 1,
+                       default = FALSE) {
   methods::new("saemvsInit",
     intercept = intercept,
-    beta_forced = beta_forced,
-    beta_candidates = beta_candidates,
+    beta_forced = if (default) NULL else beta_forced,
+    beta_candidates = if (default) NULL else beta_candidates,
     cov_re = cov_re,
-    sigma2 = sigma2
+    sigma2 = sigma2,
+    default = default
   )
 }
 

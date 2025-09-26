@@ -71,7 +71,7 @@ setMethod(
     check_data(data, model)
     data_processed <- prepare_data(data, model)
     check_init(init, data_processed, model)
-    init_alg <- prepare_init(init, model)
+    init_alg <- prepare_init(init, model, data_processed)
     check_hyper(hyperparam, model, tuning_algo)
     hyperparam <- prepare_hyper(hyperparam, data_processed, model)
 

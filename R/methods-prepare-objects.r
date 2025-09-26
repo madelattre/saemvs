@@ -207,19 +207,29 @@ setMethod(
 #' @keywords internal
 setGeneric(
   "prepare_init",
-  function(init, model) {
+  function(init, model, data_processed) {
     standardGeneric("prepare_init")
   }
 )
 
 setMethod(
   "prepare_init",
-  signature(init = "saemvsInit", model = "saemvsModel"),
-  function(init, model) {
+  signature(
+    init = "saemvsInit", model = "saemvsModel",
+    data_processed = "saemvsProcessedData"
+  ),
+  function(init, model, data_processed) {
     ## === 0. Extract indices ===
     phi_to_select_idx <- model@phi_to_select_idx
     phi_not_to_select_idx <- setdiff(seq_len(model@phi_dim), phi_to_select_idx)
     forced_support <- model@x_forced_support
+
+    if (init@default == TRUE) {
+      est_indiv <- estimate_phi_individuals(data_processed, model, init)
+      init <- build_init_from_phi_lasso(est_indiv, data_processed, model, init)
+    }
+
+
 
     ## === 1. Prepare beta and gamma for parameters subject to selection ===
     if (length(phi_to_select_idx) == 0) {
@@ -319,7 +329,6 @@ setMethod(
         cov_re[phi_not_to_select_idx, phi_not_to_select_idx, drop = FALSE],
         ncol = length(phi_not_to_select_idx)
       )
-
     }
 
 

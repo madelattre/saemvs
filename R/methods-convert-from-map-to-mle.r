@@ -200,10 +200,25 @@ setMethod(
     active_candidate_idx <- which(rowSums(cand_support[-1, , drop = FALSE]) > 0)
 
     # Build restricted beta initialization
-    new_beta_init <- rbind(
-      init@beta_forced,
-      init@beta_candidates[active_candidate_idx, , drop = FALSE]
-    )
+
+    if (init@default == TRUE) {
+      if (is_empty_matrix(model@x_forced_support)) {
+        new_beta_init <-
+          matrix(0, nrow = length(active_candidate_idx), ncol = model@phi_dim)
+      } else {
+        new_beta_init <- rbind(
+          0 * model@x_forced_support,
+          matrix(0, nrow = length(active_candidate_idx), ncol = model@phi_dim)
+        )
+      }
+    } else {
+      new_beta_init <- rbind(
+        init@beta_forced,
+        init@beta_candidates[active_candidate_idx, , drop = FALSE]
+      )
+    }
+
+
 
     saemvsInit(
       intercept = init@intercept,
