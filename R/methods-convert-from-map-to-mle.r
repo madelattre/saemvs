@@ -186,7 +186,7 @@ setGeneric(
 
 setMethod(
   "map_to_mle_init",
-  signature(init = "saemvsInit", model = "saemvsModel", cand_support = "matrix"),
+  signature(init = "saemvsProcessedInit", model = "saemvsModel", cand_support = "matrix"),
   function(init, model, cand_support) {
     if (!is.matrix(cand_support)) {
       stop("'cand_support' must be a matrix.")
@@ -201,22 +201,22 @@ setMethod(
 
     # Build restricted beta initialization
 
-    if (init@default == TRUE) {
-      if (is_empty_matrix(model@x_forced_support)) {
-        new_beta_init <-
-          matrix(0, nrow = length(active_candidate_idx), ncol = model@phi_dim)
-      } else {
-        new_beta_init <- rbind(
-          0 * model@x_forced_support,
-          matrix(0, nrow = length(active_candidate_idx), ncol = model@phi_dim)
-        )
-      }
-    } else {
+    # if (init@default == TRUE) {
+    #   if (is_empty_matrix(model@x_forced_support)) {
+    #     new_beta_init <-
+    #       matrix(0, nrow = length(active_candidate_idx), ncol = model@phi_dim)
+    #   } else {
+    #     new_beta_init <- rbind(
+    #       0 * model@x_forced_support,
+    #       matrix(0, nrow = length(active_candidate_idx), ncol = model@phi_dim)
+    #     )
+    #   }
+    # } else {
       new_beta_init <- rbind(
         init@beta_forced,
         init@beta_candidates[active_candidate_idx, , drop = FALSE]
       )
-    }
+    # }
 
 
 

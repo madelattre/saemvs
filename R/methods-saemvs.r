@@ -398,7 +398,8 @@ setMethod(
       model@phi_to_select_idx
     )
 
-    if (is_empty_support(forced_support)) {
+    #for (k in seq(1,20)) {
+if (is_empty_support(forced_support)) {
       cand_support <- matrix(as.numeric(support[[k]]),
         nrow = nrow(support[[k]])
       )
@@ -409,14 +410,12 @@ setMethod(
       cand_support <- matrix(as.numeric(support[[k]]),
         nrow = nrow(support[[k]])
       )
-      idx_forced_phi_sel <- seq(1, dim(forced_support)[1])
-      cand_support <- cand_support[-idx_forced_phi_sel, ]
+      idx_forced_phi_sel <- seq(1, dim(forced_support)[1]) #seq(1, dim(forced_support)[1] + 1) #
+      cand_support <- cand_support[-idx_forced_phi_sel, , drop = FALSE]
       forced_rows <- idx_forced_phi_sel
       active_candidate_idx <- which(rowSums(cand_support[-1, , drop = FALSE]) > 0)
       selected_rows <- active_candidate_idx
     }
-
-
     new_data <- map_to_mle_data(data, cand_support)
     new_model <- map_to_mle_model(model, cand_support)
     new_data_processed <- prepare_data(new_data, new_model)
@@ -424,6 +423,11 @@ setMethod(
     new_processed_init <- prepare_init(new_init, new_model, new_data_processed)
     new_hyperparam <- saemvsHyperSlab(NULL, NULL, NULL)
     new_full_hyperparam <- saemvsHyperSpikeAndSlab(NULL, new_hyperparam)
+    #}
+
+    
+
+
 
     mle <- run_saem(
       new_data_processed, new_model, new_processed_init, tuning_algo, new_full_hyperparam

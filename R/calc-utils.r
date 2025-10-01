@@ -237,9 +237,7 @@ build_init_from_phi_lasso <- function(est_indiv,
                                       init,
                                       lasso_lambda = NULL) {
   phi_est_matrix <- est_indiv$phi_est
-  # residuals <- unlist(est_indiv$residuals)
-
-
+  
   beta_candidates <- NULL
   beta_forced <- NULL
 
@@ -247,20 +245,10 @@ build_init_from_phi_lasso <- function(est_indiv,
   if (!is.matrix(phi_est_matrix)) stop("phi_est_matrix must be a matrix N x n_phi")
   n_phi <- ncol(phi_est_matrix)
 
-  # cov_emp <- matrix(0, nrow = n_phi, ncol = n_phi)
-
   # Indices
   phi_to_select_idx <- model@phi_to_select_idx
   phi_not_to_select_idx <- setdiff(seq_len(n_phi), phi_to_select_idx)
 
-  # === 1. Intercepts (initial) ===
-  #  intercept <- colMeans(phi_est_matrix, na.rm = TRUE)
-
-  # === 2. Sigma2 ===
-
-  # sigma2 <- var(residuals, na.rm = TRUE)
-
-  # === 3. Beta and covariance for phi_to_select_idx ===
   beta_sel <- NULL
 
   if (length(phi_to_select_idx) > 0 &&
@@ -277,10 +265,7 @@ build_init_from_phi_lasso <- function(est_indiv,
       )
       s_val <- if (is.null(lasso_lambda)) min(fit$lambda) else lasso_lambda
       coefs_list <- coef(fit, s = s_val)
-      # phi_pred_lasso <- predict(fit, newx = x_sel, s = s_val)
       beta_sel[, i] <- as.matrix(coefs_list[-1])
-      # cov_emp[phi_to_select_idx[i], phi_to_select_idx[i]] <-
-      #   stats::var(as.numeric(phi_sel - phi_pred_lasso))
     }
   }
 
@@ -293,20 +278,11 @@ build_init_from_phi_lasso <- function(est_indiv,
     if (!is_empty_matrix(x_not_sel)) {
       beta_not_sel <- matrix(0, ncol = length(phi_not_to_select_idx), nrow = ncol(x_not_sel))
       for (i in seq_along(phi_not_to_select_idx)) {
-        # phi_not_sel <- phi_est_matrix[, phi_not_to_select_idx[i]]
         fit <- lm(phi_not_sel ~ x_not_sel)
         coefs <- coef(fit)
         beta_not_sel[, i] <- coefs[-1]
-        # phi_pred_lm <- predict(fit)
-        # cov_emp[phi_not_to_select_idx[i], phi_not_to_select_idx[i]] <- stats::var(as.numeric(phi_not_sel - phi_pred_lm))
       }
     }
-    # else {
-    #  for (i in seq_along(phi_not_to_select_idx)) {
-    # phi_not_sel <- phi_est_matrix[, phi_not_to_select_idx[i]]
-    # cov_emp[phi_not_to_select_idx[i], phi_not_to_select_idx[i]] <- stats::var(as.numeric(phi_not_sel))
-    #  }
-    # }
   }
 
 
@@ -314,14 +290,21 @@ build_init_from_phi_lasso <- function(est_indiv,
 
   supp <- model@x_forced_support
   if (is_empty_support(supp)) {
+    beta_forced <- NULL
     beta_candidates <- matrix(0, nrow = ncol(x_sel), ncol = n_phi)
     if (!is.null(beta_sel)) beta_candidates[, phi_to_select_idx] <- beta_sel
   } else {
-    beta_forced <- matrix(0, nrow = ncol(x_not_sel), ncol = n_phi)
-    beta_forced[, phi_not_to_select_idx] <- beta_not_sel
-    if (!(all(supp[, phi_to_select_idx])) == 0) {
+    x_forced_idx <- seq(1, nrow(supp))
+    # beta_forced <- matrix(0, nrow = ncol(x_not_sel), ncol = n_phi)
+    beta_forced <- matrix(0, nrow = nrow(supp), ncol = n_phi)
+    if (!all(supp[, phi_not_to_select_idx] == 0)) {
+      beta_forced[, phi_not_to_select_idx] <- beta_not_sel
+    }
+    if (!all(supp[, phi_to_select_idx] == 0)) {
       beta_forced[, phi_to_select_idx] <- beta_sel[nrow(supp), ]
     }
+    beta_candidates <- matrix(0, nrow = ncol(x_sel[, - x_forced_idx]), ncol = n_phi)
+    beta_candidates[, phi_to_select_idx] <- beta_sel[-seq(1, nrow(supp)), ]
   }
 
 
