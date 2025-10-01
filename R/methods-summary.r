@@ -69,9 +69,9 @@ setMethod(
     for (j in seq_len(num_phi_sel)) {
       # Candidate rows exclude intercept (row 1) and forced covariates
       candidate_rows <- setdiff(seq_len(support_dim[1])[-1], forced_variables_idx + 1)
-      selected_rel <- which(best_support_matrix[candidate_rows, j])
+      selected_rel <- which(best_support_matrix[candidate_rows, j] == TRUE)
       if (length(selected_rel) > 0) {
-        selected_abs <- selected_variables_idx[selected_rel]
+        selected_abs <- intersect(selected_rel, selected_variables_idx) # selected_variables_idx[selected_rel]
         cat(sprintf("  - \u03C6%d : %s\n", j, paste(selected_abs, collapse = ", ")))
       } else {
         cat(sprintf("  - \u03C6%d : (none)\n", j))
