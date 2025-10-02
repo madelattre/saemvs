@@ -214,6 +214,25 @@ setMethod(
   function(res_saem, component, sel_components, phi = NULL) {
     max_ticks <- 4
 
+    phi_to_select_idx <- res_saem@phi_to_select_idx
+    phi_not_to_select_idx <- res_saem@phi_not_to_select_idx
+
+    if (!is.null(phi)) {
+      if (component %in% c("coef_phi_sel", "variance_phi_sel")) {
+        if (is.null(phi_to_select_idx) || !(phi %in% phi_to_select_idx)) {
+          stop(sprintf(
+            "Parameter %d is not subject to selection, thus not compatible with component '%s'.",
+            phi, component
+          ))
+        }
+      } else if (component %in% c("coef_phi_non_sel", "variance_phi_non_sel")) {
+        if (is.null(phi_not_to_select_idx) || !(phi %in% phi_not_to_select_idx)) {
+          stop(sprintf(
+            "Parameter %d is subject to selection, thus not compatible with component '%s'.",
+            phi, component
+          ))
+        }
+    }
     # --- Handle case: residual variance (sigma2) ---
     if (component == "sigma2") {
       df <- data.frame(
@@ -237,12 +256,12 @@ setMethod(
         ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
 
       # --- Handle case: beta/gamma matrices ---
-    } else if (component %in% c("beta_candidates", "beta_forced", "gamma_s", "gamma_ns")) {
+    } else if (component %in% c("coef_phi_sel", "coef_phi_non_sel", "variance_phi_sel", "variance_phi_non_sel")) {
       list_est <- switch(component,
-        beta_candidates = res_saem@beta_to_select,
-        beta_forced = res_saem@beta_not_to_select,
-        gamma_s = res_saem@gamma_to_select,
-        gamma_ns = res_saem@gamma_not_to_select
+        coef_phi_sel = res_saem@beta_to_select,
+        coef_phi_non_sel = res_saem@beta_not_to_select,
+        variance_phi_sel = res_saem@gamma_to_select,
+        variance_phi_non_sel = res_saem@gamma_not_to_select
       )
 
       if (length(list_est) == 0 || all(sapply(list_est, is.null))) {
@@ -267,12 +286,14 @@ setMethod(
 
       # --- Create facet labels according to component ---
       make_facet_label <- function(comp, i, j) {
-        if (comp == "beta_candidates") {
-          paste0("\u03C6", j, ", cand. ", i)
-        } else if (comp == "beta_forced") {
-          paste0("\u03C6", j, ", forc. ", i)
-        } else if (comp %in% c("gamma_s", "gamma_ns")) {
-          paste0("cov(", "\u03C6", i, ", \u03C6", j, ")")
+        if (comp == "coef_phi_sel") {
+          paste0("\u03C6", phi_to_select_idx[j], ", var. ", i - 1)
+        } else if (comp == "coef_phi_non_sel") {
+          paste0("\u03C6", phi_not_to_select_idx[j], ", var. ", i - 1)
+        } else if (comp == "variance_phi_sel") {
+          paste0("cov(", "\u03C6", phi_to_select_idx[i], ", \u03C6", phi_to_select_idx[j], ")")
+        } else if (comp == "variance_phi_non_sel") {
+          paste0("cov(", "\u03C6", phi_not_to_select_idx[i], ", \u03C6", phi_not_to_select_idx[j], ")")
         } else {
           NA
         }
@@ -329,8 +350,8 @@ setMethod(
         ggplot2::facet_wrap(~facet_label, scales = "free_y", ncol = 4) +
         ggplot2::theme_bw() +
         ggplot2::labs(
-          x = "Iteration", y = "Estimated value"#,
-          #title = paste("Evolution of", component, "components")
+          x = "Iteration", y = "Estimated value" # ,
+          # title = paste("Evolution of", component, "components")
         ) +
         ggplot2::scale_x_continuous(breaks = breaks) +
         ggplot2::scale_color_discrete(name = "component") +

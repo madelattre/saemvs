@@ -1298,14 +1298,18 @@ setClass(
     beta_not_to_select = "listORNULL",
     gamma_to_select = "listORNULL",
     gamma_not_to_select = "listORNULL",
-    sigma2 = "numericORNULL"
+    sigma2 = "numericORNULL",
+    phi_to_select_idx = "numericORNULL",
+    phi_not_to_select_idx = "numericORNULL"
   ),
   prototype = list(
     beta_to_select = NULL,
     beta_not_to_select = NULL,
     gamma_to_select = NULL,
     gamma_not_to_select = NULL,
-    sigma2 = NULL
+    sigma2 = NULL,
+    phi_to_select_idx = NULL,
+    phi_not_to_select_idx = NULL
   ),
   validity = function(object) {
     # Check beta_to_select
