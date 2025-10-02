@@ -30,7 +30,7 @@
 #' @export
 setGeneric(
   "summary_saemvs",
-  function(saem_results, digits) {
+  function(saem_results, ...) {
     standardGeneric("summary_saemvs")
   }
 )
@@ -40,8 +40,7 @@ setGeneric(
 setMethod(
   "summary_saemvs",
   signature(
-    saem_results = "saemvsResults",
-    digits = "numeric"
+    saem_results = "saemvsResults"
   ),
   function(saem_results, digits = 3) {
     # --------------------------
