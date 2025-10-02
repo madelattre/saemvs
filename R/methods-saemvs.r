@@ -398,8 +398,7 @@ setMethod(
       model@phi_to_select_idx
     )
 
-    #for (k in seq(1,20)) {
-if (is_empty_support(forced_support)) {
+    if (is_empty_support(forced_support)) {
       cand_support <- matrix(as.numeric(support[[k]]),
         nrow = nrow(support[[k]])
       )
@@ -410,7 +409,7 @@ if (is_empty_support(forced_support)) {
       cand_support <- matrix(as.numeric(support[[k]]),
         nrow = nrow(support[[k]])
       )
-      idx_forced_phi_sel <- seq(1, dim(forced_support)[1]) #seq(1, dim(forced_support)[1] + 1) #
+      idx_forced_phi_sel <- seq(1, dim(forced_support)[1])
       cand_support <- cand_support[-idx_forced_phi_sel, , drop = FALSE]
       forced_rows <- idx_forced_phi_sel
       active_candidate_idx <- which(rowSums(cand_support[-1, , drop = FALSE]) > 0)
@@ -423,9 +422,9 @@ if (is_empty_support(forced_support)) {
     new_processed_init <- prepare_init(new_init, new_model, new_data_processed)
     new_hyperparam <- saemvsHyperSlab(NULL, NULL, NULL)
     new_full_hyperparam <- saemvsHyperSpikeAndSlab(NULL, new_hyperparam)
-    #}
 
-    
+
+
 
 
 
@@ -501,8 +500,13 @@ setMethod(
       hyperparam
     )
 
+    check_data(data, model)
+    data_processed <- prepare_data(data, model)
+    check_init(init, data_processed, model)
+    init_alg <- prepare_init(init, model, data_processed)
+
     # Run the SAEM algorithm to estimate parameters
-    saem_state <- run_saem(data, model, init, tuning_algo, full_hyperparam)
+    saem_state <- run_saem(data_processed, model, init_alg, tuning_algo, full_hyperparam)
 
     # Package results into saemResults object
     res <- methods::new(
