@@ -1,9 +1,169 @@
+# #' Convergence Diagnostic Plot for SAEM Estimation
+# #'
+# #' The \code{convergence_plot} function provides visual diagnostics
+# #' of convergence for specific components estimated in a
+# #' \linkS4class{saemResults} object. It can be used to monitor the
+# #' evolution of parameter estimates across SAEM iterations.
+# #'
+# #' Supported components are:
+# #' \itemize{
+# #'   \item \code{"sigma2"}: evolution of the residual variance.
+# #'   \item \code{"beta_s"}: estimated coefficients for the variables
+# #'         subject to selection.
+# #'   \item \code{"beta_ns"}: estimated coefficients for the variables
+# #'         not subject to selection.
+# #'   \item \code{"gamma_s"}: estimated random effects covariance
+# #'         components subject to selection.
+# #'   \item \code{"gamma_ns"}: estimated random effects covariance
+# #'         components not subject to selection.
+# #' }
+# #'
+# #' @param res_saem An object of class \linkS4class{saemResults}.
+# #' @param component A character string indicating which component to plot.
+# #'   Must be one of \code{"sigma2"}, \code{"beta_s"}, \code{"beta_ns"},
+# #'   \code{"gamma_s"}, \code{"gamma_ns"}.
+# #' @param sel_components A character vector specifying which elements of
+# #'   the selected matrix (\code{"beta_*"} or \code{"gamma_*"}) to track.
+# #'   Elements must be of the form \code{"(i,j)"}, where \code{i} and
+# #'   \code{j} are row and column indices. At most 16 components are shown.
+# #'   Ignored if \code{component = "sigma2"}.
+# #'
+# #' @return A \pkg{ggplot2} object (printed by default), showing the
+# #'   evolution of the requested parameter(s) across SAEM iterations.
+# #'
+# #' @examples
+# #' \dontrun{
+# #' # Example: Plot sigma^2 evolution
+# #' convergence_plot(res, component = "sigma2")
+# #'
+# #' # Example: Plot selected beta coefficients
+# #' convergence_plot(res, component = "beta_s", sel_components = c("(1,1)", "(2,1)"))
+# #' }
+# #'
+# #' @seealso \linkS4class{saemResults}
+# #'
+# #' @export
+# setGeneric(
+#   "convergence_plot",
+#   function(res_saem, component, sel_components) {
+#     standardGeneric("convergence_plot")
+#   }
+# )
+
+# #' @rdname convergence_plot
+# #' @exportMethod convergence_plot
+# setMethod(
+#   "convergence_plot",
+#   signature(
+#     res_saem = "saemResults", component = "character",
+#     sel_components = "character"
+#   ),
+#   function(res_saem, component, sel_components) {
+#     # --- Handle case: residual variance (sigma2) ---
+#     if (component == "sigma2") {
+#       df <- data.frame(
+#         iteration = seq_along(res_saem@sigma2),
+#         value = res_saem@sigma2
+#       )
+
+#       g <- ggplot2::ggplot(df, ggplot2::aes(x = iteration, y = value)) +
+#         ggplot2::geom_line() +
+#         ggplot2::geom_point() +
+#         ggplot2::theme_bw() +
+#         ggplot2::labs(
+#           x = "Iteration", y = "Estimated value",
+#           title = "Evolution of the selected matrix component"
+#         )
+
+#       # --- Handle case: beta/gamma matrices ---
+#     } else if (component %in% c("beta_s", "beta_ns", "gamma_s", "gamma_ns")) {
+#       # Select appropriate list of matrices based on requested component
+#       switch(component,
+#         beta_s = {
+#           list_est <- res_saem@beta_to_select
+#         },
+#         beta_ns = {
+#           list_est <- res_saem@beta_not_to_select
+#         },
+#         gamma_s = {
+#           list_est <- res_saem@gamma_to_select
+#         },
+#         gamma_ns = {
+#           list_est <- res_saem@gamma_not_to_select
+#         }
+#       )
+
+#       # Build long-format dataframe of all iterations
+#       df <- do.call(rbind, lapply(seq_along(list_est), function(iter) {
+#         mat <- list_est[[iter]]
+#         data.frame(
+#           iteration = iter,
+#           i = rep(seq_len(nrow(mat)), ncol(mat)),
+#           j = rep(seq_len(ncol(mat)), each = nrow(mat)),
+#           value = as.vector(mat)
+#         )
+#       }))
+#       df$component <- paste0("(", df$i, ",", df$j, ")")
+
+#       # --- Validate sel_components ---
+#       valid_format <- grepl("^\\([0-9]+,[0-9]+\\)$", sel_components)
+#       if (any(!valid_format)) {
+#         stop("Some elements in 'sel_components' do not match the required format '(i,j)'.")
+#       }
+
+#       possible_components <- unique(df$component)
+#       invalid <- setdiff(sel_components, possible_components)
+#       if (length(invalid) > 0) {
+#         stop(
+#           paste(
+#             "The following components do not exist in the matrix:",
+#             paste(invalid, collapse = ", ")
+#           )
+#         )
+#       }
+
+#       # Restrict to 16 components max for readability
+#       if (length(sel_components) > 16) {
+#         sel_components <- sel_components[1:16]
+#         warning("Only the first 16 components of 'sel_components' have been considered.")
+#       }
+
+#       # Keep only selected components
+#       df <- subset(df, component %in% sel_components)
+
+#       # --- Build plot ---
+#       g <- ggplot2::ggplot(
+#         df,
+#         ggplot2::aes(x = iteration, y = value, color = component)
+#       ) +
+#         ggplot2::geom_line() +
+#         ggplot2::facet_wrap(~component, scales = "free_y") +
+#         ggplot2::theme_bw() +
+#         ggplot2::labs(
+#           x = "Iteration", y = "Estimated value",
+#           title = paste("Evolution of each matrix component in", component)
+#         )
+
+#       # --- Handle invalid input ---
+#     } else {
+#       stop(
+#         paste0(
+#           "'component' must be 'beta_s', 'beta_ns', 'gamma_s', ",
+#           "'gamma_ns' or 'sigma2'."
+#         )
+#       )
+#     }
+
+#     # Print plot by default
+#     print(g)
+#   }
+# )
+
 #' Convergence Diagnostic Plot for SAEM Estimation
 #'
 #' The \code{convergence_plot} function provides visual diagnostics
 #' of convergence for specific components estimated in a
-#' \linkS4class{saemResults} object. It can be used to monitor the
-#' evolution of parameter estimates across SAEM iterations.
+#' \linkS4class{saemResults} object.
 #'
 #' Supported components are:
 #' \itemize{
@@ -24,28 +184,22 @@
 #'   \code{"gamma_s"}, \code{"gamma_ns"}.
 #' @param sel_components A character vector specifying which elements of
 #'   the selected matrix (\code{"beta_*"} or \code{"gamma_*"}) to track.
-#'   Elements must be of the form \code{"(i,j)"}, where \code{i} and
-#'   \code{j} are row and column indices. At most 16 components are shown.
+#'   Elements must be of the form \code{"(i,j)"}. At most 16 components
+#'   are shown. Special values:
+#'   \itemize{
+#'     \item if missing → the first 16 components are chosen,
+#'     \item \code{"random"} → 16 components are chosen at random,
+#'     \item \code{"top:n"} → the \code{n} most variable components are shown.
+#'   }
 #'   Ignored if \code{component = "sigma2"}.
 #'
-#' @return A \pkg{ggplot2} object (printed by default), showing the
-#'   evolution of the requested parameter(s) across SAEM iterations.
-#'
-#' @examples
-#' \dontrun{
-#' # Example: Plot sigma^2 evolution
-#' convergence_plot(res, component = "sigma2")
-#'
-#' # Example: Plot selected beta coefficients
-#' convergence_plot(res, component = "beta_s", sel_components = c("(1,1)", "(2,1)"))
-#' }
-#'
-#' @seealso \linkS4class{saemResults}
+#' @return A \pkg{ggplot2} object showing the evolution of the
+#'   requested parameter(s) across SAEM iterations.
 #'
 #' @export
 setGeneric(
   "convergence_plot",
-  function(res_saem, component, sel_components) {
+  function(res_saem, component, sel_components, phi) {
     standardGeneric("convergence_plot")
   }
 )
@@ -55,10 +209,11 @@ setGeneric(
 setMethod(
   "convergence_plot",
   signature(
-    res_saem = "saemResults", component = "character",
-    sel_components = "character"
+    res_saem = "saemResults", component = "character", sel_components = "ANY", phi = "ANY"
   ),
-  function(res_saem, component, sel_components) {
+  function(res_saem, component, sel_components, phi = NULL) {
+    max_ticks <- 4
+
     # --- Handle case: residual variance (sigma2) ---
     if (component == "sigma2") {
       df <- data.frame(
@@ -66,34 +221,36 @@ setMethod(
         value = res_saem@sigma2
       )
 
+      n_iter <- length(unique(df$iteration))
+      step <- max(1, floor(n_iter / max_ticks))
+      breaks <- seq(1, n_iter, by = step)
+
       g <- ggplot2::ggplot(df, ggplot2::aes(x = iteration, y = value)) +
         ggplot2::geom_line() +
         ggplot2::geom_point() +
         ggplot2::theme_bw() +
         ggplot2::labs(
           x = "Iteration", y = "Estimated value",
-          title = "Evolution of the selected matrix component"
-        )
+          title = "Evolution of residual variance (sigma2)"
+        ) +
+        ggplot2::scale_x_continuous(breaks = breaks) +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
 
       # --- Handle case: beta/gamma matrices ---
-    } else if (component %in% c("beta_s", "beta_ns", "gamma_s", "gamma_ns")) {
-      # Select appropriate list of matrices based on requested component
-      switch(component,
-        beta_s = {
-          list_est <- res_saem@beta_to_select
-        },
-        beta_ns = {
-          list_est <- res_saem@beta_not_to_select
-        },
-        gamma_s = {
-          list_est <- res_saem@gamma_to_select
-        },
-        gamma_ns = {
-          list_est <- res_saem@gamma_not_to_select
-        }
+    } else if (component %in% c("beta_candidates", "beta_forced", "gamma_s", "gamma_ns")) {
+      list_est <- switch(component,
+        beta_candidates = res_saem@beta_to_select,
+        beta_forced = res_saem@beta_not_to_select,
+        gamma_s = res_saem@gamma_to_select,
+        gamma_ns = res_saem@gamma_not_to_select
       )
 
-      # Build long-format dataframe of all iterations
+      if (length(list_est) == 0 || all(sapply(list_est, is.null))) {
+        message(sprintf("No data available for component '%s'. Plot cannot be generated.", component))
+        return(invisible(NULL))
+      }
+
+      # Build long-format dataframe
       df <- do.call(rbind, lapply(seq_along(list_est), function(iter) {
         mat <- list_est[[iter]]
         data.frame(
@@ -103,61 +260,188 @@ setMethod(
           value = as.vector(mat)
         )
       }))
-      df$component <- paste0("(", df$i, ",", df$j, ")")
 
-      # --- Validate sel_components ---
-      valid_format <- grepl("^\\([0-9]+,[0-9]+\\)$", sel_components)
-      if (any(!valid_format)) {
-        stop("Some elements in 'sel_components' do not match the required format '(i,j)'.")
+      n_iter <- length(unique(df$iteration))
+      step <- max(1, floor(n_iter / max_ticks))
+      breaks <- seq(1, n_iter, by = step)
+
+      # --- Create facet labels according to component ---
+      make_facet_label <- function(comp, i, j) {
+        if (comp == "beta_candidates") {
+          paste0("\u03C6", j, ", cand. ", i)
+        } else if (comp == "beta_forced") {
+          paste0("\u03C6", j, ", forc. ", i)
+        } else if (comp %in% c("gamma_s", "gamma_ns")) {
+          paste0("cov(", "\u03C6", i, ", \u03C6", j, ")")
+        } else {
+          NA
+        }
       }
 
-      possible_components <- unique(df$component)
+      df$facet_label <- mapply(make_facet_label, component, df$i, df$j)
+      possible_components <- unique(df$facet_label)
+
+      # --- Default / random / top:n selection ---
+      if (missing(sel_components)) {
+        sel_components <- head(possible_components, 16)
+      } else if (length(sel_components) == 1 && sel_components == "random") {
+        sel_components <- sample(possible_components, min(16, length(possible_components)))
+      } else if (length(sel_components) == 1 && grepl("^top:[0-9]+$", sel_components)) {
+        n <- as.numeric(sub("top:", "", sel_components))
+
+        # var_df <- aggregate(value ~ facet_label, df, var)
+        # top_sel <- head(var_df[order(-var_df$value), "facet_label"], n)
+        # sel_components <- top_sel
+        if (!is.null(phi)) {
+          # ne garder que les coefficients de la colonne demandée
+          df_col <- subset(df, j == phi)
+        } else {
+          df_col <- df
+        }
+
+        # Calcul de la variance par coefficient (ligne i dans cette colonne)
+        var_df <- aggregate(value ~ facet_label, df_col, var)
+
+        top_sel <- head(var_df[order(-var_df$value), "facet_label"], n)
+        sel_components <- top_sel
+      }
+
+      # Validation
       invalid <- setdiff(sel_components, possible_components)
       if (length(invalid) > 0) {
         stop(
-          paste(
-            "The following components do not exist in the matrix:",
-            paste(invalid, collapse = ", ")
-          )
+          "The following components do not exist in the matrix: ",
+          paste(invalid, collapse = ", ")
         )
       }
 
-      # Restrict to 16 components max for readability
+      # Restrict to max 16
       if (length(sel_components) > 16) {
         sel_components <- sel_components[1:16]
-        warning("Only the first 16 components of 'sel_components' have been considered.")
+        warning("Only the first 16 components of 'sel_components' are displayed.")
       }
 
-      # Keep only selected components
-      df <- subset(df, component %in% sel_components)
+      df <- subset(df, facet_label %in% sel_components)
 
       # --- Build plot ---
-      g <- ggplot2::ggplot(
-        df,
-        ggplot2::aes(x = iteration, y = value, color = component)
-      ) +
+      g <- ggplot2::ggplot(df, ggplot2::aes(x = iteration, y = value, color = facet_label)) +
         ggplot2::geom_line() +
-        ggplot2::facet_wrap(~component, scales = "free_y") +
+        ggplot2::facet_wrap(~facet_label, scales = "free_y", ncol = 4) +
         ggplot2::theme_bw() +
         ggplot2::labs(
-          x = "Iteration", y = "Estimated value",
-          title = paste("Evolution of each matrix component in", component)
-        )
-
-      # --- Handle invalid input ---
+          x = "Iteration", y = "Estimated value"#,
+          #title = paste("Evolution of", component, "components")
+        ) +
+        ggplot2::scale_x_continuous(breaks = breaks) +
+        ggplot2::scale_color_discrete(name = "component") +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
     } else {
-      stop(
-        paste0(
-          "'component' must be 'beta_s', 'beta_ns', 'gamma_s', ",
-          "'gamma_ns' or 'sigma2'."
-        )
-      )
+      stop("'component' must be one of: 'sigma2', 'beta_s', 'beta_ns', 'gamma_s', 'gamma_ns'.")
     }
 
-    # Print plot by default
     print(g)
   }
 )
+#   function(res_saem, component, sel_components) {
+#     max_ticks <- 4
+
+#     # --- Handle case: residual variance (sigma2) ---
+#     if (component == "sigma2") {
+#       df <- data.frame(
+#         iteration = seq_along(res_saem@sigma2),
+#         value = res_saem@sigma2
+#       )
+
+#       n_iter <- length(unique(df$iteration))
+#       step <- max(1, floor(n_iter / max_ticks))
+#       breaks <- seq(1, n_iter, by = step)
+
+#       g <- ggplot2::ggplot(df, ggplot2::aes(x = iteration, y = value)) +
+#         ggplot2::geom_line() +
+#         ggplot2::geom_point() +
+#         ggplot2::theme_bw() +
+#         ggplot2::labs(
+#           x = "Iteration", y = "Estimated value",
+#           title = "Evolution of residual variance (sigma2)"
+#         ) +
+#         ggplot2::scale_x_continuous(breaks = breaks) +
+#         ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
+
+#       # --- Handle case: beta/gamma matrices ---
+#     } else if (component %in% c("beta_s", "beta_ns", "gamma_s", "gamma_ns")) {
+#       list_est <- switch(component,
+#         beta_s = res_saem@beta_to_select,
+#         beta_ns = res_saem@beta_not_to_select,
+#         gamma_s = res_saem@gamma_to_select,
+#         gamma_ns = res_saem@gamma_not_to_select
+#       )
+
+#       # Build long-format dataframe
+#       df <- do.call(rbind, lapply(seq_along(list_est), function(iter) {
+#         mat <- list_est[[iter]]
+#         data.frame(
+#           iteration = iter,
+#           i = rep(seq_len(nrow(mat)), ncol(mat)),
+#           j = rep(seq_len(ncol(mat)), each = nrow(mat)),
+#           value = as.vector(mat)
+#         )
+#       }))
+#       n_iter <- length(unique(df$iteration))
+#       step <- max(1, floor(n_iter / max_ticks))
+#       breaks <- seq(1, n_iter, by = step)
+#       df$component <- paste0("\u03C6", df$j, ", cand. ", df$i)
+
+
+
+#       possible_components <- unique(df$component)
+
+#       # --- Default / random / top:n selection ---
+#       if (missing(sel_components)) {
+#         sel_components <- head(possible_components, 16)
+#       } else if (length(sel_components) == 1 && sel_components == "random") {
+#         sel_components <- sample(possible_components, min(16, length(possible_components)))
+#       } else if (length(sel_components) == 1 && grepl("^top:[0-9]+$", sel_components)) {
+#         n <- as.numeric(sub("top:", "", sel_components))
+#         var_df <- aggregate(value ~ component, df, var)
+#         top_sel <- head(var_df[order(-var_df$value), "component"], n)
+#         sel_components <- top_sel
+#       }
+
+#       # Validation
+#       invalid <- setdiff(sel_components, possible_components)
+#       if (length(invalid) > 0) {
+#         stop(
+#           "The following components do not exist in the matrix: ",
+#           paste(invalid, collapse = ", ")
+#         )
+#       }
+
+#       # Restrict to max 16
+#       if (length(sel_components) > 16) {
+#         sel_components <- sel_components[1:16]
+#         warning("Only the first 16 components of 'sel_components' are displayed.")
+#       }
+
+#       df <- subset(df, component %in% sel_components)
+
+#       # --- Build plot ---
+#       g <- ggplot2::ggplot(df, ggplot2::aes(x = iteration, y = value, color = component)) +
+#         ggplot2::geom_line() +
+#         ggplot2::facet_wrap(~component, scales = "free_y", ncol = 4) +
+#         ggplot2::theme_bw() +
+#         ggplot2::labs(
+#           x = "Iteration", y = "Estimated value",
+#           title = paste("Evolution of", component, "components")
+#         ) +
+#         ggplot2::scale_x_continuous(breaks = breaks) +
+#         ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
+#     } else {
+#       stop("'component' must be one of: 'sigma2', 'beta_s', 'beta_ns', 'gamma_s', 'gamma_ns'.")
+#     }
+
+#     print(g)
+#   }
+# )
 
 
 #' Prepare Grid Plots for SAEMVS Results
