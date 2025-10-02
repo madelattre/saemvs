@@ -128,6 +128,37 @@ setMethod(
       ))
     }
 
+    if (!is_empty_support(model@x_forced_support)) {
+      xfs <- model@x_forced_support
+      bfs <- init@beta_forced
+
+      if (is_empty_matrix(bfs) && isFALSE(init@default)) {
+        stop(
+          "Non-empty 'x_forced_support' requires a non-empty initialisation of 'beta_forced'. ",
+          "Alternatively, set 'init@default = TRUE'."
+        )
+      }
+
+      if (!all(dim(xfs) == dim(bfs))) {
+        stop(
+          "'x_forced_support' and 'beta_forced' must have the same dimensions: ",
+          "got ", paste0(nrow(xfs), "x", ncol(xfs)), " vs ",
+          paste0(nrow(bfs), "x", ncol(bfs)), "."
+        )
+      }
+
+      if (isFALSE(init@default)) {
+        mask_violation <- any(bfs[xfs == 0] != 0)
+        if (mask_violation) {
+          stop(
+            "Inconsistent forced values: where 'x_forced_support' has 0, ",
+            "'beta_forced' must also be 0 (since init@default = FALSE)."
+          )
+        }
+      }
+    }
+
+
     # phi_idx <- model@phi_fixed_idx
     # if (length(phi_idx) > 0) {
     #   diag_vals <- diag(init@cov_re[phi_idx, phi_idx, drop = FALSE])
