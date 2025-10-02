@@ -199,7 +199,7 @@
 #' @export
 setGeneric(
   "convergence_plot",
-  function(res_saem, component, sel_components, phi) {
+  function(res_saem, component, sel_components, ...) {
     standardGeneric("convergence_plot")
   }
 )
@@ -209,7 +209,7 @@ setGeneric(
 setMethod(
   "convergence_plot",
   signature(
-    res_saem = "saemResults", component = "character", sel_components = "ANY", phi = "ANY"
+    res_saem = "saemResults", component = "character", sel_components = "ANY"
   ),
   function(res_saem, component, sel_components, phi = NULL) {
     max_ticks <- 4
@@ -232,6 +232,7 @@ setMethod(
             phi, component
           ))
         }
+    }
     }
     # --- Handle case: residual variance (sigma2) ---
     if (component == "sigma2") {
