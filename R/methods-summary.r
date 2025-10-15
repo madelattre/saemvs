@@ -46,6 +46,7 @@ setMethod(
     # --------------------------
     # Fixed-effect indices (used to zero out covariance display if needed)
     fixed_param_idx <- saem_results@phi_fixed_idx
+    phi_to_select_idx <- saem_results@phi_to_select_idx
 
     # --------------------------
     # Identify best model index according to selection criterion (BIC/e-BIC)
@@ -71,9 +72,9 @@ setMethod(
       selected_rel <- which(best_support_matrix[candidate_rows, j] == TRUE)
       if (length(selected_rel) > 0) {
         selected_abs <- intersect(selected_rel, selected_variables_idx) # selected_variables_idx[selected_rel]
-        cat(sprintf("  - \u03C6%d : %s\n", j, paste(selected_abs, collapse = ", ")))
+        cat(sprintf("  - \u03C6%d : %s\n", phi_to_select_idx[j], paste(selected_abs, collapse = ", ")))
       } else {
-        cat(sprintf("  - \u03C6%d : (none)\n", j))
+        cat(sprintf("  - \u03C6%d : (none)\n", phi_to_select_idx[j]))
       }
     }
 
