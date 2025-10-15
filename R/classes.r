@@ -1222,6 +1222,7 @@ setClass(
     support_mapping = "numeric",
     spike_values_grid = "numeric",
     phi_fixed_idx = "numericORNULL",
+    phi_to_select_idx = "numeric",
     forced_variables_idx = "list",
     selected_variables_idx = "list"
   ),
@@ -1236,6 +1237,7 @@ setClass(
     support_mapping = numeric(0),
     spike_values_grid = numeric(0),
     phi_fixed_idx = numeric(0),
+    phi_to_select_idx = numeric(0),
     forced_variables_idx = list(),
     selected_variables_idx = list()
   ),

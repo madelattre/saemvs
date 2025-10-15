@@ -187,6 +187,7 @@ setMethod(
       support_mapping = support_index_mapping,
       spike_values_grid = tuning_algo@spike_values_grid,
       phi_fixed_idx = model@phi_fixed_idx,
+      phi_to_select_idx = model@phi_to_select_idx,
       forced_variables_idx = forced_variables_idx,
       selected_variables_idx = selected_variables_idx
     )
@@ -515,7 +516,9 @@ setMethod(
       beta_not_to_select = saem_state$beta_not_to_select,
       gamma_to_select = saem_state$gamma_to_select,
       gamma_not_to_select = saem_state$gamma_not_to_select,
-      sigma2 = saem_state$sigma2
+      sigma2 = saem_state$sigma2,
+      phi_to_select_idx = model@phi_to_select_idx,
+      phi_not_to_select_idx = setdiff(seq_len(model@phi_dim), model@phi_to_select_idx)
     )
 
     return(res)
