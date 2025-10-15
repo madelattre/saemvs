@@ -1,9 +1,33 @@
 #include "maths-utils.h"
 
+// // [[Rcpp::export]]
+// arma::mat mat_inv(const arma::mat& A) {
+//   return inv(A);
+// }
+
 // [[Rcpp::export]]
 arma::mat mat_inv(const arma::mat& A) {
-  return inv(A);
+  try {
+    // Check that the matrix contains only finite values
+    // (no NA, NaN, or Inf). Armadillo's is_finite() does this efficiently.
+    if (!A.is_finite()) {
+      stop("Error: the estimated covariance matrix contains non-finite values (NA, NaN, or Inf).");
+    }
+
+    // Try to invert the matrix.
+    // arma::inv() throws a std::runtime_error if the matrix is singular or not invertible.
+    arma::mat invA = arma::inv(A);
+    return invA;
+
+  } catch (std::runtime_error &e) {
+    // Typical case: the matrix is singular or ill-conditioned.
+    stop("Error: the estimated covariance matrix is not invertible (probably singular or ill-conditioned).");
+  } catch (...) {
+    // Catch-all for any other unexpected errors.
+    stop("Unknown error occurred while trying to invert the estimated covariance matrix.");
+  }
 }
+
 
 // [[Rcpp::export]]
 arma::mat solve_linear_syst(const arma::mat& A, const arma::mat& B) {
