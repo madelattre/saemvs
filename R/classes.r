@@ -983,6 +983,7 @@ saemvsProcessedInit <- function(beta_to_select = NULL,
 #' @slot nb_workers Number of parallel workers for SAEMVS.
 #'
 #' @exportClass saemvsTuning
+
 setClass(
   "saemvsTuning",
   slots = list(
@@ -1012,40 +1013,32 @@ setClass(
     nb_workers = 4
   ),
   validity = function(object) {
-    # niter
-    if (!is.numeric(object@niter) || length(object@niter) != 1) {
-      return("'niter' must be a single numeric value.")
-    }
-    if (object@niter <= 0 || object@niter != as.integer(object@niter)) {
-      return("'niter' must be a positive integer.")
+
+    # --- Helper function pour vérifier "entier numérique" ---
+    is_integerish <- function(x, allow_zero = FALSE) {
+      if (!is.numeric(x) || length(x) != 1) return(FALSE)
+      if (allow_zero) {
+        return(x >= 0 && x == floor(x))
+      } else {
+        return(x > 0 && x == floor(x))
+      }
     }
 
-    # nburnin
-    if (!is.numeric(object@nburnin) || length(object@nburnin) != 1) {
-      return("'nburnin' must be a single numeric value.")
-    }
-    if (object@nburnin < 0 || object@nburnin != as.integer(object@nburnin)) {
-      return("'nburnin' must be a non-negative integer.")
-    }
-    if (object@nburnin > object@niter) {
-      return("'nburnin' must be smaller than 'niter'.")
-    }
+    # --- integer slots ---
+    if (!is_integerish(object@niter)) return("'niter' must be a positive integer.")
+    if (!is_integerish(object@nburnin, allow_zero = TRUE)) return("'nburnin' must be a non-negative integer.")
+    if (object@nburnin > object@niter) return("'nburnin' must be smaller than 'niter'.")
+    if (!is_integerish(object@niter_mh)) return("'niter_mh' must be a positive integer.")
+    if (!is_integerish(object@n_is_samples)) return("'n_is_samples' must be a positive integer.")
+    if (!is_integerish(object@seed, allow_zero = TRUE)) return("'seed' must be an integer.")
+    if (!is_integerish(object@nb_workers)) return("'nb_workers' must be a positive integer.")
 
-    # step
+    # --- step ---
     if (!is.numeric(object@step) || length(object@step) != object@niter) {
       return("'step' must be a numeric vector of length 'niter'.")
     }
 
-    # niter_mh
-    if (!is.numeric(object@niter_mh) || length(object@niter_mh) != 1) {
-      return("'niter_mh' must be a single numeric value.")
-    }
-    if (object@niter_mh <= 0 ||
-      object@niter_mh != as.integer(object@niter_mh)) {
-      return("'niter_mh' must be a positive integer.")
-    }
-
-    # kernel_mh
+    # --- kernel_mh ---
     if (!is.character(object@kernel_mh) || length(object@kernel_mh) != 1) {
       return("'kernel_mh' must be a single character string.")
     }
@@ -1053,61 +1046,202 @@ setClass(
       return("'kernel_mh' must be either 'random_walk' or 'pop'.")
     }
 
-    # covariance_decay
-    if (!is.numeric(object@covariance_decay) ||
-      length(object@covariance_decay) != 1) {
+    # --- covariance_decay ---
+    if (!is.numeric(object@covariance_decay) || length(object@covariance_decay) != 1) {
       return("'covariance_decay' must be a single numeric value.")
     }
     if (object@covariance_decay <= 0 || object@covariance_decay >= 1) {
       return("'covariance_decay' must be strictly between 0 and 1 (exclusive).")
     }
 
-    # mh_proposal_scale
-    if (!is.numeric(object@mh_proposal_scale) ||
-      length(object@mh_proposal_scale) != 1) {
+    # --- mh_proposal_scale ---
+    if (!is.numeric(object@mh_proposal_scale) || length(object@mh_proposal_scale) != 1) {
       return("'mh_proposal_scale' must be a single numeric value.")
     }
     if (object@mh_proposal_scale <= 0) {
       return("'mh_proposal_scale' must be strictly positive.")
     }
 
-    # spike_values_grid
-    if (!is.numeric(object@spike_values_grid) ||
-      length(object@spike_values_grid) == 0) {
+    # --- spike_values_grid ---
+    if (!is.numeric(object@spike_values_grid) || length(object@spike_values_grid) == 0) {
       return("'spike_values_grid' must be a non-empty numeric vector.")
     }
     if (any(object@spike_values_grid <= 0)) {
       return("All values in 'spike_values_grid' must be strictly positive.")
     }
 
-    # n_is_samples
-    if (!is.numeric(object@n_is_samples) || length(object@n_is_samples) != 1) {
-      return("'n_is_samples' must be a single numeric value.")
-    }
-    if (object@n_is_samples <= 0 || object@n_is_samples != as.integer(object@n_is_samples)) {
-      return("'n_is_samples' must be a positive integer.")
-    }
-
-    # seed
-    if (!is.numeric(object@seed) || length(object@seed) != 1) {
-      return("'seed' must be a single numeric value.")
-    }
-    if (object@seed != as.integer(object@seed)) {
-      return("'seed' must be an integer.")
-    }
-
-    # nb_workers
-    if (!is.numeric(object@nb_workers) || length(object@nb_workers) != 1) {
-      return("'nb_workers' must be a single numeric value.")
-    }
-    if (object@nb_workers <= 0 ||
-      object@nb_workers != as.integer(object@nb_workers)) {
-      return("'nb_workers' must be a positive integer.")
-    }
-
     TRUE
   }
 )
+
+# setClass(
+#   "saemvsTuning",
+#   slots = list(
+#     niter = "numeric",
+#     nburnin = "numeric",
+#     step = "numeric",
+#     niter_mh = "numeric",
+#     kernel_mh = "character",
+#     covariance_decay = "numeric",
+#     mh_proposal_scale = "numeric",
+#     spike_values_grid = "numericORNULL",
+#     n_is_samples = "numeric",
+#     seed = "numeric",
+#     nb_workers = "numeric"
+#   ),
+#   prototype = list(
+#     niter = 500,
+#     nburnin = 350,
+#     step = numeric(0), # computed automatically in constructor
+#     niter_mh = 5,
+#     kernel_mh = "random_walk",
+#     covariance_decay = 0.98,
+#     mh_proposal_scale = 1.5,
+#     spike_values_grid = NULL,
+#     n_is_samples = 10000,
+#     seed = 220916,
+#     nb_workers = 4
+#   ),
+#   validity = function(object) {
+#     # Helper function pour vérifier "entier numérique"
+# is_integerish <- function(x, allow_zero = FALSE) {
+#   if (!is.numeric(x) || length(x) != 1) return(FALSE)
+#   if (allow_zero) {
+#     return(x >= 0 && x == floor(x))
+#   } else {
+#     return(x > 0 && x == floor(x))
+#   }
+# }
+
+# # niter
+# if (!is_integerish(object@niter)) {
+#   return("'niter' must be a positive integer.")
+# }
+
+# # nburnin
+# if (!is_integerish(object@nburnin, allow_zero = TRUE)) {
+#   return("'nburnin' must be a non-negative integer.")
+# }
+# if (object@nburnin > object@niter) {
+#   return("'nburnin' must be smaller than 'niter'.")
+# }
+
+# # niter_mh
+# if (!is_integerish(object@niter_mh)) {
+#   return("'niter_mh' must be a positive integer.")
+# }
+
+# # n_is_samples
+# if (!is_integerish(object@n_is_samples)) {
+#   return("'n_is_samples' must be a positive integer.")
+# }
+
+# # seed
+# if (!is_integerish(object@seed, allow_zero = TRUE)) {
+#   return("'seed' must be an integer.")
+# }
+
+# # nb_workers
+# if (!is_integerish(object@nb_workers)) {
+#   return("'nb_workers' must be a positive integer.")
+# }
+
+#     # niter
+#     if (!is.numeric(object@niter) || length(object@niter) != 1) {
+#       return("'niter' must be a single numeric value.")
+#     }
+#     if (object@niter <= 0 || object@niter != as.integer(object@niter)) {
+#       return("'niter' must be a positive integer.")
+#     }
+
+#     # nburnin
+#     if (!is.numeric(object@nburnin) || length(object@nburnin) != 1) {
+#       return("'nburnin' must be a single numeric value.")
+#     }
+#     if (object@nburnin < 0 || object@nburnin != as.integer(object@nburnin)) {
+#       return("'nburnin' must be a non-negative integer.")
+#     }
+#     if (object@nburnin > object@niter) {
+#       return("'nburnin' must be smaller than 'niter'.")
+#     }
+
+#     # step
+#     if (!is.numeric(object@step) || length(object@step) != object@niter) {
+#       return("'step' must be a numeric vector of length 'niter'.")
+#     }
+
+#     # niter_mh
+#     if (!is.numeric(object@niter_mh) || length(object@niter_mh) != 1) {
+#       return("'niter_mh' must be a single numeric value.")
+#     }
+#     if (object@niter_mh <= 0 ||
+#       object@niter_mh != as.integer(object@niter_mh)) {
+#       return("'niter_mh' must be a positive integer.")
+#     }
+
+#     # kernel_mh
+#     if (!is.character(object@kernel_mh) || length(object@kernel_mh) != 1) {
+#       return("'kernel_mh' must be a single character string.")
+#     }
+#     if (!object@kernel_mh %in% c("random_walk", "pop")) {
+#       return("'kernel_mh' must be either 'random_walk' or 'pop'.")
+#     }
+
+#     # covariance_decay
+#     if (!is.numeric(object@covariance_decay) ||
+#       length(object@covariance_decay) != 1) {
+#       return("'covariance_decay' must be a single numeric value.")
+#     }
+#     if (object@covariance_decay <= 0 || object@covariance_decay >= 1) {
+#       return("'covariance_decay' must be strictly between 0 and 1 (exclusive).")
+#     }
+
+#     # mh_proposal_scale
+#     if (!is.numeric(object@mh_proposal_scale) ||
+#       length(object@mh_proposal_scale) != 1) {
+#       return("'mh_proposal_scale' must be a single numeric value.")
+#     }
+#     if (object@mh_proposal_scale <= 0) {
+#       return("'mh_proposal_scale' must be strictly positive.")
+#     }
+
+#     # spike_values_grid
+#     if (!is.numeric(object@spike_values_grid) ||
+#       length(object@spike_values_grid) == 0) {
+#       return("'spike_values_grid' must be a non-empty numeric vector.")
+#     }
+#     if (any(object@spike_values_grid <= 0)) {
+#       return("All values in 'spike_values_grid' must be strictly positive.")
+#     }
+
+#     # n_is_samples
+#     if (!is.numeric(object@n_is_samples) || length(object@n_is_samples) != 1) {
+#       return("'n_is_samples' must be a single numeric value.")
+#     }
+#     if (object@n_is_samples <= 0 || object@n_is_samples != as.integer(object@n_is_samples)) {
+#       return("'n_is_samples' must be a positive integer.")
+#     }
+
+#     # seed
+#     if (!is.numeric(object@seed) || length(object@seed) != 1) {
+#       return("'seed' must be a single numeric value.")
+#     }
+#     if (object@seed != as.integer(object@seed)) {
+#       return("'seed' must be an integer.")
+#     }
+
+#     # nb_workers
+#     if (!is.numeric(object@nb_workers) || length(object@nb_workers) != 1) {
+#       return("'nb_workers' must be a single numeric value.")
+#     }
+#     if (object@nb_workers <= 0 ||
+#       object@nb_workers != as.integer(object@nb_workers)) {
+#       return("'nb_workers' must be a positive integer.")
+#     }
+
+#     TRUE
+#   }
+# )
 
 #' @rdname saemvsTuning
 #' @title Constructor for saemvsTuning
@@ -1149,17 +1283,17 @@ saemvsTuning <- function(niter = 500,
   )
 
   methods::new("saemvsTuning",
-    niter = as.integer(niter),
-    nburnin = as.integer(nburnin),
+    niter = niter,
+    nburnin = nburnin,
     step = step,
-    niter_mh = as.integer(niter_mh),
+    niter_mh = niter_mh,
     kernel_mh = kernel_mh,
     covariance_decay = covariance_decay,
     mh_proposal_scale = mh_proposal_scale,
     spike_values_grid = sort(spike_values_grid),
-    n_is_samples = as.integer(n_is_samples),
-    seed = as.integer(seed),
-    nb_workers = as.integer(nb_workers)
+    n_is_samples = n_is_samples,
+    seed = seed,
+    nb_workers = nb_workers
   )
 }
 
