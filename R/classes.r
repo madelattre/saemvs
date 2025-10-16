@@ -438,6 +438,10 @@ setClass(
       return("'phi_dim' must be a positive integer of length 1.")
     }
 
+    if (object@phi_dim != as.integer(object@phi_dim)) {
+      return("'phi_dim' must be an integer value.")
+    }
+
     # Check indices
     if (!(is.null(object@phi_to_select_idx) ||
       all(object@phi_to_select_idx >= 1 &
@@ -472,6 +476,9 @@ setClass(
           " columns (one per phi)."
         ))
       }
+      if (!all(supp %in% c(0,1))) {
+        return("'x_forced_support' must only contain 0 or 1.")
+      }
     }
 
     TRUE
@@ -497,12 +504,13 @@ saemvsModel <- function(
     x_forced_support = matrix(numeric(0), nrow = 0, ncol = 0)) {
   methods::new("saemvsModel",
     model_func = g,
-    phi_dim = as.integer(phi_dim),
-    phi_to_select_idx = as.integer(phi_to_select_idx),
-    phi_fixed_idx = as.integer(phi_fixed_idx),
+    phi_dim = phi_dim,
+    phi_to_select_idx = phi_to_select_idx,
+    phi_fixed_idx = phi_fixed_idx,
     x_forced_support = x_forced_support
   )
 }
+
 
 
 #' @title saemvsHyperSlab
