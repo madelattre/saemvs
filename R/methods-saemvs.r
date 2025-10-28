@@ -23,7 +23,7 @@
 #' \link[=saemvsHyperSlab-class]{saemvsHyperSlab} containing the
 #' hyperparameters for the slab prior.
 #' @param pen Character string indicating the model selection criterion. Must be
-#'either `"BIC"` or `"e-BIC"`.
+#' either `"BIC"` or `"e-BIC"`.
 #'
 #' @details
 #' The procedure is carried out in two steps:
@@ -105,7 +105,7 @@ setMethod(
     }
 
     if (is.null(model@phi_to_select_idx) ||
-        (length(model@phi_to_select_idx) == 0)) {
+      (length(model@phi_to_select_idx) == 0)) {
       stop(
         paste0(
           "'phi_to_select_idx' must contain at least one parameter index",
@@ -130,7 +130,9 @@ setMethod(
         function(nu0) {
           compile_model(model@model_func)
           fh <- saemvsHyperSpikeAndSlab(nu0, hyperparam)
-          res <- saemvs_one_map_run(data_processed, model, init_alg, tuning_algo, fh)
+          res <- saemvs_one_map_run(
+            data_processed, model, init_alg, tuning_algo, fh
+          )
           p()
           res
         },
@@ -157,27 +159,30 @@ setMethod(
 
     message("SAEMVS: step 2/2")
     progressr::with_progress({
-      #p <- progressr::progressor(along = length(unique_support_indices))
-
       criterion_results <- safe_future_map(
         unique_support_indices,
         function(k) {
           compile_model(model@model_func)
-          saemvs_one_ic_run(k, support, data_processed, model, init_alg,
-                            tuning_algo, pen)
+          saemvs_one_ic_run(
+            k, support, data_processed, model, init_alg,
+            tuning_algo, pen
+          )
         },
         workers = tuning_algo@nb_workers,
         seed = tuning_algo@seed
       )
-      #p()
     })
 
     criterion_values <- vapply(criterion_results, `[[`, numeric(1), "ll")
     mle <- lapply(criterion_results, `[[`, "mle_param")
-    forced_variables_idx <- lapply(criterion_results, `[[`,
-                                   "forced_variables_idx")
-    selected_variables_idx <- lapply(criterion_results, `[[`,
-                                     "selected_variables_idx")
+    forced_variables_idx <- lapply(
+      criterion_results, `[[`,
+      "forced_variables_idx"
+    )
+    selected_variables_idx <- lapply(
+      criterion_results, `[[`,
+      "selected_variables_idx"
+    )
 
     res <- methods::new(
       "saemvsResults",
@@ -200,7 +205,27 @@ setMethod(
   }
 )
 
-# # Petit utilitaire interne au package
+#' Safe wrapper around `furrr::future_map` with controlled future plan
+#'
+#' This function provides a safe and reproducible way to map a function over
+#' a list or vector in parallel using `furrr::future_map`. It restores the
+#' previous `future` plan on exit and captures errors to provide a clean,
+#' informative message. Optionally, a random seed can be set for
+#' reproducibility.
+#'
+#' @param .x A vector or list to iterate over.
+#' @param .f A function to apply to each element of `.x`.
+#' @param ... Additional arguments passed to `.f`.
+#' @param workers Integer. Number of parallel workers. Default is 1
+#' (sequential).
+#' @param seed Optional integer. Seed for reproducibility of parallel
+#' operations.
+#'
+#' @return A list of results returned by applying `.f` over `.x`.
+#'
+#' @keywords internal
+#' @noRd
+
 safe_future_map <- function(.x, .f, ..., workers = 1, seed = NULL) {
   old_plan <- future::plan()
   on.exit(future::plan(old_plan), add = TRUE)
@@ -221,11 +246,9 @@ safe_future_map <- function(.x, .f, ..., workers = 1, seed = NULL) {
       )
     },
     error = function(e) {
-      # Extraire et nettoyer le message
       msg <- conditionMessage(e)
       msg <- sub("^Progress interrupted by [^:]+: ?", "", msg)
 
-      # Relancer proprement une seule erreur
       stop(paste0("Parallelization interrupted: ", msg), call. = FALSE)
     }
   )
@@ -246,20 +269,23 @@ safe_future_map <- function(.x, .f, ..., workers = 1, seed = NULL) {
 #'   to selection (\code{phi_to_select_idx}).
 #' @param init An object of class \link[=saemvsInit-class]{saemvsInit}
 #'   providing initial values for the SAEM algorithm.
-#' @param tuning_algo An object of class \link[=saemvsTuning-class]{saemvsTuning}
-#'   defining algorithmic parameters such as the number of iterations (\code{niter}).
-#' @param hyperparam An object of class \link[=saemvsHyperSpikeAndSlab-class]{saemvsHyperSpikeAndSlab}
-#'   containing hyperparameters of the spike-and-slab prior
-#'   (spike variance, slab variance, and mixing proportion).
+#' @param tuning_algo An object of class
+#' \link[=saemvsTuning-class]{saemvsTuning}
+#'   defining algorithmic parameters such as the number of iterations
+#'   (\code{niter}).
+#' @param hyperparam An object of class
+#' \link[=saemvsHyperSpikeAndSlab-class]{saemvsHyperSpikeAndSlab}
+#'   containing hyperparameters of the spike-and-slab prior (spike variance,
+#'   slab variance, and mixing proportion).
 #'
 #' @details
-#' The function runs the SAEM algorithm via \code{\link{run_saem}},
-#' then constructs the MAP estimates of coefficients and derives
-#' the support set by thresholding \eqn{\beta} coefficients.
+#' The function runs the SAEM algorithm via \code{\link{run_saem}}, then
+#' constructs the MAP estimates of coefficients and derives the support set by
+#' thresholding \eqn{\beta} coefficients.
 #'
-#' Special handling is performed for parameters that are forced
-#' to be in the model (\code{x_forced_support}).
-#' These are always marked as selected in the support matrix.
+#' Special handling is performed for parameters that are forced to be in the
+#' model (\code{x_forced_support}). These are always marked as selected in the
+#' support matrix.
 #'
 #' The returned support matrix includes the intercept term as the first row.
 #'
@@ -283,8 +309,11 @@ setGeneric(
 setMethod(
   "saemvs_one_map_run",
   signature(
-    data = "saemvsProcessedData", model = "saemvsModel", init = "saemvsProcessedInit",
-    tuning_algo = "saemvsTuning", hyperparam = "saemvsHyperSpikeAndSlab"
+    data = "saemvsProcessedData",
+    model = "saemvsModel",
+    init = "saemvsProcessedInit",
+    tuning_algo = "saemvsTuning",
+    hyperparam = "saemvsHyperSpikeAndSlab"
   ),
   function(data, model, init, tuning_algo, hyperparam) {
     map <- run_saem(data, model, init, tuning_algo, hyperparam)
@@ -304,7 +333,6 @@ setMethod(
 
     beta_map <- map$beta_to_select[[niter + 1]][-1, , drop = FALSE]
     alpha_map <- map$alpha[[niter + 1]]
-    # print(alpha_map)
     threshold_matrix <- matrix(
       rep(threshold(
         hyperparam@slab_parameter,
@@ -342,15 +370,17 @@ setMethod(
 #' @param k Integer index of the candidate support to be evaluated.
 #' @param support A list of logical or numeric matrices, each encoding a
 #'   candidate support obtained from MAP estimation (\code{saemvs_one_map_run}).
-#' @param data An object of class \link[=saemvsData-class]{saemvsData}, the dataset.
-#' @param model An object of class \link[=saemvsModel-class]{saemvsModel}, specifying
-#'   model structure and indices of parameters subject to selection.
-#' @param init An object of class \link[=saemvsInit-class]{saemvsInit}, providing
-#'   initialization for SAEM.
-#' @param tuning_algo An object of class \link[=saemvsTuning-class]{saemvsTuning},
-#'   containing algorithmic tuning parameters (e.g. number of iterations).
-#' @param pen Character string, the information criterion to use.
-#'   Must be either \code{"BIC"} or \code{"e-BIC"}.
+#' @param data An object of class \link[=saemvsData-class]{saemvsData},
+#' the dataset.
+#' @param model An object of class \link[=saemvsModel-class]{saemvsModel},
+#' specifying model structure and indices of parameters subject to selection.
+#' @param init An object of class \link[=saemvsInit-class]{saemvsInit},
+#' providing initialization for SAEM.
+#' @param tuning_algo An object of class
+#' \link[=saemvsTuning-class]{saemvsTuning}, containing algorithmic tuning
+#' parameters (e.g. number of iterations).
+#' @param pen Character string, the information criterion to use. Must be either
+#' \code{"BIC"} or \code{"e-BIC"}.
 #'
 #' @details
 #' The function restricts the model to the variables specified in
@@ -364,7 +394,8 @@ setMethod(
 #' @return A \code{list} with elements:
 #' \itemize{
 #'   \item \code{ll} Numeric, the penalized log-likelihood value (BIC/e-BIC).
-#'   \item \code{mle_param} List of estimated parameters under the restricted model:
+#'   \item \code{mle_param} List of estimated parameters under the restricted
+#'   model:
 #'     \itemize{
 #'       \item \code{beta} Estimated regression coefficients.
 #'       \item \code{gamma} Estimated variances for the random effects.
@@ -373,7 +404,8 @@ setMethod(
 #' }
 #'
 #' @keywords internal
-#' @seealso \code{\link{saemvs}}, \code{\link{saemvs_one_map_run}}, \code{\link{loglik}}
+#' @seealso \code{\link{saemvs}}, \code{\link{saemvs_one_map_run}},
+#' \code{\link{loglik}}
 setGeneric(
   "saemvs_one_ic_run",
   function(k, support, data, model, init, tuning_algo, pen) {
@@ -384,9 +416,13 @@ setGeneric(
 setMethod(
   "saemvs_one_ic_run",
   signature(
-    k = "integer", support = "list",
-    data = "saemvsProcessedData", model = "saemvsModel", init = "saemvsProcessedInit",
-    tuning_algo = "saemvsTuning", pen = "character"
+    k = "integer",
+    support = "list",
+    data = "saemvsProcessedData",
+    model = "saemvsModel",
+    init = "saemvsProcessedInit",
+    tuning_algo = "saemvsTuning",
+    pen = "character"
   ),
   function(k, support, data, model, init, tuning_algo, pen) {
     p <- dim(data@x_candidates)[2]
@@ -407,8 +443,10 @@ setMethod(
       cand_support <- matrix(as.numeric(support[[k]]),
         nrow = nrow(support[[k]])
       )
-      forced_rows <- integer(0) # no forced covariates
-      active_candidate_idx <- which(rowSums(cand_support[-1, , drop = FALSE]) > 0)
+      forced_rows <- integer(0)
+      active_candidate_idx <- which(rowSums(cand_support[-1, ,
+        drop = FALSE
+      ]) > 0)
       selected_rows <- active_candidate_idx
     } else {
       cand_support <- matrix(as.numeric(support[[k]]),
@@ -417,7 +455,9 @@ setMethod(
       idx_forced_phi_sel <- seq(1, dim(forced_support)[1])
       cand_support <- cand_support[-idx_forced_phi_sel, , drop = FALSE]
       forced_rows <- idx_forced_phi_sel
-      active_candidate_idx <- which(rowSums(cand_support[-1, , drop = FALSE]) > 0)
+      active_candidate_idx <- which(rowSums(cand_support[-1, ,
+        drop = FALSE
+      ]) > 0)
       selected_rows <- active_candidate_idx
     }
     new_data <- map_to_mle_data(data, cand_support)
@@ -429,12 +469,9 @@ setMethod(
     new_full_hyperparam <- saemvsHyperSpikeAndSlab(NULL, new_hyperparam)
 
 
-
-
-
-
     mle <- run_saem(
-      new_data_processed, new_model, new_processed_init, tuning_algo, new_full_hyperparam
+      new_data_processed, new_model, new_processed_init, tuning_algo,
+      new_full_hyperparam
     )
 
     mle_param <- list(
@@ -443,10 +480,17 @@ setMethod(
       sigma2 = mle$sigma2[tuning_algo@niter + 1]
     )
 
-    ll <- loglik(new_data, new_model, tuning_algo, mle_param, pen, p, model@phi_to_select_idx, nb_forced_beta)
+    ll <- loglik(
+      new_data, new_model, tuning_algo, mle_param, pen, p,
+      model@phi_to_select_idx, nb_forced_beta
+    )
 
 
-    return(list(ll = ll, mle_param = mle_param, forced_variables_idx = forced_rows, selected_variables_idx = selected_rows))
+    return(list(
+      ll = ll, mle_param = mle_param,
+      forced_variables_idx = forced_rows,
+      selected_variables_idx = selected_rows
+    ))
   }
 )
 
@@ -455,17 +499,23 @@ setMethod(
 #'
 #' Executes a simplified SAEMVS procedure for testing purposes.
 #'
-#' @param data A \link[=saemvsData-class]{saemvsData} object containing the observed response series.
-#' @param model A \link[=saemvsModel-class]{saemvsModel} object defining the model structure.
-#' @param init A \link[=saemvsInit-class]{saemvsInit} object providing initial parameter values.
-#' @param tuning_algo A \link[=saemvsTuning-class]{saemvsTuning} object specifying algorithm hyperparameters.
-#' @param hyperparam A \link[=saemvsHyperSlab-class]{saemvsHyperSlab} object defining the slab prior.
+#' @param data A \link[=saemvsData-class]{saemvsData} object containing the
+#' observed response series.
+#' @param model A \link[=saemvsModel-class]{saemvsModel} object defining the
+#' model structure.
+#' @param init A \link[=saemvsInit-class]{saemvsInit} object providing initial
+#' parameter values.
+#' @param tuning_algo A \link[=saemvsTuning-class]{saemvsTuning} object
+#' specifying algorithm hyperparameters.
+#' @param hyperparam A \link[=saemvsHyperSlab-class]{saemvsHyperSlab} object
+#' defining the slab prior.
 #'
-#' @return A \link[=saemResults-class]{saemResults} object containing estimated parameters.
+#' @return A \link[=saemResults-class]{saemResults} object containing estimated
+#' parameters.
 #'
 #' @details
-#' This function allows a quick fit of SAEMVS to inspect the evolution of parameter estimates.
-#' The function performs the following steps:
+#' This function allows a quick fit of SAEMVS to inspect the evolution of
+#' parameter estimates. The function performs the following steps:
 #' \enumerate{
 #'   \item Compile the R model function to C++ using `compile_model`.
 #'   \item Construct a spike-and-slab hyperparameter object.
@@ -475,7 +525,10 @@ setMethod(
 #'
 #' @examples
 #' \dontrun{
-#' test_results <- test_saemvs(data_obj, model_obj, init_obj, tuning_obj, hyper_obj)
+#' test_results <- test_saemvs(
+#'   data_obj, model_obj, init_obj, tuning_obj,
+#'   hyper_obj
+#' )
 #' summary(test_results)
 #' }
 #'
@@ -492,14 +545,15 @@ setGeneric(
 setMethod(
   "test_saemvs",
   signature(
-    data = "saemvsData", model = "saemvsModel", init = "saemvsInit",
-    tuning_algo = "saemvsTuning", hyperparam = "saemvsHyperSlab"
+    data = "saemvsData",
+    model = "saemvsModel",
+    init = "saemvsInit",
+    tuning_algo = "saemvsTuning",
+    hyperparam = "saemvsHyperSlab"
   ),
   function(data, model, init, tuning_algo, hyperparam) {
-    # Compile the model function to C++ for efficiency
     compile_model(model@model_func)
 
-    # Construct full spike-and-slab hyperparameter object for SAEM
     full_hyperparam <- saemvsHyperSpikeAndSlab(
       tuning_algo@spike_values_grid[1],
       hyperparam
@@ -510,10 +564,10 @@ setMethod(
     check_init(init, data_processed, model)
     init_alg <- prepare_init(init, model, data_processed)
 
-    # Run the SAEM algorithm to estimate parameters
-    saem_state <- run_saem(data_processed, model, init_alg, tuning_algo, full_hyperparam)
+    saem_state <- run_saem(
+      data_processed, model, init_alg, tuning_algo, full_hyperparam
+    )
 
-    # Package results into saemResults object
     res <- methods::new(
       "saemResults",
       beta_to_select = saem_state$beta_to_select,
@@ -522,7 +576,10 @@ setMethod(
       gamma_not_to_select = saem_state$gamma_not_to_select,
       sigma2 = saem_state$sigma2,
       phi_to_select_idx = model@phi_to_select_idx,
-      phi_not_to_select_idx = setdiff(seq_len(model@phi_dim), model@phi_to_select_idx)
+      phi_not_to_select_idx = setdiff(
+        seq_len(model@phi_dim),
+        model@phi_to_select_idx
+      )
     )
 
     return(res)

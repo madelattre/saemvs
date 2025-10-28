@@ -1,12 +1,8 @@
-## ===============================================================
-## MAP → MLE conversion methods (internal)
-## ===============================================================
-
 #' Transform data object from MAP to MLE representation
 #'
 #' Internal method that restructures a \code{saemvsData} object when moving
-#' from a MAP (maximum a posteriori) representation to an MLE (maximum likelihood
-#' estimation) representation.
+#' from a MAP (maximum a posteriori) representation to an MLE (maximum
+#' likelihood estimation) representation.
 #'
 #' The function selects only the candidate covariates that are active in the
 #' support matrix, and appends them to the forced covariates. The resulting
@@ -16,22 +12,24 @@
 #'   vector, time series, forced covariates, and candidate covariates.
 #' @param cand_support A binary matrix of dimension \code{(p + 1) x q}, where:
 #'   \itemize{
-#'     \item The first row corresponds to the intercept and must contain only ones.
+#'     \item The first row corresponds to the intercept and must contain only
+#'     ones.
 #'     \item The following \code{p} rows correspond to the candidate covariates
-#'           in \code{data@x_candidates}.
+#'     in \code{data@x_candidates}.
 #'     \item Each column corresponds to one parameter.
-#'     \item An entry equal to 1 indicates inclusion of the covariate in the support.
+#'     \item An entry equal to 1 indicates inclusion of the covariate in the
+#'     support.
 #'   }
 #'
-#' @return A new object of class \code{saemvsData}, with updated forced covariates
-#'   that include both the original forced covariates and the subset of active
-#'   candidate covariates.
+#' @return A new object of class \code{saemvsData}, with updated forced
+#' covariates that include both the original forced covariates and the subset of
+#' active candidate covariates.
 #'
 #' @details
 #' Robustness checks are performed to ensure:
 #' \itemize{
 #'   \item The number of rows in \code{cand_support} matches
-#'         \code{ncol(data@x_candidates) + 1}.
+#'   \code{ncol(data@x_candidates) + 1}.
 #'   \item The first row of \code{cand_support} (intercept) contains only ones.
 #' }
 #'
@@ -58,29 +56,38 @@ setMethod(
 
     expected_nrow <- ncol(data@x_candidates) + 1
     if (nrow(cand_support) != expected_nrow) {
-      stop(sprintf(
-        "Dimension mismatch: 'cand_support' has %d rows, but should have %d (1 intercept + %d candidates).",
-        nrow(cand_support), expected_nrow, ncol(data@x_candidates)
-      ))
+      stop(
+        sprintf(
+          paste0(
+            "Dimension mismatch: 'cand_support' has %d rows, but should have ",
+            "%d (1 intercept + %d candidates)."
+          ),
+          nrow(cand_support),
+          expected_nrow,
+          ncol(data@x_candidates)
+        )
+      )
     }
 
-    # Sanity check: first row must be intercept (all ones)
     if (!all(cand_support[1, ] == 1)) {
-      stop("Internal error: first row of 'cand_support' must correspond to the intercept (all ones).")
+      stop(
+        paste0(
+          "Internal error: first row of 'cand_support' must correspond ",
+          "to the intercept (all ones)."
+        )
+      )
     }
 
-    # Identify candidate covariates with at least one inclusion (excluding intercept row)
     active_candidate_idx <- which(rowSums(cand_support[-1, , drop = FALSE]) > 0)
 
-    # Restricted candidate design matrix
-    restricted_candidates <- data@x_candidates[, active_candidate_idx, drop = FALSE]
+    restricted_candidates <-
+      data@x_candidates[, active_candidate_idx, drop = FALSE]
 
     if (dim(restricted_candidates)[2] == 0) {
       restricted_candidates <- NULL
     }
 
 
-    # New forced design matrix = old forced + restricted candidates
     new_x_forced <- cbind(data@x_forced, restricted_candidates)
 
     saemvsData(
@@ -94,13 +101,13 @@ setMethod(
 
 #' Convert model from MAP to MLE representation (internal)
 #'
-#' Internal method that transforms a \code{saemvsModel} object
-#'   when moving from the MAP setting to the MLE setting, updating the support
-#'   of forced and selected covariates accordingly.
+#' Internal method that transforms a \code{saemvsModel} object when moving from
+#' the MAP setting to the MLE setting, updating the support of forced and
+#' selected covariates accordingly.
 #'
 #' @param model An object of class \code{saemvsModel}.
-#' @param cand_support A binary matrix indicating candidate covariate
-#'   support (rows = covariates, columns = parameters).
+#' @param cand_support A binary matrix indicating candidate covariate support
+#' (rows = covariates, columns = parameters).
 #'
 #' @return A \code{saemvsModel} object with updated support matrix.
 #'
@@ -122,14 +129,17 @@ setMethod(
     nb_phi_select <- length(model@phi_to_select_idx)
 
     if (ncol(cand_support) != nb_phi_select) {
-      stop("Number of columns in 'cand_support' must match number of phi-to-select parameters.")
+      stop(
+        paste0(
+          "Number of columns in 'cand_support' must match ",
+          "number of phi-to-select parameters."
+        )
+      )
     }
 
-    # Extract covariates contributing to phi_to_select
     active_rows <- which(rowSums(cand_support) > 0)
     covariate_restricted_support <- cand_support[active_rows, , drop = FALSE]
 
-    # If more than intercept, build the restricted support matrix
     if (nrow(covariate_restricted_support) > 1) {
       selected_support_matrix <- matrix(
         covariate_restricted_support[-1, ],
@@ -139,7 +149,6 @@ setMethod(
       selected_support_matrix <- NULL
     }
 
-    # Build new full support by merging forced support with restricted selection
     all_phi_idx <- seq_len(model@phi_dim)
     phi_unselect_idx <- setdiff(all_phi_idx, model@phi_to_select_idx)
     perm <- c(model@phi_to_select_idx, phi_unselect_idx)
@@ -165,14 +174,14 @@ setMethod(
 
 #' Convert initialization from MAP to MLE representation (internal)
 #'
-#' Internal method that transforms a \code{saemvsInit} object
-#'   when moving from the MAP setting to the MLE setting, restricting
-#'   beta initialization to forced and selected candidate covariates.
+#' Internal method that transforms a \code{saemvsInit} object when moving from
+#' the MAP setting to the MLE setting, restricting beta initialization to forced
+#' and selected candidate covariates.
 #'
 #' @param init An object of class \code{saemvsInit}.
 #' @param model An object of class \code{saemvsModel}.
-#' @param cand_support A binary matrix indicating candidate covariate
-#'   support (rows = covariates, columns = parameters).
+#' @param cand_support A binary matrix indicating candidate covariate support
+#' (rows = covariates, columns = parameters).
 #'
 #' @return A \code{saemvsInit} object with restricted initialization.
 #'
@@ -186,39 +195,30 @@ setGeneric(
 
 setMethod(
   "map_to_mle_init",
-  signature(init = "saemvsProcessedInit", model = "saemvsModel", cand_support = "matrix"),
+  signature(
+    init = "saemvsProcessedInit", model = "saemvsModel",
+    cand_support = "matrix"
+  ),
   function(init, model, cand_support) {
     if (!is.matrix(cand_support)) {
       stop("'cand_support' must be a matrix.")
     }
 
     if (ncol(cand_support) != length(model@phi_to_select_idx)) {
-      stop("Number of columns in 'cand_support' must match number of phi-to-select parameters.")
+      stop(
+        paste0(
+          "Number of columns in 'cand_support' must match ",
+          "number of phi-to-select parameters."
+        )
+      )
     }
 
-    # Identify rows with at least one active covariate (excluding intercept)
     active_candidate_idx <- which(rowSums(cand_support[-1, , drop = FALSE]) > 0)
 
-    # Build restricted beta initialization
-
-    # if (init@default == TRUE) {
-    #   if (is_empty_matrix(model@x_forced_support)) {
-    #     new_beta_init <-
-    #       matrix(0, nrow = length(active_candidate_idx), ncol = model@phi_dim)
-    #   } else {
-    #     new_beta_init <- rbind(
-    #       0 * model@x_forced_support,
-    #       matrix(0, nrow = length(active_candidate_idx), ncol = model@phi_dim)
-    #     )
-    #   }
-    # } else {
-      new_beta_init <- rbind(
-        init@beta_forced,
-        init@beta_candidates[active_candidate_idx, , drop = FALSE]
-      )
-    # }
-
-
+    new_beta_init <- rbind(
+      init@beta_forced,
+      init@beta_candidates[active_candidate_idx, , drop = FALSE]
+    )
 
     saemvsInit(
       intercept = init@intercept,

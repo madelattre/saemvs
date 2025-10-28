@@ -5,17 +5,22 @@
 #' Each individual matrix is replicated \code{q} times and processed via
 #' \code{x_per_indiv_rcpp}.
 #'
-#' @param x_mat A numeric matrix of covariates (rows = individuals, columns = features).
-#' @param support A binary matrix indicating which features are active (1) or inactive (0).
+#' @param x_mat A numeric matrix of covariates (rows = individuals,
+#' columns = features).
+#' @param support A binary matrix indicating which features are active (1) or
+#' inactive (0).
 #' @param q Number of replications for each individual matrix.
-#' @return A list of length equal to the number of rows in \code{x_mat}, each element being a list of \code{q} matrices.
+#' @return A list of length equal to the number of rows in \code{x_mat}, each
+#' element being a list of \code{q} matrices.
 #' @details
 #' The function works as follows:
 #' \enumerate{
-#'   \item Each column of \code{support} is split and the indices of ones are extracted.
+#'   \item Each column of \code{support} is split and the indices of ones are
+#'   extracted.
 #'   \item Each row of \code{x_mat} is converted to a 1-row matrix.
 #'   \item Each individual matrix is replicated \code{q} times.
-#'   \item The replicated matrices are passed to \code{x_per_indiv_rcpp} together with the support indices.
+#'   \item The replicated matrices are passed to \code{x_per_indiv_rcpp}
+#'   together with the support indices.
 #' }
 #'
 #' @examples
@@ -61,23 +66,26 @@ expand_to_list <- function(x_mat, support, q) {
 #' Apply shrinkage to a covariance matrix
 #'
 #' This internal function applies shrinkage to a covariance matrix `sigma_old`
-#' for specified indices. The diagonal elements corresponding to the shrink indices
-#' are multiplied by `alphas`, while all other entries involving these indices are set to zero.
-#' Elements not affected by shrinkage are copied from `sigma_temp`.
+#' for specified indices. The diagonal elements corresponding to the shrink
+#' indices are multiplied by `alphas`, while all other entries involving these
+#' indices are set to zero. Elements not affected by shrinkage are copied from
+#' `sigma_temp`.
 #'
-#' @param sigma_old Square matrix (\eqn{d x d}) representing the original covariance.
-#'   The diagonal elements of the shrink indices will be reduced.
-#' @param sigma_temp square matrix (\eqn{d x d}) serving as reference for non-shrinked elements.
-#'   Must have the same dimensions as `sigma_old`.
-#' @param shrink_indices Integer vector indicating the rows/columns to shrink. The diagonals
-#'   of these indices are multiplied by `alphas`, and the other entries involving these indices
-#'   are set to zero.
-#' @param alphas Numeric vector of the same length as `shrink_indices` specifying the
-#'   shrinkage factors to apply to the diagonal elements of the shrink indices.
+#' @param sigma_old Square matrix (\eqn{d x d}) representing the original
+#' covariance. The diagonal elements of the shrink indices will be reduced.
+#' @param sigma_temp square matrix (\eqn{d x d}) serving as reference for
+#' non-shrinked elements. Must have the same dimensions as `sigma_old`.
+#' @param shrink_indices Integer vector indicating the rows/columns to shrink.
+#' The diagonals of these indices are multiplied by `alphas`, and the other
+#' entries involving these indices are set to zero.
+#' @param alphas Numeric vector of the same length as `shrink_indices`
+#' specifying the shrinkage factors to apply to the diagonal elements of the
+#' shrink indices.
 #'
 #' @return A square \eqn{d x d} matrix where:
 #'   \itemize{
-#'     \item Diagonal elements of the shrink indices are reduced according to `alphas`.
+#'     \item Diagonal elements of the shrink indices are reduced according to
+#'     `alphas`.
 #'     \item Off-diagonal elements involving any shrink index are set to zero.
 #'     \item Other elements are copied from `sigma_temp`.
 #'   }
@@ -85,9 +93,11 @@ expand_to_list <- function(x_mat, support, q) {
 #' @details
 #' - This function is internal and should not be exported.
 #' - Input matrices must be numeric, non-NULL, and of the same dimension.
-#' - `shrink_indices` must contain valid integers between 1 and the matrix dimension.
-#' - The function validates inputs and throws informative errors if they are incorrect
-#'   (NULL matrices, dimension mismatch, invalid indices, or mismatched `alphas` length).
+#' - `shrink_indices` must contain valid integers between 1 and the matrix
+#' dimension.
+#' - The function validates inputs and throws informative errors if they are
+#' incorrect (NULL matrices, dimension mismatch, invalid indices, or mismatched
+#' `alphas` length).
 #'
 #' @examples
 #' \dontrun{
@@ -123,7 +133,10 @@ shrink_covariance_matrix <- function(
     ))
   }
   if (!is.numeric(alphas) || length(alphas) != length(shrink_indices)) {
-    stop(sprintf("%s: alphas must be a numeric vector of same length as shrink_indices", fun_name))
+    stop(sprintf(
+      "%s: alphas must be a numeric vector of same length as shrink_indices",
+      fun_name
+    ))
   }
 
 
@@ -148,21 +161,22 @@ shrink_covariance_matrix <- function(
 
 #' Zero out specified rows and columns of a matrix
 #'
-#' Internal utility function that sets to zero all rows and columns of a numeric matrix
-#' corresponding to the provided indices. All other elements remain unchanged.
+#' Internal utility function that sets to zero all rows and columns of a numeric
+#' matrix corresponding to the provided indices. All other elements remain
+#' unchanged.
 #'
 #' @param mat A numeric matrix. Must be non-NULL.
 #' @param indices Integer vector specifying the rows and columns to zero out.
 #'   Must contain valid indices within the dimensions of `mat`.
 #'
-#' @return A numeric matrix of the same dimensions as `mat`, with the specified rows
-#'   and columns zeroed out.
+#' @return A numeric matrix of the same dimensions as `mat`, with the specified
+#' rows and columns zeroed out.
 #'
 #' @details
 #' - This is an internal function and should **not** be exported.
 #' - If `indices` is NULL or empty, the function returns `mat` unchanged.
-#' - If `mat` is NULL or not a matrix, or if any `indices` are invalid, the function
-#'   throws an informative error.
+#' - If `mat` is NULL or not a matrix, or if any `indices` are invalid, the
+#' function throws an informative error.
 #'
 #' @examples
 #' \dontrun{
@@ -182,7 +196,12 @@ zero_out_shrinked <- function(mat, indices) {
 
   if (!all(indices %in% seq_len(nrow(mat))) ||
     !all(indices %in% seq_len(ncol(mat)))) {
-    stop("zero_out_shrinked: 'indices' contain values outside the matrix dimensions.")
+    stop(
+      paste0(
+        "zero_out_shrinked: 'indices' contain values outside ",
+        "the matrix dimensions."
+      )
+    )
   }
 
   mat_zeroed <- mat
@@ -199,17 +218,19 @@ zero_out_shrinked <- function(mat, indices) {
 #' does **not** include an intercept column, which simplifies subsequent
 #' computations in SAEM algorithms.
 #'
-#' @param fixed_support Numeric matrix or NULL. Support for covariates
-#'   that are forced in the model. Must not include an intercept.
+#' @param fixed_support Numeric matrix or NULL. Support for covariates that are
+#' forced in the model. Must not include an intercept.
 #' @param selected_support Numeric matrix or NULL. Support for covariates
-#'   selected by the model. Must not include an intercept.
-#' @param nb_phi_s Integer. Number of selected parameters (columns) in the model.
-#' @param nb_phi_ns Integer. Number of non-selected parameters (columns) in the model.
+#' selected by the model. Must not include an intercept.
+#' @param nb_phi_s Integer. Number of selected parameters (columns) in the
+#' model.
+#' @param nb_phi_ns Integer. Number of non-selected parameters (columns) in the
+#' model.
 #' @param perm Integer vector. Permutation to reorder columns of the combined
-#'   support matrix.
+#' support matrix.
 #'
 #' @return A numeric matrix combining `fixed_support` and `selected_support`,
-#'   reordered by `perm`. Returns `NULL` if both inputs are empty or NULL.
+#' reordered by `perm`. Returns `NULL` if both inputs are empty or NULL.
 #'
 #' @details
 #' - Internal function; should **not** be exported.
@@ -222,7 +243,10 @@ zero_out_shrinked <- function(mat, indices) {
 #' fixed_support <- matrix(c(1, 0, 0, 1), nrow = 2, byrow = TRUE)
 #' selected_support <- matrix(c(0, 1, 1, 0), nrow = 2, byrow = TRUE)
 #' perm <- c(2, 1)
-#' merge_support(fixed_support, selected_support, nb_phi_s = 2, nb_phi_ns = 2, perm)
+#' merge_support(fixed_support, selected_support,
+#'   nb_phi_s = 2, nb_phi_ns = 2,
+#'   perm
+#' )
 #' }
 #'
 #' @keywords internal
@@ -269,8 +293,9 @@ merge_support <- function(
 
 #' Check if a support matrix is empty
 #'
-#' Internal utility function that tests whether a support matrix is considered empty.
-#' A support is empty if it is `NULL`, has zero length, or contains only zeros.
+#' Internal utility function that tests whether a support matrix is considered
+#' empty. A support is empty if it is `NULL`, has zero length, or contains only
+#' zeros.
 #'
 #' @param support Numeric matrix, vector, or NULL. Support to be checked.
 #'
@@ -281,7 +306,8 @@ merge_support <- function(
 #' @details
 #' - Internal function; should **not** be exported.
 #' - Accepts both matrices and vectors.
-#' - Returns `TRUE` if the input is `NULL`, has zero elements, or is entirely zero.
+#' - Returns `TRUE` if the input is `NULL`, has zero elements, or is entirely
+#' zero.
 #'
 #' @examples
 #' \dontrun{
@@ -308,20 +334,22 @@ is_empty_support <- function(support) {
 
 #' Check if a matrix is empty
 #'
-#' This internal utility function determines whether a given matrix is considered
-#' "empty". A matrix is treated as empty if:
+#' This internal utility function determines whether a given matrix is
+#' considered "empty". A matrix is treated as empty if:
 #' \itemize{
 #'   \item it is \code{NULL},
 #'   \item it has zero rows,
 #'   \item or it has zero columns.
 #' }
-#' If the input is not \code{NULL} and not a matrix, the function raises an error.
+#' If the input is not \code{NULL} and not a matrix, the function raises an
+#' error.
 #'
 #' @details
 #' The definition of "empty" here refers only to structural properties
 #' (i.e. dimensions). A matrix filled with zeros but with nonzero dimensions
 #' is \emph{not} considered empty. This function is primarily intended to
-#' simplify checks in algorithms where empty matrices must be handled explicitly.
+#' simplify checks in algorithms where empty matrices must be handled
+#' explicitly.
 #'
 #' @param mat A numeric matrix, or \code{NULL}.
 #'
@@ -363,8 +391,8 @@ is_empty_matrix <- function(mat) {
 #' checking for the presence of \code{1} in each row.
 #'
 #' @param mat A numeric matrix, or \code{NULL}. Must not be empty in the sense
-#'   of dimensions (see \code{\link{is_empty_matrix}}), otherwise an empty result
-#'   is returned.
+#'   of dimensions (see \code{\link{is_empty_matrix}}), otherwise an empty
+#'   result is returned.
 #'
 #' @return An integer vector of row indices where at least one entry equals
 #'   \code{1}. Returns \code{integer(0)} if no such rows exist or if the matrix
@@ -403,10 +431,12 @@ extract_rows_with_ones <- function(mat) {
 #' representing covariate selection patterns. It ensures consistent
 #' handling of empty inputs:
 #' \itemize{
-#'   \item If \code{support} is empty according to \code{\link{is_empty_support}},
-#'         the result is \code{NULL}.
-#'   \item If \code{idx} is \code{NULL} or has length zero, the result is \code{NULL}.
-#'   \item If the extracted submatrix contains only zeros, the result is \code{NULL}.
+#'   \item If \code{support} is empty according to
+#'   \code{\link{is_empty_support}}, the result is \code{NULL}.
+#'   \item If \code{idx} is \code{NULL} or has length zero, the result is
+#'   \code{NULL}.
+#'   \item If the extracted submatrix contains only zeros, the result is
+#'   \code{NULL}.
 #' }
 #'
 #' @param support A numeric matrix or \code{NULL}, representing a covariate

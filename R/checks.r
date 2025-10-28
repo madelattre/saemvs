@@ -2,7 +2,8 @@
 #'
 #' @param mat A numeric matrix to check.
 #' @param name_mat Name of the matrix, used in messages.
-#' @return NULL if valid; a character string with an error description otherwise.
+#' @return NULL if valid; a character string with an error description
+#' otherwise.
 #' @keywords internal
 check_covariance <- function(mat, name_mat) {
   if (!is.numeric(mat)) {
@@ -32,12 +33,18 @@ check_covariance <- function(mat, name_mat) {
 check_beta_gamma <- function(beta, gamma, q, case = "ns") {
   start_case <- if (case == "ns") {
     sprintf(
-      "As %d parameters are not subject to selection (%d missing parameter indices in 'index_select'),",
+      paste0(
+        "As %d parameters are not subject to selection ",
+        "(%d missing parameter indices in 'index_select'),"
+      ),
       q, q
     )
   } else {
     sprintf(
-      "As %d parameters are subject to selection (%d indices in 'index_select'),",
+      paste0(
+        "As %d parameters are subject to selection ",
+        "(%d indices in 'index_select'),"
+      ),
       q, q
     )
   }
@@ -66,13 +73,23 @@ check_beta_gamma <- function(beta, gamma, q, case = "ns") {
 #' @keywords internal
 check_beta_support <- function(beta, support) {
   if (is.null(support) && nrow(beta) > 1) {
-    stop("beta_ns must have only one row (intercepts) as no 'covariate_support' is provided in the model.")
+    stop(
+      paste0(
+        "beta_ns must have only one row (intercepts) as no ",
+        "'covariate_support' is provided in the model."
+      )
+    )
   }
   if (!is.null(support) && nrow(support) != (nrow(beta) - 1)) {
-    stop(sprintf(
-      "beta_ns must have %d rows (intercept + %d covariates) as 'support' is designed for %d covariates (%d rows).",
-      nrow(support) + 1, nrow(support), nrow(support), nrow(support)
-    ))
+    stop(
+      sprintf(
+        paste0(
+          "beta_ns must have %d rows (intercept + %d covariates) as 'support' ",
+          "is designed for %d covariates (%d rows)."
+        ),
+        nrow(support) + 1, nrow(support), nrow(support), nrow(support)
+      )
+    )
   }
 }
 
@@ -83,10 +100,15 @@ check_beta_support <- function(beta, support) {
 #' @keywords internal
 check_beta_hdim <- function(beta, pv) {
   if (pv != nrow(beta)) {
-    stop(sprintf(
-      "beta_s must have %d rows (intercept + %d covariates) as matrix 'v' contains %d covariates.",
-      pv, pv - 1, pv - 1
-    ))
+    stop(
+      sprintf(
+        paste0(
+          "beta_s must have %d rows (intercept + %d covariates) as matrix 'v' ",
+          "contains %d covariates."
+        ),
+        pv, pv - 1, pv - 1
+      )
+    )
   }
 }
 

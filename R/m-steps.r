@@ -1,11 +1,15 @@
 #' Internal M-step: update parameters not subject to selection
 #'
-#' Performs the M-step updates for parameters that are not subject to variable selection.
-#'              Updates beta, gamma, and related sufficient statistics for the "not_to_select" parameters.
-#' @param config List containing model configuration, including design matrices and hyperparameters.
+#' Performs the M-step updates for parameters that are not subject to variable
+#' selection. Updates beta, gamma, and related sufficient statistics for the
+#' "not_to_select" parameters.
+#' @param config List containing model configuration, including design matrices
+#' and hyperparameters.
 #' @param k Current iteration index (integer).
-#' @param state List containing the current state of the algorithm (phi, beta, gamma, s1, s2, s3, etc.).
-#' @return Updated \code{state} list with new beta_not_to_select, gamma_not_to_select, and s1/s2/s3 entries.
+#' @param state List containing the current state of the algorithm
+#' (phi, beta, gamma, s1, s2, s3, etc.).
+#' @return Updated \code{state} list with new beta_not_to_select,
+#' gamma_not_to_select, and s1/s2/s3 entries.
 #' @keywords internal
 m_step_not_to_select <- function(config, k, state) {
   old_gamma <- state$gamma_not_to_select[[k]]
@@ -45,23 +49,29 @@ m_step_not_to_select <- function(config, k, state) {
   gamma_proposed <- (gamma_proposed + t(gamma_proposed)) / 2 # enforce symmetry
   gamma_scaled <- config$covariance_decay * old_gamma
 
-  # diag(gamma_proposed) <- pmax(diag(gamma_proposed), 0.001)
-
   use_scaled <- sum(gamma_scaled^2) > sum(gamma_proposed^2)
 
-  state$gamma_not_to_select[[k + 1]] <- if (use_scaled) gamma_scaled else gamma_proposed
+  state$gamma_not_to_select[[k + 1]] <- if (use_scaled) {
+    gamma_scaled
+  } else {
+    gamma_proposed
+  }
 
-  return(state)
+  return(state) # mandatory return instruction
 }
 
 #' Internal M-step: update parameters subject to selection
 #'
-#' Performs the M-step updates for parameters that are subject to variable selection.
-#'              Updates beta, gamma, and inclusion probabilities (alpha) for the "to_select" parameters.
-#' @param config List containing model configuration, including design matrices and hyperparameters.
+#' Performs the M-step updates for parameters that are subject to variable
+#' selection. Updates beta, gamma, and inclusion probabilities (alpha) for the
+#' "to_select" parameters.
+#' @param config List containing model configuration, including design matrices
+#' and hyperparameters.
 #' @param k Current iteration index (integer).
-#' @param state List containing the current state of the algorithm (phi, beta, gamma, alpha, s1, s2, s3, etc.).
-#' @return Updated \code{state} list with new beta_to_select, gamma_to_select, alpha, and related statistics.
+#' @param state List containing the current state of the algorithm
+#' (phi, beta, gamma, alpha, s1, s2, s3, etc.).
+#' @return Updated \code{state} list with new beta_to_select, gamma_to_select,
+#' alpha, and related statistics.
 #' @keywords internal
 m_step_to_select <- function(config, k, state) {
   old_beta <- state$beta_to_select[[k]]
@@ -78,16 +88,24 @@ m_step_to_select <- function(config, k, state) {
   )
 
   d_tilde_star <- rbind(
-    rep(1 / config$phi_intercept_prior_variance, config$num_parameters_to_select),
+    rep(
+      1 / config$phi_intercept_prior_variance,
+      config$num_parameters_to_select
+    ),
     (1 - p_star_k) / config$spike_parameter + p_star_k / config$slab_parameter
   )
 
   sum_pstar_k <- apply(p_star_k, 2, sum)
 
-  state$alpha[[k + 1]] <- (sum_pstar_k + config$inclusion_prob_prior_a - 1) / (config$num_covariates_to_select + config$inclusion_prob_prior_b + config$inclusion_prob_prior_a - 2)
+  state$alpha[[k + 1]] <- (sum_pstar_k + config$inclusion_prob_prior_a - 1) /
+    (config$num_covariates_to_select + config$inclusion_prob_prior_b +
+      config$inclusion_prob_prior_a - 2)
 
   s_xgx <- config$kron_tx_x_phi_to_select +
-    kronecker_gamma_diag_mult(old_gamma, c(d_tilde_star), config$num_covariates_to_select + 1)
+    kronecker_gamma_diag_mult(
+      old_gamma, c(d_tilde_star),
+      config$num_covariates_to_select + 1
+    )
 
   s_xgs3 <- matrix(t(config$x_phi_to_select) %*% s3, ncol = 1)
 
@@ -100,30 +118,34 @@ m_step_to_select <- function(config, k, state) {
     byrow = FALSE
   )
 
-  sum_bx <- t(state$beta_to_select[[k + 1]]) %*% config$tx_x_phi_to_select %*% state$beta_to_select[[k + 1]]
+  sum_bx <- t(state$beta_to_select[[k + 1]]) %*% config$tx_x_phi_to_select %*%
+    state$beta_to_select[[k + 1]]
   sum_xbs3 <- t(config$x_phi_to_select %*% state$beta_to_select[[k + 1]]) %*% s3
 
-  gamma_proposed <- (config$cov_re_prior_scale + s2 + sum_bx - sum_xbs3 - t(sum_xbs3)) /
-    (config$num_series + config$cov_re_prior_df + config$num_parameters_to_select + 1)
+  gamma_proposed <- (config$cov_re_prior_scale + s2 + sum_bx - sum_xbs3 -
+    t(sum_xbs3)) /
+    (config$num_series + config$cov_re_prior_df +
+      config$num_parameters_to_select + 1)
   gamma_proposed <- (gamma_proposed + t(gamma_proposed)) / 2 # enforce symmetry
   gamma_scaled <- config$covariance_decay * old_gamma
 
-  # diag(gamma_proposed) <- pmax(diag(gamma_proposed), 0.001)
-
   use_scaled <- sum(gamma_scaled^2) > sum(gamma_proposed^2)
 
-  state$gamma_to_select[[k + 1]] <- if (use_scaled) gamma_scaled else gamma_proposed
-
-  return(state)
+  state$gamma_to_select[[k + 1]] <- if (use_scaled) {
+    gamma_scaled
+  } else {
+    gamma_proposed
+  }
+  return(state) # mandatory return instruction
 }
 
 #' Internal M-step: update MLE parameters
 #'
-#' Updates the residual variance (sigma2) and parameters not subject to selection (MLE case).
+#' Updates the residual variance (sigma2) and parameters in the MLE case.
 #' @param config List containing model configuration and hyperparameters.
 #' @param k Current iteration index (integer).
 #' @param state List containing the current state of the algorithm.
-#' @return Updated \code{state} list with new sigma2 and beta/gamma for non-selected parameters.
+#' @return Updated \code{state} list with new sigma2, beta and gamma.
 #' @keywords internal
 m_step_mle <- function(config, k, state) {
   state <- m_step_not_to_select(config, k, state)
@@ -132,36 +154,42 @@ m_step_mle <- function(config, k, state) {
     config$covariance_decay * old_sigma2,
     state$s1[k + 1] / config$total_observations
   )
-  return(state)
+  return(state) # mandatory return instruction
 }
 
 #' Internal M-step: update MAP estimates for parameters subject to selection
 #'
-#' Performs MAP update for parameters subject to selection, including beta, gamma, alpha, and sigma2.
+#' Performs MAP update for parameters subject to selection, including beta,
+#' gamma, alpha, and sigma2.
 #' @param config List containing model configuration and hyperparameters.
 #' @param k Current iteration index (integer).
 #' @param state List containing the current state of the algorithm.
-#' @return Updated \code{state} list with new beta_to_select, gamma_to_select, alpha, and sigma2.
+#' @return Updated \code{state} list with new beta_to_select, gamma_to_select,
+#' alpha, and sigma2.
 #' @keywords internal
 m_step_map_to_select <- function(config, k, state) {
   state <- m_step_to_select(config, k, state)
   old_sigma2 <- state$sigma2[k]
   state$sigma2[k + 1] <- max(
     config$covariance_decay * old_sigma2,
-    (config$residual_variance_prior_shape * config$residual_variance_prior_rate + state$s1[k + 1]) /
+    (config$residual_variance_prior_shape *
+      config$residual_variance_prior_rate +
+      state$s1[k + 1]) /
       (config$total_observations + config$residual_variance_prior_shape + 2)
   )
-  return(state)
+  return(state) # mandatory return instruction
 }
 
 #' Internal M-step: update MAP for all parameters
 #'
-#' @description Performs a full MAP update for both parameters subject and not subject to selection,
-#'              combining the updates for beta, gamma, alpha, and sigma2.
+#' @description Performs a full MAP update for both parameters subject and not
+#' subject to selection, combining the updates for beta, gamma, alpha, and
+#' sigma2.
 #' @param config List containing model configuration and hyperparameters.
 #' @param k Current iteration index (integer).
 #' @param state List containing the current state of the algorithm.
-#' @return Updated \code{state} list with new beta, gamma, alpha, and sigma2 for all parameters.
+#' @return Updated \code{state} list with new beta, gamma, alpha, and sigma2 for
+#' all parameters.
 #' @keywords internal
 m_step_map_all <- function(config, k, state) {
   state <- m_step_to_select(config, k, state)
@@ -169,8 +197,10 @@ m_step_map_all <- function(config, k, state) {
   old_sigma2 <- state$sigma2[k]
   state$sigma2[k + 1] <- max(
     config$covariance_decay * old_sigma2,
-    (config$residual_variance_prior_shape * config$residual_variance_prior_rate + state$s1[k + 1]) /
+    (config$residual_variance_prior_shape *
+      config$residual_variance_prior_rate +
+      state$s1[k + 1]) /
       (config$total_observations + config$residual_variance_prior_shape + 2)
   )
-  return(state)
+  return(state) # mandatory return instruction
 }

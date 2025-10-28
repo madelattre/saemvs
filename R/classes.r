@@ -27,9 +27,9 @@ setClassUnion("listORNULL", c("list", "NULL"))
 #' responses for one individual.
 #' @slot t_series list of numeric vectors. Each element contains corresponding
 #' time indices.
-#' @slot x_candidates matrix or NULL. Optional matrix of candidate covariates
+#' @slot x_candidates matrix or NULL. Matrix of candidate covariates
 #' (rows = individuals, columns = covariates).
-#' @slot x_forced matrix or NULL. Optional matrix of forced covariates
+#' @slot x_forced matrix or NULL. Matrix of forced covariates
 #' (rows = individuals, columns = covariates).
 #'
 #' @section Validity:
@@ -39,6 +39,8 @@ setClassUnion("listORNULL", c("list", "NULL"))
 #'  vectors of the same length.
 #'   \item If provided, \code{x_candidates} and \code{x_forced} must each have
 #'  as many rows as the length of \code{y_series}.
+#'   \item If provided, , \code{x_candidates} and \code{x_forced} must not have
+#'  any columns in common.
 #'   \item All matrices must be numeric.
 #' }
 #'
@@ -111,8 +113,6 @@ setClass(
     if (!is.null(object@x_candidates) && !is.null(object@x_forced)) {
       candidates <- object@x_candidates
       forced <- object@x_forced
-
-      # Loop over each column in x_forced
       for (j in seq_len(ncol(forced))) {
         col_forced <- forced[, j, drop = FALSE]
         for (i in seq_len(ncol(candidates))) {
@@ -127,7 +127,6 @@ setClass(
         }
       }
     }
-
 
     TRUE
   }
@@ -156,22 +155,21 @@ saemvsData <- function(y, t, x_candidates = NULL, x_forced = NULL) {
 #' @title Constructor from data.frames for saemvsData
 #'
 #' @description
-#' Creates a \code{saemvsData} object from a longitudinal dataset and a
-#' covariate dataset.
+#' Creates a \code{saemvsData} object from a dataset containing longitudinal
+#' observations and a dataset containing covariates.
 #' The function splits the longitudinal data by individual to build
 #' \code{y_series} and \code{t_series}, and constructs \code{x_candidates}
-#' and \code{x_forced} matrices from the covariate data.
+#' and \code{x_forced} matrices from the covariates dataset.
 #' @param long_df data.frame containing the longitudinal measurements.
-#' Must include columns for ID, response, and time.
-#' @param covar_df data.frame containing fixed covariates (one row per
-#' individual).
+#' Must include columns for individual identifier, response, and time.
+#' @param covar_df data.frame containing covariates (one row per individual).
 #' @param id_col name of the column identifying individuals (must exist in
 #' both dataframes).
 #' @param y_col name of the response column in \code{long_df}.
 #' @param t_col name of the time column in \code{long_df}.
 #' @param x_candidates_cols vector of column names in \code{covar_df} to use as
 #' candidate covariates (optional). If NULL, all columns except \code{id_col}
-#' and forced covariates are used.
+#' are used.
 #' @param x_forced_cols vector of column names in \code{covar_df} to use as
 #' forced covariates (optional).
 #'
@@ -180,7 +178,6 @@ saemvsData <- function(y, t, x_candidates = NULL, x_forced = NULL) {
 #' @details
 #' The function ensures that the order of individuals in \code{y_series}
 #' matches the order of rows in \code{x_candidates} and \code{x_forced}.
-#' Candidate covariates are assumed to be fixed per individual.
 #'
 #' @examples
 #' # Example longitudinal data
@@ -262,7 +259,6 @@ saemvsDataFromDFs <- function(long_df,
     x_candidates <- NULL
   }
 
-  # Build the final saemvsData object
   saemvsData(
     y = y_series,
     t = t_series,
@@ -309,8 +305,6 @@ saemvsDataFromDFs <- function(long_df,
 #'     \item All matrices must be numeric if not NULL.
 #'     \item \code{x_phi_not_to_select_list}, if not NULL, must have length
 #'  equal to the number of individuals.
-#'     \item Columns in \code{x_phi_to_select} and \code{x_phi_not_to_select}
-#'  should not overlap (warning issued if they do).
 #'     \item Inherits all validity checks from \code{saemvsData} (e.g., length
 #'  and type checks for y_series, t_series, x_candidates, x_forced).
 #'   }
@@ -364,8 +358,10 @@ setClass(
     }
 
     # Check list length
-    if (!is.null(object@x_phi_not_to_select_list) &&
-      length(object@x_phi_not_to_select_list) != n_ind) {
+    if (!is.null(
+      object@x_phi_not_to_select_list
+    ) && length(object@x_phi_not_to_select_list) != n_ind
+    ) {
       return(sprintf(
         "'x_phi_not_to_select_list' must have %d elements (matching y_series).",
         n_ind
@@ -396,10 +392,10 @@ saemvsProcessedData <- function(x_phi_to_select = NULL,
 
 #' @title saemvsModel class
 #' @description Represents a model for SAEMVS, including the model function and
-#' indexing information for variable selection on parameters phi.
+#' the indices of fixed or subject to selection parameters in phi.
 #'
-#' @slot model_func A function of form function(phi, t) returning predicted
-#'  values.
+#' @slot model_func A function of form `function(phi, t)` returning predicted
+#' values.
 #' @slot phi_dim Integer: total number of phi parameters.
 #' @slot phi_to_select_idx Integer vector or NULL: indices of phi parameters
 #'   on which variable selection will be performed.
@@ -433,8 +429,10 @@ setClass(
     }
 
     # Check phi_dim
-    if (!(is.numeric(object@phi_dim) && length(object@phi_dim) == 1 &&
-      object@phi_dim >= 1)) {
+    if (!(is.numeric(object@phi_dim) && length(
+      object@phi_dim
+    ) == 1 && object@phi_dim >= 1)
+    ) {
       return("'phi_dim' must be a positive integer of length 1.")
     }
 
@@ -443,21 +441,32 @@ setClass(
     }
 
     # Check indices
-    if (!(is.null(object@phi_to_select_idx) ||
-      all(object@phi_to_select_idx >= 1 &
-        object@phi_to_select_idx <= object@phi_dim))) {
+    if (!(
+      (is.null(object@phi_to_select_idx) ||
+        all(object@phi_to_select_idx >= 1 &
+          object@phi_to_select_idx <= object@phi_dim))
+    )
+    ) {
       return("
       'phi_to_select_idx' must contain integers between 1 and 'phi_dim'.
       ")
     }
 
-    if (!(is.null(object@phi_fixed_idx) ||
-      all(object@phi_fixed_idx >= 1 &
-        object@phi_fixed_idx <= object@phi_dim))) {
+
+
+
+    if (!(
+      (is.null(object@phi_fixed_idx)) ||
+        all(object@phi_fixed_idx >= 1 &
+          object@phi_fixed_idx <= object@phi_dim)
+    )
+    ) {
       return("
       'phi_not_to_select_idx' must contain integers between 1 and 'phi_dim'.
       ")
     }
+
+
 
     # No overlap
     if (length(intersect(object@phi_to_select_idx, object@phi_fixed_idx)) > 0) {
@@ -476,7 +485,7 @@ setClass(
           " columns (one per phi)."
         ))
       }
-      if (!all(supp %in% c(0,1))) {
+      if (!all(supp %in% c(0, 1))) {
         return("'x_forced_support' must only contain 0 or 1.")
       }
     }
@@ -492,15 +501,15 @@ setClass(
 #' @param phi_dim Integer: total number of phi parameters.
 #' @param phi_to_select_idx Integer vector (optional): indices of phi
 #'  parameters for variable selection.
-#' @param phi_fixed_idx Integer vector (optional): indices of phi parameters
-#'  fixed (no random variability).
+#' @param phi_fixed_idx Integer vector (optional): indices of fixed phi
+#' parameters (no random variability).
 #' @param x_forced_support Numeric matrix or NULL: design matrix for forced
 #'  covariates (phi_dim columns).
 #'
 #' @return An object of class \code{saemvsModel}.
 #' @export
 saemvsModel <- function(
-    g, phi_dim, phi_to_select_idx = c(), phi_fixed_idx = c(),
+    g, phi_dim, phi_to_select_idx = NULL, phi_fixed_idx = NULL,
     x_forced_support = matrix(numeric(0), nrow = 0, ncol = 0)) {
   methods::new("saemvsModel",
     model_func = g,
@@ -769,25 +778,26 @@ setClass(
       if (!is.null(object@beta_candidates)) {
         return("'beta_candidates' must be NULL when default = TRUE.")
       }
-      # if (length(object@cov_re) > 0) {
-      #   return("'cov_re' must be empty when default = TRUE.")
-      # }
-      # if (is.na(object@sigma2) && object@sigma2 != 1) {
-      #   return("'sigma2' must remain at its default when default = TRUE.")
-      #   ## A revoir
-      # }
     } else {
       ## Check beta_candidates
       if (!is.null(object@beta_candidates)) {
         if (ncol(object@beta_candidates) != n_phi) {
-          return("Number of columns in 'beta_candidates' must equal length of 'intercept'.")
+          msg <- paste0(
+            "Number of columns in 'beta_candidates' ",
+            "must equal length of 'intercept'."
+          )
+          return(msg)
         }
       }
 
       ## Check beta_forced
       if (!is.null(object@beta_forced)) {
         if (ncol(object@beta_forced) != n_phi) {
-          return("Number of columns in 'beta_forced' must equal length of 'intercept'.")
+          msg <- paste0(
+            "Number of columns in 'beta_forced' ",
+            "must equal length of 'intercept'."
+          )
+          return(msg)
         }
       }
 
@@ -822,7 +832,13 @@ setClass(
         if (length(idx_zero) > 0) {
           for (i in idx_zero) {
             if (any(object@cov_re[i, ] != 0) || any(object@cov_re[, i] != 0)) {
-              return(paste0("Row/column ", i, " of 'cov_re' must be all zeros if diagonal entry is zero."))
+              return(
+                paste0(
+                  "Row/column ",
+                  i,
+                  " of 'cov_re' must be all zeros if diagonal entry is zero."
+                )
+              )
             }
           }
         }
@@ -1013,10 +1029,10 @@ setClass(
     nb_workers = 4
   ),
   validity = function(object) {
-
-    # --- Helper function pour vérifier "entier numérique" ---
     is_integerish <- function(x, allow_zero = FALSE) {
-      if (!is.numeric(x) || length(x) != 1) return(FALSE)
+      if (!is.numeric(x) || length(x) != 1) {
+        return(FALSE)
+      }
       if (allow_zero) {
         return(x >= 0 && x == floor(x))
       } else {
@@ -1025,13 +1041,27 @@ setClass(
     }
 
     # --- integer slots ---
-    if (!is_integerish(object@niter)) return("'niter' must be a positive integer.")
-    if (!is_integerish(object@nburnin, allow_zero = TRUE)) return("'nburnin' must be a non-negative integer.")
-    if (object@nburnin > object@niter) return("'nburnin' must be smaller than 'niter'.")
-    if (!is_integerish(object@niter_mh)) return("'niter_mh' must be a positive integer.")
-    if (!is_integerish(object@n_is_samples)) return("'n_is_samples' must be a positive integer.")
-    if (!is_integerish(object@seed, allow_zero = TRUE)) return("'seed' must be an integer.")
-    if (!is_integerish(object@nb_workers)) return("'nb_workers' must be a positive integer.")
+    if (!is_integerish(object@niter)) {
+      return("'niter' must be a positive integer.")
+    }
+    if (!is_integerish(object@nburnin, allow_zero = TRUE)) {
+      return("'nburnin' must be a non-negative integer.")
+    }
+    if (object@nburnin > object@niter) {
+      return("'nburnin' must be smaller than 'niter'.")
+    }
+    if (!is_integerish(object@niter_mh)) {
+      return("'niter_mh' must be a positive integer.")
+    }
+    if (!is_integerish(object@n_is_samples)) {
+      return("'n_is_samples' must be a positive integer.")
+    }
+    if (!is_integerish(object@seed, allow_zero = TRUE)) {
+      return("'seed' must be an integer.")
+    }
+    if (!is_integerish(object@nb_workers)) {
+      return("'nb_workers' must be a positive integer.")
+    }
 
     # --- step ---
     if (!is.numeric(object@step) || length(object@step) != object@niter) {
@@ -1047,7 +1077,10 @@ setClass(
     }
 
     # --- covariance_decay ---
-    if (!is.numeric(object@covariance_decay) || length(object@covariance_decay) != 1) {
+    if (
+      (!is.numeric(object@covariance_decay)) ||
+        (length(object@covariance_decay) != 1)
+    ) {
       return("'covariance_decay' must be a single numeric value.")
     }
     if (object@covariance_decay <= 0 || object@covariance_decay >= 1) {
@@ -1055,7 +1088,10 @@ setClass(
     }
 
     # --- mh_proposal_scale ---
-    if (!is.numeric(object@mh_proposal_scale) || length(object@mh_proposal_scale) != 1) {
+    if (
+      (!is.numeric(object@mh_proposal_scale)) ||
+        (length(object@mh_proposal_scale) != 1)
+    ) {
       return("'mh_proposal_scale' must be a single numeric value.")
     }
     if (object@mh_proposal_scale <= 0) {
@@ -1063,7 +1099,10 @@ setClass(
     }
 
     # --- spike_values_grid ---
-    if (!is.numeric(object@spike_values_grid) || length(object@spike_values_grid) == 0) {
+    if (
+      (!is.numeric(object@spike_values_grid)) ||
+        (length(object@spike_values_grid) == 0)
+    ) {
       return("'spike_values_grid' must be a non-empty numeric vector.")
     }
     if (any(object@spike_values_grid <= 0)) {
@@ -1073,175 +1112,6 @@ setClass(
     TRUE
   }
 )
-
-# setClass(
-#   "saemvsTuning",
-#   slots = list(
-#     niter = "numeric",
-#     nburnin = "numeric",
-#     step = "numeric",
-#     niter_mh = "numeric",
-#     kernel_mh = "character",
-#     covariance_decay = "numeric",
-#     mh_proposal_scale = "numeric",
-#     spike_values_grid = "numericORNULL",
-#     n_is_samples = "numeric",
-#     seed = "numeric",
-#     nb_workers = "numeric"
-#   ),
-#   prototype = list(
-#     niter = 500,
-#     nburnin = 350,
-#     step = numeric(0), # computed automatically in constructor
-#     niter_mh = 5,
-#     kernel_mh = "random_walk",
-#     covariance_decay = 0.98,
-#     mh_proposal_scale = 1.5,
-#     spike_values_grid = NULL,
-#     n_is_samples = 10000,
-#     seed = 220916,
-#     nb_workers = 4
-#   ),
-#   validity = function(object) {
-#     # Helper function pour vérifier "entier numérique"
-# is_integerish <- function(x, allow_zero = FALSE) {
-#   if (!is.numeric(x) || length(x) != 1) return(FALSE)
-#   if (allow_zero) {
-#     return(x >= 0 && x == floor(x))
-#   } else {
-#     return(x > 0 && x == floor(x))
-#   }
-# }
-
-# # niter
-# if (!is_integerish(object@niter)) {
-#   return("'niter' must be a positive integer.")
-# }
-
-# # nburnin
-# if (!is_integerish(object@nburnin, allow_zero = TRUE)) {
-#   return("'nburnin' must be a non-negative integer.")
-# }
-# if (object@nburnin > object@niter) {
-#   return("'nburnin' must be smaller than 'niter'.")
-# }
-
-# # niter_mh
-# if (!is_integerish(object@niter_mh)) {
-#   return("'niter_mh' must be a positive integer.")
-# }
-
-# # n_is_samples
-# if (!is_integerish(object@n_is_samples)) {
-#   return("'n_is_samples' must be a positive integer.")
-# }
-
-# # seed
-# if (!is_integerish(object@seed, allow_zero = TRUE)) {
-#   return("'seed' must be an integer.")
-# }
-
-# # nb_workers
-# if (!is_integerish(object@nb_workers)) {
-#   return("'nb_workers' must be a positive integer.")
-# }
-
-#     # niter
-#     if (!is.numeric(object@niter) || length(object@niter) != 1) {
-#       return("'niter' must be a single numeric value.")
-#     }
-#     if (object@niter <= 0 || object@niter != as.integer(object@niter)) {
-#       return("'niter' must be a positive integer.")
-#     }
-
-#     # nburnin
-#     if (!is.numeric(object@nburnin) || length(object@nburnin) != 1) {
-#       return("'nburnin' must be a single numeric value.")
-#     }
-#     if (object@nburnin < 0 || object@nburnin != as.integer(object@nburnin)) {
-#       return("'nburnin' must be a non-negative integer.")
-#     }
-#     if (object@nburnin > object@niter) {
-#       return("'nburnin' must be smaller than 'niter'.")
-#     }
-
-#     # step
-#     if (!is.numeric(object@step) || length(object@step) != object@niter) {
-#       return("'step' must be a numeric vector of length 'niter'.")
-#     }
-
-#     # niter_mh
-#     if (!is.numeric(object@niter_mh) || length(object@niter_mh) != 1) {
-#       return("'niter_mh' must be a single numeric value.")
-#     }
-#     if (object@niter_mh <= 0 ||
-#       object@niter_mh != as.integer(object@niter_mh)) {
-#       return("'niter_mh' must be a positive integer.")
-#     }
-
-#     # kernel_mh
-#     if (!is.character(object@kernel_mh) || length(object@kernel_mh) != 1) {
-#       return("'kernel_mh' must be a single character string.")
-#     }
-#     if (!object@kernel_mh %in% c("random_walk", "pop")) {
-#       return("'kernel_mh' must be either 'random_walk' or 'pop'.")
-#     }
-
-#     # covariance_decay
-#     if (!is.numeric(object@covariance_decay) ||
-#       length(object@covariance_decay) != 1) {
-#       return("'covariance_decay' must be a single numeric value.")
-#     }
-#     if (object@covariance_decay <= 0 || object@covariance_decay >= 1) {
-#       return("'covariance_decay' must be strictly between 0 and 1 (exclusive).")
-#     }
-
-#     # mh_proposal_scale
-#     if (!is.numeric(object@mh_proposal_scale) ||
-#       length(object@mh_proposal_scale) != 1) {
-#       return("'mh_proposal_scale' must be a single numeric value.")
-#     }
-#     if (object@mh_proposal_scale <= 0) {
-#       return("'mh_proposal_scale' must be strictly positive.")
-#     }
-
-#     # spike_values_grid
-#     if (!is.numeric(object@spike_values_grid) ||
-#       length(object@spike_values_grid) == 0) {
-#       return("'spike_values_grid' must be a non-empty numeric vector.")
-#     }
-#     if (any(object@spike_values_grid <= 0)) {
-#       return("All values in 'spike_values_grid' must be strictly positive.")
-#     }
-
-#     # n_is_samples
-#     if (!is.numeric(object@n_is_samples) || length(object@n_is_samples) != 1) {
-#       return("'n_is_samples' must be a single numeric value.")
-#     }
-#     if (object@n_is_samples <= 0 || object@n_is_samples != as.integer(object@n_is_samples)) {
-#       return("'n_is_samples' must be a positive integer.")
-#     }
-
-#     # seed
-#     if (!is.numeric(object@seed) || length(object@seed) != 1) {
-#       return("'seed' must be a single numeric value.")
-#     }
-#     if (object@seed != as.integer(object@seed)) {
-#       return("'seed' must be an integer.")
-#     }
-
-#     # nb_workers
-#     if (!is.numeric(object@nb_workers) || length(object@nb_workers) != 1) {
-#       return("'nb_workers' must be a single numeric value.")
-#     }
-#     if (object@nb_workers <= 0 ||
-#       object@nb_workers != as.integer(object@nb_workers)) {
-#       return("'nb_workers' must be a positive integer.")
-#     }
-
-#     TRUE
-#   }
-# )
 
 #' @rdname saemvsTuning
 #' @title Constructor for saemvsTuning
@@ -1342,8 +1212,8 @@ saemvsTuning <- function(niter = 500,
 #'   covariates that were forced into the model (always included).
 #'
 #' @slot selected_variables_idx List. For each unique support, indices of
-#'   covariates that were actively selected by the variable selection
-#'   procedure (excluding forced covariates).
+#'   covariates that were selected by the variable selection procedure
+#'   (excluding forced covariates).
 #'
 #' @details
 #' The class is mainly used as an internal result structure and is returned by
