@@ -15,45 +15,52 @@
 #'   that are candidates for selection (`phi_to_select_idx`).
 #' @param init An object of class \link[=saemvsInit-class]{saemvsInit}
 #'   providing the initialization for the SAEM algorithm.
-#' @param tuning_algo An object of class \link[=saemvsTuning-class]{saemvsTuning}
-#'   containing algorithmic tuning parameters such as
-#'   the spike grid (`spike_values_grid`), number of workers, and random seed.
-#' @param hyperparam An object of class \link[=saemvsHyperSlab-class]{saemvsHyperSlab}
-#'   containing the hyperparameters for the slab prior.
-#' @param pen Character string indicating the model selection criterion.
-#'   Must be either `"BIC"` or `"e-BIC"`.
+#' @param tuning_algo An object of class
+#' \link[=saemvsTuning-class]{saemvsTuning} containing algorithmic tuning
+#' parameters such as the spike grid (`spike_values_grid`), number of workers,
+#' and random seed.
+#' @param hyperparam An object of class
+#' \link[=saemvsHyperSlab-class]{saemvsHyperSlab} containing the
+#' hyperparameters for the slab prior.
+#' @param pen Character string indicating the model selection criterion. Must be
+#'either `"BIC"` or `"e-BIC"`.
 #'
 #' @details
 #' The procedure is carried out in two steps:
 #' \enumerate{
-#'   \item For each spike variance candidate (`nu0`), a MAP estimation
-#'   is performed in parallel, producing supports, thresholds, and MAP estimates.
+#'   \item For each spike variance candidate (`nu0`), a MAP estimation is
+#'   performed in parallel, producing supports, thresholds, and MAP estimates.
 #'   \item Unique supports are identified, and each support is re-evaluated
 #'   with the chosen information criterion (`pen`) to select the most
 #'   appropriate model.
 #' }
 #'
 #' Parallel execution is handled using the `future` and `furrr` packages.
-#' The model function (C++ code) must be compiled on each worker before execution.
+#' The model function (C++ code) must be compiled on each worker before
+#' execution.
 #'
 #' @return An object of class \code{\linkS4class{saemvsResults}} containing:
 #' \itemize{
 #'   \item `criterion`: The selection criterion used (`"BIC"` or `"e-BIC"`).
 #'   \item `criterion_values`: Values of the criterion for each unique support.
 #'   \item `thresholds`: Thresholds computed for each spike value.
-#'   \item `beta_map`: MAP estimates of regression parameters for each spike value.
+#'   \item `beta_map`: MAP estimates of regression parameters for each spike
+#'   value.
 #'   \item `mle_estimates`: MLE estimates for each unique support.
 #'   \item `support`: List of supports obtained across spike values.
 #'   \item `unique_support`: List of unique supports identified.
-#'   \item `support_mapping`: Mapping from each run to the corresponding unique support.
+#'   \item `support_mapping`: Mapping from each run to the corresponding unique
+#'   support.
 #'   \item `spike_values_grid`: The grid of spike variances used.
-#'   \item `phi_fixed_idx`: Indices of fixed parameters (not subject to selection).
-#'   \item `forced_variables_idx`: For each unique support, indices of covariates
-#'     that were forced into the model (always included).
-#'   \item `selected_variables_idx`: For each unique support, indices of covariates
-#'     that were actively selected by the algorithm (excluding forced ones).
+#'   \item `phi_fixed_idx`: Indices of fixed parameters.
+#'   \item `phi_to_select_idx`: Indices of parameters subject to selection.
+#'   \item `forced_variables_idx`: For each unique support, indices of
+#'   covariates that were forced into the model (always included).
+#'   \item `selected_variables_idx`: For each unique support, indices of
+#'   covariates that were actively selected by the algorithm (excluding forced
+#'   ones).
 #' }
-#'
+
 #' @examples
 #' \dontrun{
 #' # Assuming data_obj, model_obj, init_obj, tuning_obj, hyper_obj are created
@@ -97,7 +104,8 @@ setMethod(
       )
     }
 
-    if (is.null(model@phi_to_select_idx) || (length(model@phi_to_select_idx) == 0)) {
+    if (is.null(model@phi_to_select_idx) ||
+        (length(model@phi_to_select_idx) == 0)) {
       stop(
         paste0(
           "'phi_to_select_idx' must contain at least one parameter index",
@@ -108,13 +116,11 @@ setMethod(
 
     spike_values_grid <- tuning_algo@spike_values_grid
 
-    # Order of checks is critical: data → init → hyperparams
     check_data(data, model)
     data_processed <- prepare_data(data, model)
     check_init(init, data_processed, model)
     init_alg <- prepare_init(init, model, data_processed)
 
-    # --- Step 2: First SAEMVS phase (MAP estimation) ---
     message("SAEMVS: step 1/2")
     progressr::with_progress({
       p <- progressr::progressor(along = spike_values_grid)
@@ -133,12 +139,10 @@ setMethod(
       )
     })
 
-    # Extract MAP results
     support <- lapply(map_runs, `[[`, "support")
     thresholds <- lapply(map_runs, `[[`, "threshold")
     beta_map <- lapply(map_runs, `[[`, "beta")
 
-    # Deduplicate supports
     support_hashes <- vapply(support, digest::digest, character(1))
     unique_support_indices <- which(!duplicated(support_hashes))
     hash_to_compact_index <- stats::setNames(
@@ -151,30 +155,30 @@ setMethod(
       integer(1)
     ))
 
-    # --- Step 3: Second SAEMVS phase (criterion evaluation: BIC/e-BIC) ---
     message("SAEMVS: step 2/2")
     progressr::with_progress({
-      p <- progressr::progressor(along = length(unique_support_indices))
+      #p <- progressr::progressor(along = length(unique_support_indices))
 
       criterion_results <- safe_future_map(
         unique_support_indices,
         function(k) {
           compile_model(model@model_func)
-          saemvs_one_ic_run(k, support, data_processed, model, init_alg, tuning_algo, pen)
+          saemvs_one_ic_run(k, support, data_processed, model, init_alg,
+                            tuning_algo, pen)
         },
         workers = tuning_algo@nb_workers,
         seed = tuning_algo@seed
       )
-      for (i in seq_along(criterion_results)) p()
+      #p()
     })
 
-    # Extract evaluation results
     criterion_values <- vapply(criterion_results, `[[`, numeric(1), "ll")
     mle <- lapply(criterion_results, `[[`, "mle_param")
-    forced_variables_idx <- lapply(criterion_results, `[[`, "forced_variables_idx")
-    selected_variables_idx <- lapply(criterion_results, `[[`, "selected_variables_idx")
+    forced_variables_idx <- lapply(criterion_results, `[[`,
+                                   "forced_variables_idx")
+    selected_variables_idx <- lapply(criterion_results, `[[`,
+                                     "selected_variables_idx")
 
-    # --- Step 4: Assemble results object ---
     res <- methods::new(
       "saemvsResults",
       criterion = pen,
