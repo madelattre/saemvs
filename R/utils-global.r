@@ -17,3 +17,7 @@ if (getRversion() >= "2.15.1") {
     logdmvnorm_cpp <- function(...) stop("stub")
   }
 }
+
+# Global variables
+utils::globalVariables(c("j", "facet_label", "var"))
+
