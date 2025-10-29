@@ -7,14 +7,18 @@
 \usage{
 summary_saemvs(saem_results, ...)
 
-\S4method{summary_saemvs}{saemvsResults}(saem_results, digits = 3)
+\S4method{summary_saemvs}{saemvsResults}(saem_results, ...)
 }
 \arguments{
 \item{saem_results}{An object of class \code{saemvsResults} containing
 the output of a SAEMVS run.}
 
-\item{digits}{Numeric scalar (default = 3). Number of decimal places to use
-when printing coefficients and covariance matrix.}
+\item{...}{Additional arguments passed to methods or generic functions.
+Currently supported arguments:
+\describe{
+\item{digits}{Numeric scalar (default = 3). Number of decimal places
+used when printing coefficients and the covariance matrix.}
+}}
 }
 \description{
 Provides a human-readable summary of the results from a SAEM variable
@@ -37,7 +41,7 @@ displayed in a labeled table, followed by the estimated covariance matrix.
 \examples{
 \dontrun{
 # Assuming 'res' is a saemvsResults object from a SAEMVS run
-summary_saemvs(res, digits = 4)
+summary_saemvs(res)
 }
 
 }
