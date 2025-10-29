@@ -19,16 +19,16 @@ Imports:
     digest,
     future,
     furrr,
-    withr,
-    rlang,
     ggplot2,
     progressr,
     methods, 
-    stats
+    stats,
+    glmnet
 Suggests: 
     testthat (>= 3.0.0),
     mockery,
     knitr, 
-    rmarkdown
+    rmarkdown,
+    survival
 Config/testthat/edition: 3
 VignetteBuilder: knitr
