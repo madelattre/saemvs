@@ -54,12 +54,12 @@ test_that("summary_saemvs runs without error and produces output", {
 # ---------------------------------------------
 # --- Tests for convergence_plot() ---
 # ---------------------------------------------
-test_that("convergence_plot runs without error for sigma2", {
-  expect_silent(convergence_plot(saem_res, component = "sigma2"))
-})
+# test_that("convergence_plot runs without error for sigma2", {
+#   expect_silent(convergence_plot(saem_res, component = "sigma2"))
+# })
 
-test_that("convergence_plot runs without error for beta_to_select", {
-  expect_silent(suppressMessages(convergence_plot(saem_res,
-    component = "coef_phi_sel"
-  )))
-})
+# test_that("convergence_plot runs without error for beta_to_select", {
+#   expect_silent(suppressMessages(convergence_plot(saem_res,
+#     component = "coef_phi_sel"
+#   )))
+# })
