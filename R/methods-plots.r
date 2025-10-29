@@ -7,7 +7,7 @@
 #' (`coef_phi_sel` or `coef_phi_non_sel`), or covariance matrices
 #' (`variance_phi_sel` or `variance_phi_non_sel`) across iterations.
 #'
-#' @param res_saem An object of class [`saemResults`], containing results from a
+#' @param res_saem An object of class `saemResults`, containing results from a
 #'   SAEM estimation procedure. It must include slots such as `@sigma2`,
 #'   `@beta_to_select`, `@beta_not_to_select`, `@gamma_to_select`,
 #'   `@gamma_not_to_select`, and corresponding index vectors.

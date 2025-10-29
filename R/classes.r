@@ -1304,7 +1304,6 @@ setClass(
 #' @slot sigma2 A numeric vector of estimated residual variances at each
 #'  iteration.
 #'
-#' @keywords internal
 setClass(
   "saemResults",
   slots = list(
