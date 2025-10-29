@@ -18,8 +18,8 @@ sigma2 <- 30 # Observation variance
 gamma2 <- diag(c(200, 10)) # Covariance for phi random effects
 mu <- matrix(c(1200, 500), ncol = 1) # Intercepts for phi
 beta <- rbind(
-  c(100, 50, 20, 0),
-  c(20, 0, 10, 0)
+  c(100, 50, 20, rep(0, 197)),
+  c(20, 0, 10, rep(0, 197))
 )
 beta_tilde <- cbind(mu, beta) # Combine mu and beta
 psi <- c(200) # Constant for g function
@@ -46,18 +46,38 @@ y_list <- vector("list", n)
 # Sample number of observations per individual
 j_vec <- sample(jmin:jmax, n, replace = TRUE)
 
-for (i in 1:n) {
-  t_i <- sort(runif(j_vec[i], tmin, tmax)) # Random times
-  y_i <- g(phi[i, ], psi, t_i) + rnorm(j_vec[i], sd = sqrt(sigma2)) # Observations with noise
-  t_list[[i]] <- t_i
-  y_list[[i]] <- y_i
+# Pré-allocation
+y_all <- vector("list", n)
+time_all <- vector("list", n)
+id_all <- vector("list", n)
+
+for (i in seq_len(n)) {
+  t_i <- seq(tmin, tmax, length.out = j_vec[i])
+  y_i <- g(phi[i, ], psi, t_i) + rnorm(j_vec[i], sd = sqrt(sigma2))
+
+  time_all[[i]] <- t_i
+  y_all[[i]] <- y_i
+  id_all[[i]] <- rep(i, j_vec[i])
 }
 
-small_example_data <- list(
-  y_list = y_list,
-  t_list = t_list,
+# Combine into a single long dataframe
+df_long <- data.frame(
+  id = unlist(id_all),
+  time = unlist(time_all),
+  y = unlist(y_all)
+)
+
+# Covariates dataframe
+df_cov <- as.data.frame(x)
+colnames(df_cov) <- paste0("x", 1:p)
+df_cov$id <- 1:n
+
+example_data_list <- list(
+  y_list = y_all,
+  t_list = time_all,
   x = x
 )
 
 # ----- Save results -----
-save(small_example_data, file = "data/small_example_data.rda")
+save(example_data_list, file = "data/example_data_list.rda")
+save(df_long, df_cov, file = "data/example_data_df.rda")
