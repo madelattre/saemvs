@@ -206,7 +206,7 @@ setMethod(
 
       # --- Default / random / top:n selection ---
       if (missing(sel_components)) {
-        sel_components <- head(possible_components, 16)
+        sel_components <- utils::head(possible_components, 16)
       } else if (length(sel_components) == 1 && sel_components == "random") {
         sel_components <- sample(
           possible_components,
@@ -219,14 +219,14 @@ setMethod(
         n <- as.numeric(sub("top:", "", sel_components))
 
         if (!is.null(phi)) {
-          df_col <- subset(df, j == phi)
+          df_col <- base::subset(df, j == phi)
         } else {
           df_col <- df
         }
 
-        var_df <- aggregate(value ~ facet_label, df_col, var)
+        var_df <- stats::aggregate(value ~ facet_label, df_col, var)
 
-        top_sel <- head(var_df[order(-var_df$value), "facet_label"], n)
+        top_sel <- utils::head(var_df[order(-var_df$value), "facet_label"], n)
         sel_components <- top_sel
       }
 
@@ -247,7 +247,7 @@ setMethod(
         )
       }
 
-      df <- subset(df, facet_label %in% sel_components)
+      df <- base::subset(df, facet_label %in% sel_components)
 
       # --- Build plot ---
       g <- ggplot2::ggplot(df, ggplot2::aes(

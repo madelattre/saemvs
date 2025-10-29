@@ -13,8 +13,12 @@
 #'
 #' @param saem_results An object of class \code{saemvsResults} containing
 #'   the output of a SAEMVS run.
-#' @param digits Numeric scalar (default = 3). Number of decimal places to use
-#'   when printing coefficients and covariance matrix.
+#' @param ... Additional arguments passed to methods or generic functions.
+#' Currently supported arguments:
+#'   \describe{
+#'     \item{digits}{Numeric scalar (default = 3). Number of decimal places
+#'       used when printing coefficients and the covariance matrix.}
+#'   }
 #'
 #' @details
 #' The best model is identified as the one minimizing the selection criterion.
@@ -25,7 +29,7 @@
 #' @examples
 #' \dontrun{
 #' # Assuming 'res' is a saemvsResults object from a SAEMVS run
-#' summary_saemvs(res, digits = 4)
+#' summary_saemvs(res)
 #' }
 #'
 #' @export
@@ -43,7 +47,8 @@ setMethod(
   signature(
     saem_results = "saemvsResults"
   ),
-  function(saem_results, digits = 3) {
+  function(saem_results, ...) {
+    digits <- list(...)$digits %||% 3
     fixed_param_idx <- saem_results@phi_fixed_idx
     phi_to_select_idx <- saem_results@phi_to_select_idx
 

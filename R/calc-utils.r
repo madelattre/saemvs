@@ -149,7 +149,7 @@ estimate_phi_individuals <- function(data, model, init, maxit = 1000) {
     t <- data@t_series[[i]]
     phi0 <- init@intercept
 
-    opt <- optim(
+    opt <- stats::optim(
       par = phi0,
       fn = sse_phi,
       y = y, t = t,
@@ -256,7 +256,7 @@ build_init_from_phi_lasso <- function(est_indiv,
         standardize = TRUE
       )
       s_val <- if (is.null(lasso_lambda)) min(fit$lambda) else lasso_lambda
-      coefs_list <- coef(fit, s = s_val)
+      coefs_list <- stats::coef(fit, s = s_val)
       beta_sel[, i] <- as.matrix(coefs_list[-1])
     }
   }
@@ -273,10 +273,10 @@ build_init_from_phi_lasso <- function(est_indiv,
         ncol = length(phi_not_to_select_idx), nrow = ncol(x_not_sel)
       )
       for (i in seq_along(phi_not_to_select_idx)) {
-        fit <- lm(
+        fit <- stats::lm(
           phi_est_matrix[, phi_not_to_select_idx[i]] ~ x_not_sel
         )
-        coefs <- coef(fit)
+        coefs <- stats::coef(fit)
         beta_not_sel[, i] <- coefs[-1]
       }
     }
