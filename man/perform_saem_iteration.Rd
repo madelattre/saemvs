@@ -9,15 +9,19 @@ perform_saem_iteration(k, config, state, sa_func, m_func, mh_update_func)
 \arguments{
 \item{k}{Integer. Current iteration index.}
 
-\item{config}{List. Model configuration including design matrices, hyperparameters, and algorithm settings.}
+\item{config}{List. Model configuration including design matrices,
+hyperparameters, and algorithm settings.}
 
-\item{state}{List. Current state of the algorithm (phi, beta, gamma, alpha, etc.).}
+\item{state}{List. Current state of the algorithm (phi, beta, gamma, alpha,
+etc.).}
 
-\item{sa_func}{Function. Stochastic approximation step function (SA-step) to update sufficient statistics.}
+\item{sa_func}{Function. Stochastic approximation step function (SA-step) to
+update sufficient statistics.}
 
 \item{m_func}{Function. M-step function to update model parameters.}
 
-\item{mh_update_func}{Function. Optional function to update proposal distributions for the Metropolis step.}
+\item{mh_update_func}{Function. Optional function to update proposal
+distributions for the Metropolis step.}
 }
 \value{
 Updated \code{state} list after one SAEM iteration.

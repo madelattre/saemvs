@@ -7,17 +7,21 @@
 m_step_to_select(config, k, state)
 }
 \arguments{
-\item{config}{List containing model configuration, including design matrices and hyperparameters.}
+\item{config}{List containing model configuration, including design matrices
+and hyperparameters.}
 
 \item{k}{Current iteration index (integer).}
 
-\item{state}{List containing the current state of the algorithm (phi, beta, gamma, alpha, s1, s2, s3, etc.).}
+\item{state}{List containing the current state of the algorithm
+(phi, beta, gamma, alpha, s1, s2, s3, etc.).}
 }
 \value{
-Updated \code{state} list with new beta_to_select, gamma_to_select, alpha, and related statistics.
+Updated \code{state} list with new beta_to_select, gamma_to_select,
+alpha, and related statistics.
 }
 \description{
-Performs the M-step updates for parameters that are subject to variable selection.
-Updates beta, gamma, and inclusion probabilities (alpha) for the "to_select" parameters.
+Performs the M-step updates for parameters that are subject to variable
+selection. Updates beta, gamma, and inclusion probabilities (alpha) for the
+"to_select" parameters.
 }
 \keyword{internal}

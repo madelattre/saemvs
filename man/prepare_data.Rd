@@ -8,14 +8,13 @@ prepare_data(data, model)
 }
 \arguments{
 \item{data}{A \code{\linkS4class{saemvsData}} object.
-Contains observed time series \code{y_series}, covariates
-to be selected (\code{x_candidates}), and forced covariates
-(\code{x_forced}).}
+Contains observed time series \code{y_series}, covariates to be selected
+(\code{x_candidates}), and forced covariates (\code{x_forced}).}
 
 \item{model}{A \code{\linkS4class{saemvsModel}} object.
 Provides model dimension (\code{phi_dim}), indices of parameters
-subject to selection (\code{phi_to_select_idx}), and the forced
-support structure (\code{x_forced_support}).}
+subject to selection (\code{phi_to_select_idx}), and the forced support
+structure (\code{x_forced_support}).}
 }
 \value{
 A \code{\linkS4class{saemvsProcessedData}} object containing:
@@ -24,11 +23,16 @@ A \code{\linkS4class{saemvsProcessedData}} object containing:
 \item{\code{t_series}}{Associated time points.}
 \item{\code{x_candidates}}{Design matrix of candidate covariates.}
 \item{\code{x_forced}}{Design matrix of forced covariates.}
-\item{\code{x_phi_to_select}}{Final design matrix for parameters subject to selection, including intercept.}
-\item{\code{x_phi_not_to_select}}{Final design matrix for parameters not subject to selection, including intercept.}
-\item{\code{tx_x_phi_to_select}}{Gram matrix \eqn{X'X} for the parameters subject to selection.}
-\item{\code{kron_tx_x_phi_to_select}}{Block-diagonal expansion of the Gram matrix, one block per parameter subject to selection.}
-\item{\code{x_phi_not_to_select_list}}{List of matrices representing the design for parameters not subject to selection, expanded by support.}
+\item{\code{x_phi_to_select}}{Final design matrix for parameters subject to
+selection, including intercept.}
+\item{\code{x_phi_not_to_select}}{Final design matrix for parameters not
+subject to selection, including intercept.}
+\item{\code{tx_x_phi_to_select}}{Gram matrix \eqn{X'X} for the parameters
+subject to selection.}
+\item{\code{kron_tx_x_phi_to_select}}{Block-diagonal expansion of the Gram
+matrix, one block per parameter subject to selection.}
+\item{\code{x_phi_not_to_select_list}}{List of matrices representing the
+design for parameters not subject to selection, expanded by support.}
 }
 }
 \description{
@@ -38,17 +42,21 @@ required for fitting a \code{saemvsModel} to a \code{saemvsData} object.
 \details{
 Specifically, it:
 \itemize{
-\item separates covariates for parameters subject to selection from those for parameters not subject to selection,
+\item separates covariates for parameters subject to selection from those
+for parameters not subject to selection,
 \item builds corresponding design matrices (with intercept),
-\item computes Gram matrices and block-diagonal expansions for covariates related to parameters subject to selection,
-\item constructs a list representation of design matrices for parameters not subject to selection for efficient use in SAEM updates,
-\item and returns a \code{saemvsProcessedData} object encapsulating all results.
+\item computes Gram matrices and block-diagonal expansions for covariates
+related to parameters subject to selection,
+\item constructs a list representation of design matrices for parameters
+not subject to selection for efficient use in SAEM updates,
+\item and returns a \code{saemvsProcessedData} object encapsulating all
+results.
 }
 }
 \note{
-This method is internal to the package and not intended for direct user calls.
-It assumes that \code{data} and \code{model} are consistent, and may error
-if the forced support structure does not match model dimensions.
+This method is internal to the package and not intended for direct user
+calls. It assumes that \code{data} and \code{model} are consistent, and may
+error if the forced support structure does not match model dimensions.
 }
 \examples{
 \dontrun{
@@ -58,6 +66,7 @@ processed <- prepare_data(data_obj, model_obj)
 }
 }
 \seealso{
-\code{\linkS4class{saemvsData}}, \code{\linkS4class{saemvsModel}}, \code{\linkS4class{saemvsProcessedData}}
+\code{\linkS4class{saemvsData}}, \code{\linkS4class{saemvsModel}},
+\code{\linkS4class{saemvsProcessedData}}
 }
 \keyword{internal}

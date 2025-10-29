@@ -9,15 +9,15 @@ map_to_mle_model(model, cand_support)
 \arguments{
 \item{model}{An object of class \code{saemvsModel}.}
 
-\item{cand_support}{A binary matrix indicating candidate covariate
-support (rows = covariates, columns = parameters).}
+\item{cand_support}{A binary matrix indicating candidate covariate support
+(rows = covariates, columns = parameters).}
 }
 \value{
 A \code{saemvsModel} object with updated support matrix.
 }
 \description{
-Internal method that transforms a \code{saemvsModel} object
-when moving from the MAP setting to the MLE setting, updating the support
-of forced and selected covariates accordingly.
+Internal method that transforms a \code{saemvsModel} object when moving from
+the MAP setting to the MLE setting, updating the support of forced and
+selected covariates accordingly.
 }
 \keyword{internal}

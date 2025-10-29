@@ -9,25 +9,28 @@ A class to store processed design matrices ready for SAEMVS algorithms.
 This class is internal to the package and is not intended to be
 directly created or manipulated by the user.
 It inherits from \code{saemvsData} and contains additional slots
-representing design matrices of covariates associated with the model parameters \code{phi},
-split into components subject to selection and components that are not subject to selection.
+representing design matrices of covariates associated with the model
+parameters \code{phi}, split into components subject to selection and
+components that are not subject to selection.
 }
 \section{Slots}{
 
 \describe{
-\item{\code{x_phi_to_select}}{matrix or NULL.
-Design matrix of covariates for \code{phi} parameters on which variable
-selection will be performed. Rows correspond to individuals; columns to covariates.}
+\item{\code{x_phi_to_select}}{matrix or NULL. Design matrix of covariates for
+\code{phi} parameters on which variable selection will be performed.
+Rows correspond to individuals; columns to covariates.}
 
 \item{\code{x_phi_not_to_select}}{matrix or NULL.
 Design matrix of covariates for \code{phi} parameters that are not
-subject to selection. Rows correspond to individuals; columns to covariates.}
+subject to selection. Rows correspond to individuals; columns to
+covariates.}
 
 \item{\code{tx_x_phi_to_select}}{matrix or NULL.
-Transformation of \code{x_phi_to_select} (e.g., multiplied by its transpose) required for algorithm computations.}
+Transformation of \code{x_phi_to_select} (e.g., multiplied by its transpose)
+required for algorithm computations.}
 
-\item{\code{kron_tx_x_phi_to_select}}{matrix or NULL.
-Kronecker product of \code{tx_x_phi_to_select} used for vectorized calculations.}
+\item{\code{kron_tx_x_phi_to_select}}{matrix or NULL. Kronecker product of
+\code{tx_x_phi_to_select} used for vectorized calculations.}
 
 \item{\code{x_phi_not_to_select_list}}{list or NULL.
 List of \code{x_phi_not_to_select} entries per individual. Each element
@@ -38,9 +41,10 @@ corresponds to one individual and contains a numeric vector.}
 
 \itemize{
 \item All matrices must be numeric if not NULL.
-\item \code{x_phi_not_to_select_list}, if not NULL, must have length equal to the number of individuals.
-\item Columns in \code{x_phi_to_select} and \code{x_phi_not_to_select} should not overlap (warning issued if they do).
-\item Inherits all validity checks from \code{saemvsData} (e.g., length and type checks for y_series, t_series, x_candidates, x_forced).
+\item \code{x_phi_not_to_select_list}, if not NULL, must have length
+equal to the number of individuals.
+\item Inherits all validity checks from \code{saemvsData} (e.g., length
+and type checks for y_series, t_series, x_candidates, x_forced).
 }
 }
 

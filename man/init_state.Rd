@@ -7,52 +7,68 @@
 init_state(config)
 }
 \arguments{
-\item{config}{A \code{saemvsConfig} object containing:
+\item{config}{A list, especially containing the following named elements:
 \describe{
 \item{num_iterations}{Total number of iterations.}
 \item{num_series}{Number of series/individuals.}
 \item{total_parameters}{Total number of parameters in the model.}
-\item{num_parameters_to_select}{Number of parameters subject to selection.}
-\item{num_covariates_to_select}{Number of covariates for parameters subject to selection.}
-\item{num_parameters_not_to_select}{Number of parameters not subject to selection.}
-\item{num_covariates_not_to_select}{Number of covariates for parameters not subject to selection.}
+\item{num_parameters_to_select}{Number of parameters subject
+to selection.}
+\item{num_covariates_to_select}{Number of covariates for parameters
+subject to selection.}
+\item{num_parameters_not_to_select}{Number of parameters not subject to
+selection.}
+\item{num_covariates_not_to_select}{Number of covariates for parameters
+not subject to selection.}
 \item{init_parameters}{Initial values as a \code{saemvsProcessedInit} object.}
-\item{parameters_to_select_indices}{Indices of parameters subject to select in the full vector.}
-\item{parameters_not_to_select_indices}{Indices of parameters not subject to selection.}
-\item{x_phi_to_select}{Design matrix for parameters subject to selection.}
-\item{x_phi_not_to_select}{Design matrix for parameters not subject to selection.}
+\item{parameters_to_select_indices}{Indices of parameters subject to
+select in the full vector.}
+\item{parameters_not_to_select_indices}{Indices of parameters not subject
+to selection.}
+\item{x_phi_to_select}{Design matrix for parameters subject to
+selection.}
+\item{x_phi_not_to_select}{Design matrix for parameters not subject to
+selection.}
 }}
 }
 \value{
 A named list containing:
 \describe{
-\item{beta_to_select}{List of beta matrices for parameters subject to selection.}
-\item{gamma_to_select}{List of gamma covariance matrices for parameters subject to selection.}
-\item{beta_not_to_select}{List of beta matrices for parameters not subject to select.}
-\item{gamma_not_to_select}{List of gamma covariance matrices for parameters not subject to selection.}
-\item{beta_mat_0}{Initial vectorized beta for active covariates for parameters not subject to selection.}
+\item{beta_to_select}{List of beta matrices (one for each iteration of
+the algorithm) for parameters subject to selection.}
+\item{gamma_to_select}{List of gamma covariance matrices (one for each
+iteration of the algorithm) for parameters subject to selection.}
+\item{beta_not_to_select}{List of beta matrices (one for each iteration
+of the algorithm) for parameters not subject to select.}
+\item{gamma_not_to_select}{List of gamma covariance matrices (one for
+each iteration of the algorithm) for parameters not subject to
+selection.}
+\item{beta_mat_0}{Initial vectorized beta for active covariates for
+parameters not subject to selection.}
 \item{sigma2}{Vector of residual variance across iterations.}
-\item{alpha}{List of inclusion probabilities.}
-\item{phi}{List of parameter values for all series.}
-\item{s1}{Vector of sufficient statistics for residuals.}
-\item{s2_to_select, s3_to_select}{Sufficient statistics for parameters subject to selection.}
-\item{s2_not_to_select, s3_not_to_select}{Sufficient statistics for parameters not subject to selection.}
-\item{mprop_mh}{List of mean proposal matrices for MH step.}
-\item{vprop_mh}{List of variance proposal matrices for MH step.}
+\item{alpha}{List of inclusion probabilities (one for each iteration of
+the algorithm).}
+\item{phi}{List of simulated parameter values for all series.}
+\item{s1}{Vector of sufficient statistics for residuals across
+iterations.}
+\item{s2_to_select, s3_to_select}{Sufficient statistics (one for each
+iteration of the algorithm) for parameters subject to selection.}
+\item{s2_not_to_select, s3_not_to_select}{Sufficient statistics (one for
+each iteration of the algorithm) for parameters not subject to
+selection.}
+\item{mprop_mh}{List of mean proposal matrices for MH step across
+iterations.}
+\item{vprop_mh}{List of variance proposal matrices for MH step across
+iterations.}
 }
 }
 \description{
 Internal function to initialize all necessary matrices and lists for the
 SAEMVS algorithm according to the provided configuration.
-Supports parameters subject to selection (\verb{_to_select}) and
-parameters not subject to selection (\verb{_not_to_select}).
-Includes initial values for \code{beta}, \code{gamma}, \code{phi}, \code{sigma2}, inclusion probabilities (\code{alpha}),
-sufficient statistics, and proposal distributions for the Metropolis-Hastings step.
 }
 \details{
 Performs consistent initialization for all elements required in the SAEMVS
 algorithm. Ensures that all lists have length \code{num_iterations + 1} and
-that initial values are properly assigned. Handles the case when either
-parameters subject to selection or parameters not subject to selection are absent.
+that initial values are properly assigned.
 }
 \keyword{internal}

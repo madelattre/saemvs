@@ -8,25 +8,31 @@
 Internal processed initialization of parameters
 }
 \details{
-Stores processed initial values of parameters transformed into a format compatible with the SAEMVS algorithm.
+Stores processed initial values of parameters transformed into a format
+compatible with the SAEMVS algorithm.
 }
 \section{Slots}{
 
 \describe{
-\item{\code{beta_to_select}}{Matrix of regression coefficients for phi components subject to variable selection.}
+\item{\code{beta_to_select}}{Matrix of regression coefficients for phi components
+subject to variable selection.}
 
-\item{\code{beta_not_to_select}}{Matrix of regression coefficients for phi components not subject to variable selection.}
+\item{\code{beta_not_to_select}}{Matrix of regression coefficients for phi
+components not subject to variable selection.}
 
 \item{\code{gamma_to_select}}{Covariance_matrix associated with phi_to_select.}
 
-\item{\code{gamma_not_to_select}}{Covariance_matrix associated with phi_not_to_select.}
+\item{\code{gamma_not_to_select}}{Covariance_matrix associated with
+phi_not_to_select.}
 
 \item{\code{sigma2}}{Numeric. Residual variance.}
 
-\item{\code{inclusion_prob}}{Numeric vector of inclusion probabilities, consistent with the processed dimension of phi.}
+\item{\code{inclusion_prob}}{Numeric vector of inclusion probabilities, consistent
+with the processed dimension of phi.}
 }}
 
 \note{
-This class is created internally by the package. Users should not create or modify objects of this class directly.
+This class is created internally by the package. Users should not
+create or modify objects of this class directly.
 }
 \keyword{internal}

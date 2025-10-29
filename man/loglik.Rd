@@ -16,11 +16,13 @@ loglik(
 )
 }
 \arguments{
-\item{data}{A \code{saemvsData} object containing the response and design matrices.}
+\item{data}{A \code{saemvsData} object containing the response and design
+matrices.}
 
 \item{model}{A \code{saemvsModel} object defining the model structure.}
 
-\item{tuning_algo}{A \code{saemvsTuning} object containing tuning settings (e.g., number of Monte Carlo samples).}
+\item{tuning_algo}{A \code{saemvsTuning} object containing tuning settings
+(e.g., number of Monte Carlo samples).}
 
 \item{param}{A list with parameter estimates. Must contain:
 \describe{
@@ -29,13 +31,19 @@ loglik(
 \item{sigma2}{Residual variance.}
 }}
 
-\item{pen}{Character string specifying the penalty. One of "BIC", "e-BIC", or no penalty.}
+\item{pen}{Character string specifying the penalty. One of "BIC", "e-BIC",
+or no penalty.}
 
-\item{p}{Numeric, number of candidate covariates (for e-BIC computation). Consider renaming to \code{num_covariates} for clarity.}
+\item{p}{Numeric, number of candidate covariates (for e-BIC computation).
+Consider renaming to \code{num_covariates} for clarity.}
 
-\item{phi_to_select_idx}{Integer vector indicating which covariates (columns of the design matrix) are subject to selection. Used for computing the penalization term in BIC/e-BIC.}
+\item{phi_to_select_idx}{Integer vector indicating which covariates
+(columns of the design matrix) are subject to selection. Used for computing
+the penalization term in BIC/e-BIC.}
 
-\item{nb_forced_beta}{Integer specifying the number of covariates that are forced to be included in the model. This is used to adjust the penalization term in the e-BIC computation.}
+\item{nb_forced_beta}{Integer specifying the number of covariates that are
+forced to be included in the model. This is used to adjust the penalization
+term in the e-BIC computation.}
 }
 \value{
 Numeric value of the penalized log-likelihood (BIC or e-BIC).

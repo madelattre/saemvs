@@ -7,13 +7,14 @@
 \description{
 Initialization of user-provided parameters
 
-Stores the initial values of parameters provided by the user for the SAEMVS algorithm.
+Stores the initial values of parameters provided by the user for the SAEMVS
+algorithm.
 }
 \details{
 Validity checks ensure:
 \itemize{
-\item The number of columns in \code{beta_forced} and \code{beta_candidates}
-matches the length of \code{intercept}.
+\item The number of columns in \code{beta_forced} and
+\code{beta_candidates} matches the length of \code{intercept}.
 \item \code{cov_re} is a valid covariance matrix.
 \item \code{sigma2} is strictly positive.
 }
@@ -24,14 +25,18 @@ matches the length of \code{intercept}.
 \item{\code{intercept}}{Numeric vector of intercepts for each component of phi.
 Must have length equal to \code{phi_dim} in the model.}
 
-\item{\code{beta_forced}}{Optional matrix of regression coefficients for forced covariates
-(from \code{x_forced}). Each column corresponds to a component of phi.}
+\item{\code{beta_forced}}{Optional matrix of regression coefficients for forced
+covariates (from \code{x_forced}). Each column corresponds to a component
+of phi.}
 
-\item{\code{beta_candidates}}{Optional matrix of regression coefficients for candidate covariates
-(from \code{x_candidates}). Same structure as \code{beta_forced}.}
+\item{\code{beta_candidates}}{Optional matrix of regression coefficients for
+candidate covariates (from \code{x_candidates}). Same structure as
+\code{beta_forced}.}
 
 \item{\code{cov_re}}{Initial covariance matrix of the random effects.}
 
 \item{\code{sigma2}}{Numeric. Initial residual variance (must be strictly positive).}
+
+\item{\code{default}}{Logical. If TRUE, all slots except intercept must be "empty".}
 }}
 

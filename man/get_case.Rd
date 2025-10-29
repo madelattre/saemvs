@@ -7,25 +7,31 @@
 get_case(config)
 }
 \arguments{
-\item{config}{List. Configuration object containing the following elements:
+\item{config}{List. Configuration object containing in particular the
+following elements:
 \itemize{
 \item \code{method_type} Character. Either "map" or "mle".
-\item \code{num_parameters_not_to_select} Integer. Number of parameters not subject to selection.
-\item \code{fixed_parameters_indices} Integer vector. Indices of parameters fixed a priori.
+\item \code{num_parameters_not_to_select} Integer. Number of parameters
+not subject to selection.
+\item \code{fixed_parameters_indices} Integer vector. Indices of
+parameters without random variability.
 }}
 }
 \value{
 Character string indicating the operational case. Possible values:
 \itemize{
 \item "map_full_select": MAP with all parameters subject to selection.
-\item "map_part_select_nofixed": MAP with partial selection, no fixed parameters.
-\item "map_part_select_fixed": MAP with partial selection and some fixed parameters.
+\item "map_part_select_nofixed": MAP with some (but not all) of the
+parameters subject to selection, no fixed parameters.
+\item "map_part_select_fixed": MAP with some (but not all) of the
+parameters subject to selection and some fixed parameters.
 \item "mle_nofixed": MLE with no fixed parameters.
 \item "mle_fixed": MLE with some fixed parameters.
 }
 }
 \description{
-Determines the operational case for the algorithm (e.g., MAP vs MLE, full vs partial selection,
-presence of fixed parameters) based on the provided configuration.
+Determines the operational case for the algorithm (e.g., MAP vs MLE,
+full vs partial selection, presence of fixed parameters) based on the
+provided configuration.
 }
 \keyword{internal}

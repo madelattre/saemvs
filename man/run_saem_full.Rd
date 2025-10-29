@@ -7,11 +7,13 @@
 run_saem_full(config, state, sa_func, m_func, mh_update_func)
 }
 \arguments{
-\item{config}{List. Model configuration including number of iterations and algorithm settings.}
+\item{config}{List. Model configuration including number of iterations and
+algorithm settings.}
 
 \item{state}{List. Initial state of the algorithm.}
 
-\item{sa_func}{Function. Stochastic approximation step function (SA-step) to update sufficient statistics.}
+\item{sa_func}{Function. Stochastic approximation step function (SA-step) to
+update sufficient statistics.}
 
 \item{m_func}{Function. M-step function to update model parameters.}
 

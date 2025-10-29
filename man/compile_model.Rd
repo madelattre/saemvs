@@ -7,39 +7,43 @@
 compile_model(g_fun, build_dir = "compiled_models")
 }
 \arguments{
-\item{g_fun}{A user-defined R function of the form \code{g(phi, t)} representing
-the model function, where \code{phi} is a parameter vector and \code{t} a scalar
-or vector of inputs. This function body will be translated into C++.}
+\item{g_fun}{A user-defined R function of the form \code{g(phi, t)}
+representing the model function, where \code{phi} is a parameter vector and
+\code{t} a scalar or vector of inputs. This function body will be translated
+into C++.}
 
-\item{build_dir}{Character string indicating the directory where compiled models
-should be stored. Defaults to \code{"compiled_models"}. Currently, the function
-writes the generated C++ code to a temporary file rather than persisting it in
-\code{build_dir}.}
+\item{build_dir}{Character string indicating the directory where compiled
+models should be stored. Defaults to \code{"compiled_models"}. Currently,
+the function writes the generated C++ code to a temporary file rather than
+persisting it in \code{build_dir}.}
 }
 \value{
 Invisibly returns \code{TRUE} if compilation succeeds. The compiled functions
 \code{g_scalar_cpp}, \code{g_vector_cpp}, \code{rmvnorm_cpp},
-\code{logdmvnorm_cpp}, and \code{metropolis_vector_cpp} are loaded and callable
-within the R session.
+\code{logdmvnorm_cpp}, and \code{metropolis_vector_cpp} are loaded and
+callable within the R session.
 }
 \description{
-Internal function that compiles a user-specified R function into optimized C++
-code using \pkg{RcppArmadillo}.
+Internal function that compiles a user-specified R function into optimized
+C++ code using \pkg{RcppArmadillo}.
 }
 \details{
 The function extracts the body of an R function \code{g_fun}, adapts the
-indexing from R (1-based) to C++ (0-based), and generates C++ code containing:
+indexing from R (1-based) to C++ (0-based), and generates C++ code
+containing:
 \itemize{
 \item A scalar evaluation function \code{g_scalar_cpp}.
 \item A vectorized evaluation function \code{g_vector_cpp}.
 \item Utility functions for multivariate normal simulation and density.
 \item A Metropolis-Hastings sampler for parameter chains.
 }
-The generated code is compiled on the fly and loaded into the current R session.
+The generated code is compiled on the fly and loaded into the current R
+session.
 
 The following steps are performed:
 \enumerate{
-\item Extract the body of \code{g_fun} and collapse it into a single string.
+\item Extract the body of \code{g_fun} and collapse it into a single
+string.
 \item Replace R-style 1-based indexing \code{phi[i]} with C++-compatible
 0-based indexing.
 \item Embed the function body in a templated C++ source code.
@@ -47,9 +51,9 @@ The following steps are performed:
 \item Compile and load the code with \code{Rcpp::sourceCpp()}.
 }
 
-This function is intended for internal use. Error handling is minimal and assumes
-that the input function \code{g_fun} is well-formed and compatible with the
-generated C++ code.
+This function is intended for internal use. Error handling is minimal and
+assumes that the input function \code{g_fun} is well-formed and compatible
+with the generated C++ code.
 }
 \examples{
 \dontrun{

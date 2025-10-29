@@ -10,7 +10,7 @@ saemvsTuning(
   niter_mh = 5,
   kernel_mh = "random_walk",
   covariance_decay = 0.98,
-  mh_proposal_scale = 1.5,
+  mh_proposal_scale = 1,
   spike_values_grid,
   n_is_samples = 10000,
   seed = 220916,
@@ -20,19 +20,24 @@ saemvsTuning(
 \arguments{
 \item{niter}{Integer. Total number of SAEM iterations (positive).}
 
-\item{nburnin}{Integer. Number of burn-in iterations (non-negative, less than niter).}
+\item{nburnin}{Integer. Number of burn-in iterations (non-negative, less
+than niter).}
 
-\item{niter_mh}{Integer. Number of Metropolis-Hastings iterations per S-step (positive).}
+\item{niter_mh}{Integer. Number of Metropolis-Hastings iterations per S-step
+(positive).}
 
 \item{kernel_mh}{Character. Type of MH kernel: "random_walk" or "pop".}
 
-\item{covariance_decay}{Numeric between 0 and 1. Decay factor for covariance adaptation.}
+\item{covariance_decay}{Numeric between 0 and 1. Decay factor for covariance
+adaptation.}
 
-\item{mh_proposal_scale}{Positive numeric. Scaling factor for MH proposal variance.}
+\item{mh_proposal_scale}{Positive numeric. Scaling factor for MH proposal
+variance.}
 
 \item{spike_values_grid}{Numeric vector, strictly positive and non-empty.}
 
-\item{n_is_samples}{Integer. Number of importance sampling iterations (positive).}
+\item{n_is_samples}{Integer. Number of importance sampling iterations
+(positive).}
 
 \item{seed}{Integer. Random seed for reproducibility.}
 
@@ -42,5 +47,6 @@ saemvsTuning(
 An object of class \code{saemvsTuning}.
 }
 \description{
-Create a \code{saemvsTuning} object specifying algorithm tuning parameters for SAEMVS.
+Create a \code{saemvsTuning} object specifying algorithm tuning
+parameters for SAEMVS.
 }

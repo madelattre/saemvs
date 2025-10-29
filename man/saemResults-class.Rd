@@ -15,21 +15,20 @@ to be created by the user but are automatically produced by
 \describe{
 \item{\code{beta_to_select}}{A list of matrices containing the estimated regression
 coefficients for covariates that are related with the components of
-\code{phi} that are subject to selection
-(\code{phi_to_select}) at each iteration.}
+\code{phi} that are subject to selection (\code{phi_to_select}) at each iteration.}
 
-\item{\code{beta_not_to_select}}{A list of matrices containing the estimated regression
-coefficients for covariates that are related with the components of
-\code{phi} that are not subject to selection
-(\code{phi_not_to_select}) at each iteration.}
+\item{\code{beta_not_to_select}}{A list of matrices containing the estimated
+regression coefficients for covariates that are related with the components
+of \code{phi} that are not subject to selection (\code{phi_not_to_select}) at
+each iteration.}
 
-\item{\code{gamma_to_select}}{A list of covariance matrices estimated at each iteration
-for the random effects associated with \code{phi_to_select}.}
+\item{\code{gamma_to_select}}{A list of covariance matrices estimated at each
+iteration for the random effects associated with \code{phi_to_select}.}
 
-\item{\code{gamma_not_to_select}}{A list of covariance matrices estimated at each iteration
-for the random effects associated with \code{phi_not_to_select}.}
+\item{\code{gamma_not_to_select}}{A list of covariance matrices estimated at each
+iteration for the random effects associated with \code{phi_not_to_select}.}
 
-\item{\code{sigma2}}{A numeric vector of estimated residual variances at each iteration.}
+\item{\code{sigma2}}{A numeric vector of estimated residual variances at each
+iteration.}
 }}
 
-\keyword{internal}

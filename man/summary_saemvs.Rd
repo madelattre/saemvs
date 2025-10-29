@@ -2,12 +2,12 @@
 % Please edit documentation in R/methods-summary.r
 \name{summary_saemvs}
 \alias{summary_saemvs}
-\alias{summary_saemvs,saemvsResults,numeric-method}
+\alias{summary_saemvs,saemvsResults-method}
 \title{Summary of SAEM Variable Selection Results}
 \usage{
-summary_saemvs(saem_results, digits)
+summary_saemvs(saem_results, ...)
 
-\S4method{summary_saemvs}{saemvsResults,numeric}(saem_results, digits = 3)
+\S4method{summary_saemvs}{saemvsResults}(saem_results, digits = 3)
 }
 \arguments{
 \item{saem_results}{An object of class \code{saemvsResults} containing
@@ -17,21 +17,22 @@ the output of a SAEMVS run.}
 when printing coefficients and covariance matrix.}
 }
 \description{
-Provides a human-readable summary of the results from a SAEM variable selection run.
+Provides a human-readable summary of the results from a SAEM variable
+selection run.
 For the best model (chosen by BIC/e-BIC), it displays:
 \itemize{
 \item Selected covariates for each \eqn{\phi} parameter.
 \item Estimated regression coefficients (\eqn{\beta}) with labeled rows
 for intercept, forced covariates, and selected covariates.
-\item Estimated covariance matrix (\eqn{\Gamma}), where fixed-effect parameters
-are zeroed out for clarity.
+\item Estimated covariance matrix (\eqn{\Gamma}), where fixed-effect
+parameters are zeroed out for clarity.
 }
 }
 \details{
 The best model is identified as the one minimizing the selection criterion.
-The function separates forced covariates (always included), selected covariates
-(chosen by the algorithm), and the intercept. Coefficients are displayed in a
-labeled table, followed by the estimated covariance matrix.
+The function separates forced covariates (always included), selected
+covariates (chosen by the algorithm), and the intercept. Coefficients are
+displayed in a labeled table, followed by the estimated covariance matrix.
 }
 \examples{
 \dontrun{

@@ -17,7 +17,7 @@ threshold(nu1, nu0, alpha)
 Numeric. Threshold value used in spike-and-slab selection.
 }
 \description{
-Computes the threshold value for variable selection in a spike-and-slab prior,
-based on prior variances and inclusion probability.
+Computes the threshold value for variable selection with the Gaussian
+spike-and-slab prior, based on prior variances and inclusion probability.
 }
 \keyword{internal}

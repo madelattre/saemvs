@@ -7,40 +7,45 @@
 shrink_covariance_matrix(sigma_old, sigma_temp, shrink_indices, alphas)
 }
 \arguments{
-\item{sigma_old}{Square matrix (\eqn{d x d}) representing the original covariance.
-The diagonal elements of the shrink indices will be reduced.}
+\item{sigma_old}{Square matrix (\eqn{d x d}) representing the original
+covariance. The diagonal elements of the shrink indices will be reduced.}
 
-\item{sigma_temp}{square matrix (\eqn{d x d}) serving as reference for non-shrinked elements.
-Must have the same dimensions as \code{sigma_old}.}
+\item{sigma_temp}{square matrix (\eqn{d x d}) serving as reference for
+non-shrinked elements. Must have the same dimensions as \code{sigma_old}.}
 
-\item{shrink_indices}{Integer vector indicating the rows/columns to shrink. The diagonals
-of these indices are multiplied by \code{alphas}, and the other entries involving these indices
-are set to zero.}
+\item{shrink_indices}{Integer vector indicating the rows/columns to shrink.
+The diagonals of these indices are multiplied by \code{alphas}, and the other
+entries involving these indices are set to zero.}
 
-\item{alphas}{Numeric vector of the same length as \code{shrink_indices} specifying the
-shrinkage factors to apply to the diagonal elements of the shrink indices.}
+\item{alphas}{Numeric vector of the same length as \code{shrink_indices}
+specifying the shrinkage factors to apply to the diagonal elements of the
+shrink indices.}
 }
 \value{
 A square \eqn{d x d} matrix where:
 \itemize{
-\item Diagonal elements of the shrink indices are reduced according to \code{alphas}.
+\item Diagonal elements of the shrink indices are reduced according to
+\code{alphas}.
 \item Off-diagonal elements involving any shrink index are set to zero.
 \item Other elements are copied from \code{sigma_temp}.
 }
 }
 \description{
 This internal function applies shrinkage to a covariance matrix \code{sigma_old}
-for specified indices. The diagonal elements corresponding to the shrink indices
-are multiplied by \code{alphas}, while all other entries involving these indices are set to zero.
-Elements not affected by shrinkage are copied from \code{sigma_temp}.
+for specified indices. The diagonal elements corresponding to the shrink
+indices are multiplied by \code{alphas}, while all other entries involving these
+indices are set to zero. Elements not affected by shrinkage are copied from
+\code{sigma_temp}.
 }
 \details{
 \itemize{
 \item This function is internal and should not be exported.
 \item Input matrices must be numeric, non-NULL, and of the same dimension.
-\item \code{shrink_indices} must contain valid integers between 1 and the matrix dimension.
-\item The function validates inputs and throws informative errors if they are incorrect
-(NULL matrices, dimension mismatch, invalid indices, or mismatched \code{alphas} length).
+\item \code{shrink_indices} must contain valid integers between 1 and the matrix
+dimension.
+\item The function validates inputs and throws informative errors if they are
+incorrect (NULL matrices, dimension mismatch, invalid indices, or mismatched
+\code{alphas} length).
 }
 }
 \examples{

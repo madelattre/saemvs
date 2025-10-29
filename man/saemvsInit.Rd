@@ -8,24 +8,30 @@ saemvsInit(
   intercept,
   beta_forced = NULL,
   beta_candidates = NULL,
-  cov_re,
-  sigma2 = 1
+  cov_re = matrix(numeric(0), nrow = 0, ncol = 0),
+  sigma2 = 1,
+  default = FALSE
 )
 }
 \arguments{
 \item{intercept}{Numeric vector. Intercepts for each component of phi.}
 
-\item{beta_forced}{Numeric matrix or NULL. Coefficients for forced covariates.}
+\item{beta_forced}{Numeric matrix or NULL. Coefficients for forced
+covariates.}
 
-\item{beta_candidates}{Numeric matrix or NULL. Coefficients for candidate covariates.}
+\item{beta_candidates}{Numeric matrix or NULL. Coefficients for candidate
+covariates.}
 
 \item{cov_re}{Numeric square matrix. Initial covariance of random effects.}
 
 \item{sigma2}{Numeric, positive. Initial residual variance (default = 1).}
+
+\item{default}{Logical. If TRUE, ignore all slots except intercept.}
 }
 \value{
 An object of class \code{saemvsInit}.
 }
 \description{
-Create an object of class \code{saemvsInit} specifying initial values for the SAEMVS algorithm.
+Create an object of class \code{saemvsInit} specifying initial
+values for the SAEMVS algorithm.
 }

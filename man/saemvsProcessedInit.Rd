@@ -10,21 +10,31 @@ saemvsProcessedInit(
   gamma_to_select = NULL,
   gamma_not_to_select = NULL,
   sigma2 = 1,
-  inclusion_prob = numeric(0)
+  inclusion_prob = numeric(0),
+  intercept,
+  beta_forced,
+  beta_candidates,
+  cov_re,
+  default
 )
 }
 \arguments{
-\item{beta_to_select}{Numeric matrix or NULL. Coefficients for phi components subject to selection.}
+\item{beta_to_select}{Numeric matrix or NULL. Coefficients for phi
+components subject to selection.}
 
-\item{beta_not_to_select}{Numeric matrix or NULL. Coefficients for phi components not subject to selection.}
+\item{beta_not_to_select}{Numeric matrix or NULL. Coefficients for phi
+components not subject to selection.}
 
-\item{gamma_to_select}{Numeric matrix or NULL. Covariance matrix for phi components to select.}
+\item{gamma_to_select}{Numeric matrix or NULL. Covariance matrix for phi
+components to select.}
 
-\item{gamma_not_to_select}{Numeric matrix or NULL. Covariance matrix for phi components not to select.}
+\item{gamma_not_to_select}{Numeric matrix or NULL. Covariance matrix for phi
+components not to select.}
 
 \item{sigma2}{Numeric. Residual variance.}
 
-\item{inclusion_prob}{Numeric vector or NULL. Inclusion probabilities for phi components.}
+\item{inclusion_prob}{Numeric vector or NULL. Inclusion probabilities for
+phi components.}
 }
 \value{
 An object of class \code{saemvsProcessedInit}.

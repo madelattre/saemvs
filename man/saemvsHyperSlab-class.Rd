@@ -5,28 +5,38 @@
 \alias{saemvsHyperSlab-class}
 \title{saemvsHyperSlab}
 \description{
-Represents the hyperparameters for the slab component in a spike-and-slab prior.
+Represents the hyperparameters for the slab component in a
+spike-and-slab prior.
 
-Only the slab parameter, random effects covariance prior, and degrees of freedom need
-to be specified by the user. Other hyperparameters are fixed internally.
+Only the slab parameter, random effects covariance prior, and degrees of
+freedom need to be specified by the user. Other hyperparameters are fixed
+internally.
 }
 \section{Slots}{
 
 \describe{
-\item{\code{slab_parameter}}{Numeric: positive slab parameter (controls the slab prior).}
+\item{\code{slab_parameter}}{Numeric: positive slab parameter (controls the slab
+prior).}
 
-\item{\code{cov_re_prior_scale}}{Numeric matrix: scale matrix of the Inverse-Wishart prior for random effects covariance.}
+\item{\code{cov_re_prior_scale}}{Numeric matrix: scale matrix of the Inverse-Wishart
+prior for random effects covariance.}
 
-\item{\code{cov_re_prior_df}}{Numeric: degrees of freedom of the Inverse-Wishart prior for random effects covariance.}
+\item{\code{cov_re_prior_df}}{Numeric: degrees of freedom of the Inverse-Wishart
+prior for random effects covariance.}
 
-\item{\code{residual_variance_prior_shape}}{Numeric: shape parameter of the inverse-gamma prior on residual variance (fixed internally).}
+\item{\code{residual_variance_prior_shape}}{Numeric: shape parameter of the
+inverse-gamma prior on residual variance (fixed internally).}
 
-\item{\code{residual_variance_prior_rate}}{Numeric: rate parameter of the inverse-gamma prior on residual variance (fixed internally).}
+\item{\code{residual_variance_prior_rate}}{Numeric: rate parameter of the
+inverse-gamma prior on residual variance (fixed internally).}
 
-\item{\code{phi_intercept_prior_variance}}{Numeric: variance of the Gaussian prior on each intercept of phi (fixed internally).}
+\item{\code{phi_intercept_prior_variance}}{Numeric: variance of the Gaussian prior
+on each intercept of phi (fixed internally).}
 
-\item{\code{inclusion_prob_prior_a}}{Numeric or NULL: alpha parameter of the Beta prior on covariate inclusion probabilities.}
+\item{\code{inclusion_prob_prior_a}}{Numeric or NULL: alpha parameter of the Beta
+prior on covariate inclusion probabilities.}
 
-\item{\code{inclusion_prob_prior_b}}{Numeric or NULL: beta parameter of the Beta prior on covariate inclusion probabilities.}
+\item{\code{inclusion_prob_prior_b}}{Numeric or NULL: beta parameter of the Beta
+prior on covariate inclusion probabilities.}
 }}
 

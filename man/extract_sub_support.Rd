@@ -27,10 +27,12 @@ The function is primarily designed to manipulate support matrices
 representing covariate selection patterns. It ensures consistent
 handling of empty inputs:
 \itemize{
-\item If \code{support} is empty according to \code{\link{is_empty_support}},
-the result is \code{NULL}.
-\item If \code{idx} is \code{NULL} or has length zero, the result is \code{NULL}.
-\item If the extracted submatrix contains only zeros, the result is \code{NULL}.
+\item If \code{support} is empty according to
+\code{\link{is_empty_support}}, the result is \code{NULL}.
+\item If \code{idx} is \code{NULL} or has length zero, the result is
+\code{NULL}.
+\item If the extracted submatrix contains only zeros, the result is
+\code{NULL}.
 }
 }
 \examples{

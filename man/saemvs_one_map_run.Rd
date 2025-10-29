@@ -17,12 +17,15 @@ to selection (\code{phi_to_select_idx}).}
 \item{init}{An object of class \link[=saemvsInit-class]{saemvsInit}
 providing initial values for the SAEM algorithm.}
 
-\item{tuning_algo}{An object of class \link[=saemvsTuning-class]{saemvsTuning}
-defining algorithmic parameters such as the number of iterations (\code{niter}).}
+\item{tuning_algo}{An object of class
+\link[=saemvsTuning-class]{saemvsTuning}
+defining algorithmic parameters such as the number of iterations
+(\code{niter}).}
 
-\item{hyperparam}{An object of class \link[=saemvsHyperSpikeAndSlab-class]{saemvsHyperSpikeAndSlab}
-containing hyperparameters of the spike-and-slab prior
-(spike variance, slab variance, and mixing proportion).}
+\item{hyperparam}{An object of class
+\link[=saemvsHyperSpikeAndSlab-class]{saemvsHyperSpikeAndSlab}
+containing hyperparameters of the spike-and-slab prior (spike variance,
+slab variance, and mixing proportion).}
 }
 \value{
 A \code{list} with elements:
@@ -40,13 +43,13 @@ This function is used internally by \code{\link{saemvs}} to explore
 different spike variances and extract candidate supports.
 }
 \details{
-The function runs the SAEM algorithm via \code{\link{run_saem}},
-then constructs the MAP estimates of coefficients and derives
-the support set by thresholding \eqn{\beta} coefficients.
+The function runs the SAEM algorithm via \code{\link{run_saem}}, then
+constructs the MAP estimates of coefficients and derives the support set by
+thresholding \eqn{\beta} coefficients.
 
-Special handling is performed for parameters that are forced
-to be in the model (\code{x_forced_support}).
-These are always marked as selected in the support matrix.
+Special handling is performed for parameters that are forced to be in the
+model (\code{x_forced_support}). These are always marked as selected in the
+support matrix.
 
 The returned support matrix includes the intercept term as the first row.
 }

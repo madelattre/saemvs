@@ -11,7 +11,8 @@ a spike hyperparameter for the spike-and-slab prior.
 \section{Slots}{
 
 \describe{
-\item{\code{spike_parameter}}{\code{numeric}. The spike parameter, must be strictly positive.}
+\item{\code{spike_parameter}}{\code{numeric}. The spike parameter, must be strictly
+positive.}
 }}
 
 \section{Prototype}{

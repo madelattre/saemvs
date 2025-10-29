@@ -8,8 +8,8 @@ extract_rows_with_ones(mat)
 }
 \arguments{
 \item{mat}{A numeric matrix, or \code{NULL}. Must not be empty in the sense
-of dimensions (see \code{\link{is_empty_matrix}}), otherwise an empty result
-is returned.}
+of dimensions (see \code{\link{is_empty_matrix}}), otherwise an empty
+result is returned.}
 }
 \value{
 An integer vector of row indices where at least one entry equals

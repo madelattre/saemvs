@@ -12,16 +12,18 @@ check_data(data, model)
 \item{model}{An object of class \code{saemvsModel}.}
 }
 \description{
-Internal function to verify that the data provided by the user
-is consistent with the SAEMVS model specification.
+Internal function to verify that the data provided by the user is consistent
+with the SAEMVS model specification.
 }
 \details{
 Performs the following checks:
 \itemize{
-\item If \code{phi_to_select_idx} is non-empty, \code{x_candidates} must be provided.
-\item \code{x_candidates}, if present, must have one row per sequence in \code{y_series}.
-\item \code{x_forced} and \code{x_forced_support}, if present, must be numeric matrices
-with compatible dimensions.
+\item If \code{phi_to_select_idx} is non-empty, \code{x_candidates} must be
+provided.
+\item \code{x_candidates}, if present, must have one row per sequence in
+\code{y_series}.
+\item \code{x_forced} and \code{x_forced_support}, if present, must be
+numeric matrices with compatible dimensions.
 }
 }
 \keyword{internal}

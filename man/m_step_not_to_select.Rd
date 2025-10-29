@@ -7,17 +7,21 @@
 m_step_not_to_select(config, k, state)
 }
 \arguments{
-\item{config}{List containing model configuration, including design matrices and hyperparameters.}
+\item{config}{List containing model configuration, including design matrices
+and hyperparameters.}
 
 \item{k}{Current iteration index (integer).}
 
-\item{state}{List containing the current state of the algorithm (phi, beta, gamma, s1, s2, s3, etc.).}
+\item{state}{List containing the current state of the algorithm
+(phi, beta, gamma, s1, s2, s3, etc.).}
 }
 \value{
-Updated \code{state} list with new beta_not_to_select, gamma_not_to_select, and s1/s2/s3 entries.
+Updated \code{state} list with new beta_not_to_select,
+gamma_not_to_select, and s1/s2/s3 entries.
 }
 \description{
-Performs the M-step updates for parameters that are not subject to variable selection.
-Updates beta, gamma, and related sufficient statistics for the "not_to_select" parameters.
+Performs the M-step updates for parameters that are not subject to variable
+selection. Updates beta, gamma, and related sufficient statistics for the
+"not_to_select" parameters.
 }
 \keyword{internal}

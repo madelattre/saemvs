@@ -12,22 +12,24 @@ vector, time series, forced covariates, and candidate covariates.}
 
 \item{cand_support}{A binary matrix of dimension \code{(p + 1) x q}, where:
 \itemize{
-\item The first row corresponds to the intercept and must contain only ones.
+\item The first row corresponds to the intercept and must contain only
+ones.
 \item The following \code{p} rows correspond to the candidate covariates
 in \code{data@x_candidates}.
 \item Each column corresponds to one parameter.
-\item An entry equal to 1 indicates inclusion of the covariate in the support.
+\item An entry equal to 1 indicates inclusion of the covariate in the
+support.
 }}
 }
 \value{
-A new object of class \code{saemvsData}, with updated forced covariates
-that include both the original forced covariates and the subset of active
-candidate covariates.
+A new object of class \code{saemvsData}, with updated forced
+covariates that include both the original forced covariates and the subset of
+active candidate covariates.
 }
 \description{
 Internal method that restructures a \code{saemvsData} object when moving
-from a MAP (maximum a posteriori) representation to an MLE (maximum likelihood
-estimation) representation.
+from a MAP (maximum a posteriori) representation to an MLE (maximum
+likelihood estimation) representation.
 }
 \details{
 The function selects only the candidate covariates that are active in the

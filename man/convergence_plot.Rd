@@ -2,60 +2,80 @@
 % Please edit documentation in R/methods-plots.r
 \name{convergence_plot}
 \alias{convergence_plot}
-\alias{convergence_plot,saemResults,character,character-method}
-\title{Convergence Diagnostic Plot for SAEM Estimation}
+\alias{convergence_plot,saemResults,character-method}
+\title{Plot Convergence Diagnostics for SAEM Estimation}
 \usage{
-convergence_plot(res_saem, component, sel_components)
+convergence_plot(res_saem, component, sel_components, ...)
 
-\S4method{convergence_plot}{saemResults,character,character}(res_saem, component, sel_components)
+\S4method{convergence_plot}{saemResults,character}(res_saem, component, sel_components, phi = NULL)
 }
 \arguments{
-\item{res_saem}{An object of class \linkS4class{saemResults}.}
+\item{res_saem}{An object of class \code{saemResults}, containing results from a
+SAEM estimation procedure. It must include slots such as \verb{@sigma2},
+\verb{@beta_to_select}, \verb{@beta_not_to_select}, \verb{@gamma_to_select},
+\verb{@gamma_not_to_select}, and corresponding index vectors.}
 
-\item{component}{A character string indicating which component to plot.
-Must be one of \code{"sigma2"}, \code{"beta_s"}, \code{"beta_ns"},
-\code{"gamma_s"}, \code{"gamma_ns"}.}
+\item{component}{A character string specifying which element to plot.
+Must be one of:
+\itemize{
+\item \code{"sigma2"}: residual variance
+\item \code{"coef_phi_sel"}: regression coefficients for parameters subject to
+selection
+\item \code{"coef_phi_non_sel"}: regression coefficients for parameters not
+subject to selection
+\item \code{"variance_phi_sel"}: covariance matrix of parameters subject to
+selection
+\item \code{"variance_phi_non_sel"}: covariance matrix of parameters not
+subject to selection
+}}
 
-\item{sel_components}{A character vector specifying which elements of
-the selected matrix (\code{"beta_*"} or \code{"gamma_*"}) to track.
-Elements must be of the form \code{"(i,j)"}, where \code{i} and
-\code{j} are row and column indices. At most 16 components are shown.
-Ignored if \code{component = "sigma2"}.}
+\item{sel_components}{Optional specification of components to display.
+Can be a character vector of facet labels, \code{"random"}, or \code{"top:n"}.
+Defaults to the first 16 components.}
+
+\item{...}{Further arguments passed to or from other methods (not used).
+
+#' @details
+The function automatically adjusts the x-axis tick marks to ensure
+readability and limits the number of displayed components to a maximum of 16
+subplots.
+Users can specify which components to display using the \code{sel_components}
+argument:
+\itemize{
+\item If omitted, the first 16 components are plotted.
+\item \code{"random"} randomly selects up to 16 components.
+\item \code{"top:n"} selects the \emph{n} components with the highest variance across
+iterations.
+}
+For \code{coef_phi_sel} and \code{variance_phi_sel}, the argument \code{phi} must refer to a
+parameter that is subject to selection (i.e., within \code{phi_to_select_idx}).
+Conversely, for \code{coef_phi_non_sel} and \code{variance_phi_non_sel}, \code{phi} must
+correspond to a non-selected parameter (within \code{phi_not_to_select_idx}).
+Incompatible combinations will trigger an error.}
+
+\item{phi}{Optional integer specifying a parameter index to focus on.
+Used mainly with \code{component} values referring to parameters subject or not
+subject to selection.}
 }
 \value{
-A \pkg{ggplot2} object (printed by default), showing the
-evolution of the requested parameter(s) across SAEM iterations.
+A \href{https://ggplot2.tidyverse.org/}{\code{ggplot2}} object showing the evolution
+of the specified component across SAEM iterations. The plot is also printed
+to the active graphical device. Returns \code{invisible(NULL)} if no data is
+available for the requested component.
 }
 \description{
-The \code{convergence_plot} function provides visual diagnostics
-of convergence for specific components estimated in a
-\linkS4class{saemResults} object. It can be used to monitor the
-evolution of parameter estimates across SAEM iterations.
-}
-\details{
-Supported components are:
-\itemize{
-\item \code{"sigma2"}: evolution of the residual variance.
-\item \code{"beta_s"}: estimated coefficients for the variables
-subject to selection.
-\item \code{"beta_ns"}: estimated coefficients for the variables
-not subject to selection.
-\item \code{"gamma_s"}: estimated random effects covariance
-components subject to selection.
-\item \code{"gamma_ns"}: estimated random effects covariance
-components not subject to selection.
-}
+Produces diagnostic plots showing the convergence of parameter estimates
+obtained with the Stochastic Approximation Expectation Maximization (SAEM)
+algorithm. Depending on the selected \code{component}, this function displays the
+evolution of the residual variance (\code{sigma2}), regression coefficients
+(\code{coef_phi_sel} or \code{coef_phi_non_sel}), or covariance matrices
+(\code{variance_phi_sel} or \code{variance_phi_non_sel}) across iterations.
 }
 \examples{
 \dontrun{
-# Example: Plot sigma^2 evolution
+# Example usage (assuming `res` is an object of class 'saemResults'):
 convergence_plot(res, component = "sigma2")
-
-# Example: Plot selected beta coefficients
-convergence_plot(res, component = "beta_s", sel_components = c("(1,1)", "(2,1)"))
+convergence_plot(res, component = "coef_phi_sel", sel_components = "top:8")
 }
 
-}
-\seealso{
-\linkS4class{saemResults}
 }

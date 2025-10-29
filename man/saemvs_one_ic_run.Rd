@@ -12,25 +12,28 @@ saemvs_one_ic_run(k, support, data, model, init, tuning_algo, pen)
 \item{support}{A list of logical or numeric matrices, each encoding a
 candidate support obtained from MAP estimation (\code{saemvs_one_map_run}).}
 
-\item{data}{An object of class \link[=saemvsData-class]{saemvsData}, the dataset.}
+\item{data}{An object of class \link[=saemvsData-class]{saemvsData},
+the dataset.}
 
-\item{model}{An object of class \link[=saemvsModel-class]{saemvsModel}, specifying
-model structure and indices of parameters subject to selection.}
+\item{model}{An object of class \link[=saemvsModel-class]{saemvsModel},
+specifying model structure and indices of parameters subject to selection.}
 
-\item{init}{An object of class \link[=saemvsInit-class]{saemvsInit}, providing
-initialization for SAEM.}
+\item{init}{An object of class \link[=saemvsInit-class]{saemvsInit},
+providing initialization for SAEM.}
 
-\item{tuning_algo}{An object of class \link[=saemvsTuning-class]{saemvsTuning},
-containing algorithmic tuning parameters (e.g. number of iterations).}
+\item{tuning_algo}{An object of class
+\link[=saemvsTuning-class]{saemvsTuning}, containing algorithmic tuning
+parameters (e.g. number of iterations).}
 
-\item{pen}{Character string, the information criterion to use.
-Must be either \code{"BIC"} or \code{"e-BIC"}.}
+\item{pen}{Character string, the information criterion to use. Must be either
+\code{"BIC"} or \code{"e-BIC"}.}
 }
 \value{
 A \code{list} with elements:
 \itemize{
 \item \code{ll} Numeric, the penalized log-likelihood value (BIC/e-BIC).
-\item \code{mle_param} List of estimated parameters under the restricted model:
+\item \code{mle_param} List of estimated parameters under the restricted
+model:
 \itemize{
 \item \code{beta} Estimated regression coefficients.
 \item \code{gamma} Estimated variances for the random effects.
@@ -56,6 +59,7 @@ Finally, the log-likelihood penalized by the chosen criterion (BIC/e-BIC)
 is computed via \code{\link{loglik}}.
 }
 \seealso{
-\code{\link{saemvs}}, \code{\link{saemvs_one_map_run}}, \code{\link{loglik}}
+\code{\link{saemvs}}, \code{\link{saemvs_one_map_run}},
+\code{\link{loglik}}
 }
 \keyword{internal}

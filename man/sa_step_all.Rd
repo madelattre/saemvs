@@ -7,17 +7,21 @@
 sa_step_all(config, iteration, state)
 }
 \arguments{
-\item{config}{List containing model configuration, including step sizes, series data, parameter indices, and the model function.}
+\item{config}{List containing model configuration, including step sizes,
+series data, parameter indices, and the model function.}
 
 \item{iteration}{Integer, the current iteration index (1-based).}
 
-\item{state}{List representing the current MCMC state, including phi, s1, s2_to_select, s3_to_select, s2_not_to_select, and s3_not_to_select.}
+\item{state}{List representing the current MCMC state, including phi, s1,
+s2_to_select, s3_to_select, s2_not_to_select, and s3_not_to_select.}
 }
 \value{
 Updated \code{state} list with statistics updated for all parameters.
 }
 \description{
-Update the stochastic approximation statistics for all parameters simultaneously.
-This function updates s1, s2_to_select, s3_to_select, s2_not_to_select, and s3_not_to_select in the MCMC state for a given iteration.
+Update the stochastic approximation statistics for all parameters
+simultaneously.
+This function updates s1, s2_to_select, s3_to_select, s2_not_to_select, and
+s3_not_to_select in the MCMC state for a given iteration.
 }
 \keyword{internal}

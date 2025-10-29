@@ -16,21 +16,29 @@ candidate covariates for selection, and forced covariates.
 \section{Slots}{
 
 \describe{
-\item{\code{y_series}}{list of numeric vectors. Each element contains observed responses for one individual.}
+\item{\code{y_series}}{list of numeric vectors. Each element contains observed
+responses for one individual.}
 
-\item{\code{t_series}}{list of numeric vectors. Each element contains corresponding time indices.}
+\item{\code{t_series}}{list of numeric vectors. Each element contains corresponding
+time indices.}
 
-\item{\code{x_candidates}}{matrix or NULL. Optional matrix of candidate covariates (rows = individuals, columns = covariates).}
+\item{\code{x_candidates}}{matrix or NULL. Matrix of candidate covariates
+(rows = individuals, columns = covariates).}
 
-\item{\code{x_forced}}{matrix or NULL. Optional matrix of forced covariates (rows = individuals, columns = covariates).}
+\item{\code{x_forced}}{matrix or NULL. Matrix of forced covariates
+(rows = individuals, columns = covariates).}
 }}
 
 \section{Validity}{
 
 \itemize{
 \item \code{y_series} and \code{t_series} must have the same length.
-\item Each element of \code{y_series} and \code{t_series} must be numeric vectors of the same length.
-\item If provided, \code{x_candidates} and \code{x_forced} must each have as many rows as the length of \code{y_series}.
+\item Each element of \code{y_series} and \code{t_series} must be numeric
+vectors of the same length.
+\item If provided, \code{x_candidates} and \code{x_forced} must each have
+as many rows as the length of \code{y_series}.
+\item If provided, , \code{x_candidates} and \code{x_forced} must not have
+any columns in common.
 \item All matrices must be numeric.
 }
 }

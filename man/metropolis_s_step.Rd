@@ -5,7 +5,8 @@
 \alias{update_proposal_mh_all}
 \alias{update_proposal_mh_to_select}
 \alias{update_proposal_mh_not_to_select}
-\title{Metropolis-Hastings Update and Proposal Management for Latent Parameters}
+\title{Metropolis-Hastings Update and Proposal Management for Latent
+Parameters}
 \usage{
 metropolis_s_step(config, iteration, state)
 
@@ -16,23 +17,30 @@ update_proposal_mh_to_select(config, iteration, state)
 update_proposal_mh_not_to_select(config, iteration, state)
 }
 \arguments{
-\item{config}{Internal configuration object containing data, model matrices, and MH parameters.}
+\item{config}{Internal configuration object containing data, model matrices,
+and MH parameters.}
 
-\item{iteration}{Integer specifying the current iteration of the SAEM algorithm.}
+\item{iteration}{Integer specifying the current iteration of the SAEM
+algorithm.}
 
 \item{state}{List containing the current latent state, including:
 \itemize{
 \item \code{phi}: list of latent parameter matrices per iteration
 \item \code{mprop_mh}: list of proposal mean matrices per iteration
 \item \code{vprop_mh}: list of proposal covariance matrices per iteration
-\item \code{beta_to_select}: list of regression coefficient matrices for parameters to select
-\item \code{beta_not_to_select}: list of regression coefficient matrices for parameters not to select
-\item \code{gamma_to_select}: list of covariance matrices for parameters to select
-\item \code{gamma_not_to_select}: list of covariance matrices for parameters not to select
+\item \code{beta_to_select}: list of regression coefficient matrices for
+parameters to select
+\item \code{beta_not_to_select}: list of regression coefficient matrices
+for parameters not to select
+\item \code{gamma_to_select}: list of covariance matrices for parameters
+to select
+\item \code{gamma_not_to_select}: list of covariance matrices for
+parameters not to select
 }}
 }
 \value{
-Updated \code{state} list with new latent parameters or proposal matrices.
+Updated \code{state} list with new latent parameters or proposal
+matrices.
 }
 \description{
 Internal functions to update latent parameters (\code{phi}) and
@@ -41,11 +49,15 @@ These functions are used internally for the Metropolis-Hastings (MH) steps.
 }
 \details{
 \itemize{
-\item \code{metropolis_s_step()} performs one MH update for all series at a given iteration.
-\item \code{update_proposal_mh_all()} updates the mean and variance of the proposal distribution
-for both parameters subject to selection (to-select) and parameters not subject to selection (not-to-select).
-\item \code{update_proposal_mh_to_select()} updates the proposals only for parameters subject to selection.
-\item \code{update_proposal_mh_not_to_select()} updates the proposals only for parameters not subject to selection.
+\item \code{metropolis_s_step()} performs one MH update for all series at a given
+iteration.
+\item \code{update_proposal_mh_all()} updates the mean and variance of the proposal
+distribution for both parameters subject to selection (to-select) and
+parameters not subject to selection (not-to-select).
+\item \code{update_proposal_mh_to_select()} updates the proposals only for parameters
+subject to selection.
+\item \code{update_proposal_mh_not_to_select()} updates the proposals only for
+parameters not subject to selection.
 }
 }
 \keyword{internal}

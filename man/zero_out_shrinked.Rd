@@ -13,19 +13,20 @@ zero_out_shrinked(mat, indices)
 Must contain valid indices within the dimensions of \code{mat}.}
 }
 \value{
-A numeric matrix of the same dimensions as \code{mat}, with the specified rows
-and columns zeroed out.
+A numeric matrix of the same dimensions as \code{mat}, with the specified
+rows and columns zeroed out.
 }
 \description{
-Internal utility function that sets to zero all rows and columns of a numeric matrix
-corresponding to the provided indices. All other elements remain unchanged.
+Internal utility function that sets to zero all rows and columns of a numeric
+matrix corresponding to the provided indices. All other elements remain
+unchanged.
 }
 \details{
 \itemize{
 \item This is an internal function and should \strong{not} be exported.
 \item If \code{indices} is NULL or empty, the function returns \code{mat} unchanged.
-\item If \code{mat} is NULL or not a matrix, or if any \code{indices} are invalid, the function
-throws an informative error.
+\item If \code{mat} is NULL or not a matrix, or if any \code{indices} are invalid, the
+function throws an informative error.
 }
 }
 \examples{

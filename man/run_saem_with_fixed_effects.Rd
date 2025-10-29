@@ -7,21 +7,25 @@
 run_saem_with_fixed_effects(config, state, sa_func, m_func, mh_update_func)
 }
 \arguments{
-\item{config}{List. Model configuration including number of iterations, burn-in period, and fixed parameter indices.}
+\item{config}{List. Model configuration including number of iterations,
+burn-in period, and fixed parameter indices.}
 
 \item{state}{List. Initial state of the algorithm.}
 
-\item{sa_func}{Function. Stochastic approximation step function (SA-step) to update sufficient statistics.}
+\item{sa_func}{Function. Stochastic approximation step function (SA-step) to
+update sufficient statistics.}
 
 \item{m_func}{Function. M-step function to update model parameters.}
 
 \item{mh_update_func}{Function. Metropolis-Hastings update function.}
 }
 \value{
-Final \code{state} list after completing all SAEM iterations with shrinkage for fixed effects.
+Final \code{state} list after completing all SAEM iterations with
+shrinkage for fixed effects.
 }
 \description{
 Executes the SAEM algorithm for models with both random and fixed effects.
-Shrinkage is applied to the covariance of fixed parameters after burn-in iterations.
+Shrinkage is applied to the covariance of fixed parameters after burn-in
+iterations.
 }
 \keyword{internal}

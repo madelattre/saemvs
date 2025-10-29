@@ -14,8 +14,8 @@ check_init(init, data, model)
 \item{model}{An object of class \code{saemvsModel}.}
 }
 \description{
-Internal function to verify that the initial values provided
-by the user match the SAEMVS model and data dimensions.
+Internal function to verify that the initial values provided by the user
+match the SAEMVS model and data dimensions.
 }
 \details{
 Performs the following checks:

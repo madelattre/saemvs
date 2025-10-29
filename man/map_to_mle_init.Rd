@@ -11,15 +11,15 @@ map_to_mle_init(init, model, cand_support)
 
 \item{model}{An object of class \code{saemvsModel}.}
 
-\item{cand_support}{A binary matrix indicating candidate covariate
-support (rows = covariates, columns = parameters).}
+\item{cand_support}{A binary matrix indicating candidate covariate support
+(rows = covariates, columns = parameters).}
 }
 \value{
 A \code{saemvsInit} object with restricted initialization.
 }
 \description{
-Internal method that transforms a \code{saemvsInit} object
-when moving from the MAP setting to the MLE setting, restricting
-beta initialization to forced and selected candidate covariates.
+Internal method that transforms a \code{saemvsInit} object when moving from
+the MAP setting to the MLE setting, restricting beta initialization to forced
+and selected candidate covariates.
 }
 \keyword{internal}

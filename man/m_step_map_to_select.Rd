@@ -14,9 +14,11 @@ m_step_map_to_select(config, k, state)
 \item{state}{List containing the current state of the algorithm.}
 }
 \value{
-Updated \code{state} list with new beta_to_select, gamma_to_select, alpha, and sigma2.
+Updated \code{state} list with new beta_to_select, gamma_to_select,
+alpha, and sigma2.
 }
 \description{
-Performs MAP update for parameters subject to selection, including beta, gamma, alpha, and sigma2.
+Performs MAP update for parameters subject to selection, including beta,
+gamma, alpha, and sigma2.
 }
 \keyword{internal}

@@ -18,11 +18,12 @@ make_config(data, model, tuning_algo, init, hyperparam)
 \item{hyperparam}{A \code{saemvsHyperSlab} object.}
 }
 \value{
-A named list containing all information necessary to run the SAEMVS algorithm.
+A named list containing all information necessary to run the SAEMVS
+algorithm.
 }
 \description{
-This function constructs a configuration list containing processed data, model information,
-initialization, hyperparameters, and tuning parameters, with fields aligned with the
-original object slots.
+This function constructs a configuration list containing processed data,
+model information, initialization, hyperparameters, and tuning parameters,
+with fields aligned with the original object slots.
 }
 \keyword{internal}

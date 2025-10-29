@@ -17,14 +17,16 @@ Logical value:
 }
 }
 \description{
-Internal utility function that tests whether a support matrix is considered empty.
-A support is empty if it is \code{NULL}, has zero length, or contains only zeros.
+Internal utility function that tests whether a support matrix is considered
+empty. A support is empty if it is \code{NULL}, has zero length, or contains only
+zeros.
 }
 \details{
 \itemize{
 \item Internal function; should \strong{not} be exported.
 \item Accepts both matrices and vectors.
-\item Returns \code{TRUE} if the input is \code{NULL}, has zero elements, or is entirely zero.
+\item Returns \code{TRUE} if the input is \code{NULL}, has zero elements, or is entirely
+zero.
 }
 }
 \examples{

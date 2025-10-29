@@ -4,16 +4,17 @@
 \alias{prepare_init}
 \title{Prepare initial values for the SAEMVS algorithm}
 \usage{
-prepare_init(init, model)
+prepare_init(init, model, data_processed)
 }
 \arguments{
 \item{init}{An object of class \code{saemvsInit} containing initial values
-for intercepts, candidate betas, forced betas, covariance of random effects,
-and residual variance.}
+for intercepts, candidate betas, forced betas, covariance of random
+effects, and residual variance.}
 
-\item{model}{An object of class \code{saemvsModel} defining the model structure,
-including indices of parameters subject to selection (\code{phi_to_select_idx}) and
-forced covariate support (\code{x_forced_support}).}
+\item{model}{An object of class \code{saemvsModel} defining the model
+structure, including indices of parameters subject to selection
+(\code{phi_to_select_idx}) and forced covariate support
+(\code{x_forced_support}).}
 }
 \value{
 An object of class \code{saemvsProcessedInit} containing:
@@ -34,14 +35,14 @@ subject to selection, combining intercept and forced covariates.}
 \description{
 This internal method constructs processed initial values for the SAEMVS
 algorithm, splitting parameters into those subject to variable selection
-and those not. It combines intercepts, forced and candidate
-betas into matrices ready for algorithmic use.
+and those not. It combines intercepts, forced and candidate betas into
+matrices ready for algorithmic use.
 }
 \details{
 The function handles the following cases explicitly:
 \itemize{
-\item No parameters are subject to selection (\code{phi_to_select_idx} is empty),
-resulting in \code{beta_to_select}, \code{gamma_to_select}, and
+\item No parameters are subject to selection (\code{phi_to_select_idx} is
+empty), resulting in \code{beta_to_select}, \code{gamma_to_select}, and
 \code{inclusion_prob} being \code{NULL}.
 \item No forced covariates for either selected or non-selected parameters,
 in which case only intercepts and candidate betas are used.
@@ -49,6 +50,7 @@ in which case only intercepts and candidate betas are used.
 active support (rows with ones) are included in the beta matrices.
 }
 
-The method ensures all matrices maintain proper dimensions using \code{drop = FALSE}.
+The method ensures all matrices maintain proper dimensions using
+\code{drop = FALSE}.
 }
 \keyword{internal}

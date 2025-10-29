@@ -12,7 +12,8 @@ check_covariance(mat, name_mat)
 \item{name_mat}{Name of the matrix, used in messages.}
 }
 \value{
-NULL if valid; a character string with an error description otherwise.
+NULL if valid; a character string with an error description
+otherwise.
 }
 \description{
 Check that a matrix is square, symmetric, and positive definite

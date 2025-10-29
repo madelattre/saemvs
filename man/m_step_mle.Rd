@@ -14,9 +14,9 @@ m_step_mle(config, k, state)
 \item{state}{List containing the current state of the algorithm.}
 }
 \value{
-Updated \code{state} list with new sigma2 and beta/gamma for non-selected parameters.
+Updated \code{state} list with new sigma2, beta and gamma.
 }
 \description{
-Updates the residual variance (sigma2) and parameters not subject to selection (MLE case).
+Updates the residual variance (sigma2) and parameters in the MLE case.
 }
 \keyword{internal}

@@ -7,8 +7,8 @@
 saemvsModel(
   g,
   phi_dim,
-  phi_to_select_idx = c(),
-  phi_fixed_idx = c(),
+  phi_to_select_idx = NULL,
+  phi_fixed_idx = NULL,
   x_forced_support = matrix(numeric(0), nrow = 0, ncol = 0)
 )
 }
@@ -17,11 +17,14 @@ saemvsModel(
 
 \item{phi_dim}{Integer: total number of phi parameters.}
 
-\item{phi_to_select_idx}{Integer vector (optional): indices of phi parameters for variable selection.}
+\item{phi_to_select_idx}{Integer vector (optional): indices of phi
+parameters for variable selection.}
 
-\item{phi_fixed_idx}{Integer vector (optional): indices of phi parameters fixed (no random variability).}
+\item{phi_fixed_idx}{Integer vector (optional): indices of fixed phi
+parameters (no random variability).}
 
-\item{x_forced_support}{Numeric matrix or NULL: design matrix for forced covariates (phi_dim columns).}
+\item{x_forced_support}{Numeric matrix or NULL: design matrix for forced
+covariates (phi_dim columns).}
 }
 \value{
 An object of class \code{saemvsModel}.

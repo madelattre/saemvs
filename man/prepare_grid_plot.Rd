@@ -16,28 +16,27 @@ typically obtained from a call to \code{\link{saemvs}}.}
 \value{
 A list with two elements:
 \itemize{
-\item \code{reg_plot}: A list of \pkg{ggplot2} objects, one for
-each parameter block, showing regression estimates versus
-spike variance.
+\item \code{reg_plot}: A list of \pkg{ggplot2} objects, one for each
+parameter block, showing regression estimates versus spike variance.
 \item \code{ebic_plot}: A single \pkg{ggplot2} object showing the
 selection criterion (BIC/e-BIC) across the grid of \eqn{\nu_0}.
 }
 }
 \description{
-The \code{prepare_grid_plot} function generates diagnostic plots
-to visualize the SAEMVS selection process across the grid of spike
-variances (\eqn{\nu_0}).
+The \code{prepare_grid_plot} function generates diagnostic plots to visualize
+the SAEMVS selection process across the grid of spike variances
+(\eqn{\nu_0}).
 }
 \details{
 Two types of plots are returned:
 \itemize{
 \item A criterion plot (\code{ebic_plot}): values of the selection
-criterion (BIC or e-BIC) across the grid of \eqn{\nu_0}, with the
-optimal point highlighted.
+criterion (BIC or e-BIC) across the grid of \eqn{\nu_0}, with the optimal
+point highlighted.
 \item A list of regression coefficient plots (\code{reg_plot}):
 for each parameter block, the estimated regression coefficients
-(\eqn{\hat{\beta}}) are plotted across the grid of \eqn{\nu_0},
-together with their threshold bounds.
+(\eqn{\hat{\beta}}) are plotted across the grid of \eqn{\nu_0}, together
+with their threshold bounds.
 }
 }
 \examples{

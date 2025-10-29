@@ -55,8 +55,8 @@ summaries.}
 covariates that were forced into the model (always included).}
 
 \item{\code{selected_variables_idx}}{List. For each unique support, indices of
-covariates that were actively selected by the variable selection
-procedure (excluding forced covariates).}
+covariates that were selected by the variable selection procedure
+(excluding forced covariates).}
 }}
 
 \keyword{internal}

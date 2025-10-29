@@ -11,22 +11,22 @@ saemvsHyperSlab(
 )
 }
 \arguments{
-\item{slab_parameter}{Numeric, positive. Controls the variance of the slab prior.
-Default is 12000.}
+\item{slab_parameter}{Numeric, positive. Controls the variance of the slab
+prior. Default is 12000.}
 
 \item{cov_re_prior_scale}{Numeric matrix. Scale matrix of the Inverse-Wishart
-prior for the random effects covariance. Must be square with dimension matching
-the number of phi parameters.}
+prior for the random effects covariance. Must be square with dimension
+matching the number of phi parameters.}
 
-\item{cov_re_prior_df}{Numeric, positive. Degrees of freedom of the Inverse-Wishart
-prior for the random effects covariance. Default is 1.}
+\item{cov_re_prior_df}{Numeric, positive. Degrees of freedom of the
+Inverse-Wishart prior for the random effects covariance. Default is 1.}
 }
 \value{
 An object of class \code{saemvsHyperSlab}.
 }
 \description{
-Create a \code{saemvsHyperSlab} object specifying hyperparameters for
-the slab component in a spike-and-slab prior.
+Create a \code{saemvsHyperSlab} object specifying
+hyperparameters for the slab component in a spike-and-slab prior.
 
 Only the slab parameter, the scale matrix for the random effects covariance,
 and the degrees of freedom need to be specified by the user. All other
@@ -35,7 +35,10 @@ hyperparameters are fixed internally.
 \examples{
 \dontrun{
 cov_scale <- diag(2)
-h <- saemvsHyperSlab(slab_parameter = 1000, cov_re_prior_scale = cov_scale, cov_re_prior_df = 3)
+h <- saemvsHyperSlab(
+  slab_parameter = 1000,
+  cov_re_prior_scale = cov_scale, cov_re_prior_df = 3
+)
 }
 
 }

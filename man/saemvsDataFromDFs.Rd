@@ -15,32 +15,38 @@ saemvsDataFromDFs(
 )
 }
 \arguments{
-\item{long_df}{data.frame containing the longitudinal measurements. Must include columns for ID, response, and time.}
+\item{long_df}{data.frame containing the longitudinal measurements.
+Must include columns for individual identifier, response, and time.}
 
-\item{covar_df}{data.frame containing fixed covariates (one row per individual).}
+\item{covar_df}{data.frame containing covariates (one row per individual).}
 
-\item{id_col}{name of the column identifying individuals (must exist in both dataframes).}
+\item{id_col}{name of the column identifying individuals (must exist in
+both dataframes).}
 
 \item{y_col}{name of the response column in \code{long_df}.}
 
 \item{t_col}{name of the time column in \code{long_df}.}
 
-\item{x_candidates_cols}{vector of column names in \code{covar_df} to use as candidate covariates (optional).
-If NULL, all columns except \code{id_col} and forced covariates are used.}
+\item{x_candidates_cols}{vector of column names in \code{covar_df} to use as
+candidate covariates (optional). If NULL, all columns except \code{id_col}
+are used.}
 
-\item{x_forced_cols}{vector of column names in \code{covar_df} to use as forced covariates (optional).}
+\item{x_forced_cols}{vector of column names in \code{covar_df} to use as
+forced covariates (optional).}
 }
 \value{
 An object of class \code{saemvsData}.
 }
 \description{
-Creates a \code{saemvsData} object from a longitudinal dataset and a covariate dataset.
-The function splits the longitudinal data by individual to build \code{y_series} and \code{t_series},
-and constructs \code{x_candidates} and \code{x_forced} matrices from the covariate data.
+Creates a \code{saemvsData} object from a dataset containing longitudinal
+observations and a dataset containing covariates.
+The function splits the longitudinal data by individual to build
+\code{y_series} and \code{t_series}, and constructs \code{x_candidates}
+and \code{x_forced} matrices from the covariates dataset.
 }
 \details{
-The function ensures that the order of individuals in \code{y_series} matches the order of rows in
-\code{x_candidates} and \code{x_forced}. Candidate covariates are assumed to be fixed per individual.
+The function ensures that the order of individuals in \code{y_series}
+matches the order of rows in \code{x_candidates} and \code{x_forced}.
 }
 \examples{
 # Example longitudinal data

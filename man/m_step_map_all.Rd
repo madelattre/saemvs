@@ -14,10 +14,12 @@ m_step_map_all(config, k, state)
 \item{state}{List containing the current state of the algorithm.}
 }
 \value{
-Updated \code{state} list with new beta, gamma, alpha, and sigma2 for all parameters.
+Updated \code{state} list with new beta, gamma, alpha, and sigma2 for
+all parameters.
 }
 \description{
-Performs a full MAP update for both parameters subject and not subject to selection,
-combining the updates for beta, gamma, alpha, and sigma2.
+Performs a full MAP update for both parameters subject and not
+subject to selection, combining the updates for beta, gamma, alpha, and
+sigma2.
 }
 \keyword{internal}

@@ -7,19 +7,22 @@
 p_star(beta, alpha, nu0, nu1)
 }
 \arguments{
-\item{beta}{Numeric matrix. Current coefficient estimates (rows: covariates, columns: responses/parameters).}
+\item{beta}{Numeric matrix. Current coefficient estimates
+(rows: covariates, columns: responses/parameters).}
 
-\item{alpha}{Numeric vector. Prior inclusion probabilities for each coefficient.}
+\item{alpha}{Numeric vector. Prior inclusion probabilities for each
+coefficient.}
 
 \item{nu0}{Numeric. Variance of the spike (small variance) component.}
 
 \item{nu1}{Numeric. Variance of the slab (large variance) component.}
 }
 \value{
-Numeric matrix of the same dimension as \code{beta}. Each entry is the posterior probability p*.
+Numeric matrix of the same dimension as \code{beta}. Each entry
+is the posterior probability p*.
 }
 \description{
-Computes the posterior probability that a coefficient belongs to the "slab" component
-of a spike-and-slab prior. This is used for fast variable selection updates.
+Computes the posterior probability that a coefficient belongs to the
+"slab" component of the spike-and-slab prior.
 }
 \keyword{internal}

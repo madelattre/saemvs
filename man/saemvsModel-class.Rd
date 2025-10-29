@@ -6,12 +6,13 @@
 \title{saemvsModel class}
 \description{
 Represents a model for SAEMVS, including the model function and
-indexing information for variable selection on parameters phi.
+the indices of fixed or subject to selection parameters in phi.
 }
 \section{Slots}{
 
 \describe{
-\item{\code{model_func}}{A function of form function(phi, t) returning predicted values.}
+\item{\code{model_func}}{A function of form \verb{function(phi, t)} returning predicted
+values.}
 
 \item{\code{phi_dim}}{Integer: total number of phi parameters.}
 

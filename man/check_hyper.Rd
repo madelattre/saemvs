@@ -20,11 +20,12 @@ prior are consistent with the SAEMVS model and tuning parameters.
 \details{
 Performs the following checks:
 \itemize{
-\item \code{inclusion_prob_prior_a} and \code{inclusion_prob_prior_b} lengths
-must match the number of phi parameters subject to selection.
+\item \code{inclusion_prob_prior_a} and \code{inclusion_prob_prior_b}
+lengths must match the number of phi parameters subject to selection.
 \item \code{cov_re_prior_scale} must be a numeric square matrix with
 dimensions equal to the number of phi parameters selected.
-\item All values in \code{spike_values_grid} must be smaller than \code{slab_parameter}.
+\item All values in \code{spike_values_grid} must be smaller than
+\code{slab_parameter}.
 }
 }
 \keyword{internal}

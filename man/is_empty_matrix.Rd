@@ -15,20 +15,22 @@ A logical scalar:
 \code{FALSE} otherwise.
 }
 \description{
-This internal utility function determines whether a given matrix is considered
-"empty". A matrix is treated as empty if:
+This internal utility function determines whether a given matrix is
+considered "empty". A matrix is treated as empty if:
 \itemize{
 \item it is \code{NULL},
 \item it has zero rows,
 \item or it has zero columns.
 }
-If the input is not \code{NULL} and not a matrix, the function raises an error.
+If the input is not \code{NULL} and not a matrix, the function raises an
+error.
 }
 \details{
 The definition of "empty" here refers only to structural properties
 (i.e. dimensions). A matrix filled with zeros but with nonzero dimensions
 is \emph{not} considered empty. This function is primarily intended to
-simplify checks in algorithms where empty matrices must be handled explicitly.
+simplify checks in algorithms where empty matrices must be handled
+explicitly.
 }
 \examples{
 \dontrun{

@@ -7,15 +7,17 @@
 merge_support(fixed_support, selected_support, nb_phi_s, nb_phi_ns, perm)
 }
 \arguments{
-\item{fixed_support}{Numeric matrix or NULL. Support for covariates
-that are forced in the model. Must not include an intercept.}
+\item{fixed_support}{Numeric matrix or NULL. Support for covariates that are
+forced in the model. Must not include an intercept.}
 
 \item{selected_support}{Numeric matrix or NULL. Support for covariates
 selected by the model. Must not include an intercept.}
 
-\item{nb_phi_s}{Integer. Number of selected parameters (columns) in the model.}
+\item{nb_phi_s}{Integer. Number of selected parameters (columns) in the
+model.}
 
-\item{nb_phi_ns}{Integer. Number of non-selected parameters (columns) in the model.}
+\item{nb_phi_ns}{Integer. Number of non-selected parameters (columns) in the
+model.}
 
 \item{perm}{Integer vector. Permutation to reorder columns of the combined
 support matrix.}
@@ -43,7 +45,10 @@ it is ignored in the combination.
 fixed_support <- matrix(c(1, 0, 0, 1), nrow = 2, byrow = TRUE)
 selected_support <- matrix(c(0, 1, 1, 0), nrow = 2, byrow = TRUE)
 perm <- c(2, 1)
-merge_support(fixed_support, selected_support, nb_phi_s = 2, nb_phi_ns = 2, perm)
+merge_support(fixed_support, selected_support,
+  nb_phi_s = 2, nb_phi_ns = 2,
+  perm
+)
 }
 
 }

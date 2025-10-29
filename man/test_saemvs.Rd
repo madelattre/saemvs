@@ -10,25 +10,31 @@ test_saemvs(data, model, init, tuning_algo, hyperparam)
 \S4method{test_saemvs}{saemvsData,saemvsModel,saemvsInit,saemvsTuning,saemvsHyperSlab}(data, model, init, tuning_algo, hyperparam)
 }
 \arguments{
-\item{data}{A \link[=saemvsData-class]{saemvsData} object containing the observed response series.}
+\item{data}{A \link[=saemvsData-class]{saemvsData} object containing the
+observed response series.}
 
-\item{model}{A \link[=saemvsModel-class]{saemvsModel} object defining the model structure.}
+\item{model}{A \link[=saemvsModel-class]{saemvsModel} object defining the
+model structure.}
 
-\item{init}{A \link[=saemvsInit-class]{saemvsInit} object providing initial parameter values.}
+\item{init}{A \link[=saemvsInit-class]{saemvsInit} object providing initial
+parameter values.}
 
-\item{tuning_algo}{A \link[=saemvsTuning-class]{saemvsTuning} object specifying algorithm hyperparameters.}
+\item{tuning_algo}{A \link[=saemvsTuning-class]{saemvsTuning} object
+specifying algorithm hyperparameters.}
 
-\item{hyperparam}{A \link[=saemvsHyperSlab-class]{saemvsHyperSlab} object defining the slab prior.}
+\item{hyperparam}{A \link[=saemvsHyperSlab-class]{saemvsHyperSlab} object
+defining the slab prior.}
 }
 \value{
-A \link[=saemResults-class]{saemResults} object containing estimated parameters.
+A \link[=saemResults-class]{saemResults} object containing estimated
+parameters.
 }
 \description{
 Executes a simplified SAEMVS procedure for testing purposes.
 }
 \details{
-This function allows a quick fit of SAEMVS to inspect the evolution of parameter estimates.
-The function performs the following steps:
+This function allows a quick fit of SAEMVS to inspect the evolution of
+parameter estimates. The function performs the following steps:
 \enumerate{
 \item Compile the R model function to C++ using \code{compile_model}.
 \item Construct a spike-and-slab hyperparameter object.
@@ -38,7 +44,10 @@ The function performs the following steps:
 }
 \examples{
 \dontrun{
-test_results <- test_saemvs(data_obj, model_obj, init_obj, tuning_obj, hyper_obj)
+test_results <- test_saemvs(
+  data_obj, model_obj, init_obj, tuning_obj,
+  hyper_obj
+)
 summary(test_results)
 }
 

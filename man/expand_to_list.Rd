@@ -7,14 +7,17 @@
 expand_to_list(x_mat, support, q)
 }
 \arguments{
-\item{x_mat}{A numeric matrix of covariates (rows = individuals, columns = features).}
+\item{x_mat}{A numeric matrix of covariates (rows = individuals,
+columns = features).}
 
-\item{support}{A binary matrix indicating which features are active (1) or inactive (0).}
+\item{support}{A binary matrix indicating which features are active (1) or
+inactive (0).}
 
 \item{q}{Number of replications for each individual matrix.}
 }
 \value{
-A list of length equal to the number of rows in \code{x_mat}, each element being a list of \code{q} matrices.
+A list of length equal to the number of rows in \code{x_mat}, each
+element being a list of \code{q} matrices.
 }
 \description{
 Internal utility function that transforms a design matrix \code{x_mat} into
@@ -25,10 +28,12 @@ Each individual matrix is replicated \code{q} times and processed via
 \details{
 The function works as follows:
 \enumerate{
-\item Each column of \code{support} is split and the indices of ones are extracted.
+\item Each column of \code{support} is split and the indices of ones are
+extracted.
 \item Each row of \code{x_mat} is converted to a 1-row matrix.
 \item Each individual matrix is replicated \code{q} times.
-\item The replicated matrices are passed to \code{x_per_indiv_rcpp} together with the support indices.
+\item The replicated matrices are passed to \code{x_per_indiv_rcpp}
+together with the support indices.
 }
 }
 \examples{
