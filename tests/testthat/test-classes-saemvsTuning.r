@@ -10,7 +10,7 @@ spike_grid_valid <- c(0.1, 0.5, 1)
 spike_grid_empty <- numeric(0)
 spike_grid_negative <- c(-0.1, 0.5)
 
-# niter / nburnin
+# niter and nburnin
 niter_valid <- 500
 nburnin_valid <- 350
 niter_invalid <- 10.5
