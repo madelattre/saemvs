@@ -1,40 +1,71 @@
-#' Convergence Diagnostic Plot for SAEM Estimation
+#' Plot Convergence Diagnostics for SAEM Estimation
 #'
-#' The \code{convergence_plot} function provides visual diagnostics of
-#' convergence for specific components estimated in a \linkS4class{saemResults}
-#' object.
+#' Produces diagnostic plots showing the convergence of parameter estimates
+#' obtained with the Stochastic Approximation Expectation Maximization (SAEM)
+#' algorithm. Depending on the selected `component`, this function displays the
+#' evolution of the residual variance (`sigma2`), regression coefficients
+#' (`coef_phi_sel` or `coef_phi_non_sel`), or covariance matrices
+#' (`variance_phi_sel` or `variance_phi_non_sel`) across iterations.
 #'
-#' Supported components are:
+#' @param res_saem An object of class [`saemResults`], containing results from a
+#'   SAEM estimation procedure. It must include slots such as `@sigma2`,
+#'   `@beta_to_select`, `@beta_not_to_select`, `@gamma_to_select`,
+#'   `@gamma_not_to_select`, and corresponding index vectors.
+#' @param component A character string specifying which element to plot.
+#'   Must be one of:
+#'   \itemize{
+#'     \item `"sigma2"`: residual variance
+#'     \item `"coef_phi_sel"`: regression coefficients for parameters subject to
+#'     selection
+#'     \item `"coef_phi_non_sel"`: regression coefficients for parameters not
+#'     subject to selection
+#'     \item `"variance_phi_sel"`: covariance matrix of parameters subject to
+#'     selection
+#'     \item `"variance_phi_non_sel"`: covariance matrix of parameters not
+#'     subject to selection
+#'   }
+#' @param sel_components Optional specification of components to display.
+#'   Can be a character vector of facet labels, `"random"`, or `"top:n"`.
+#'   Defaults to the first 16 components.
+#' @param phi Optional integer specifying a parameter index to focus on.
+#'   Used mainly with `component` values referring to parameters subject or not
+#'   subject to selection.
+#' @param ... Further arguments passed to or from other methods (not used).
+#'
+#' #' @details
+#' The function automatically adjusts the x-axis tick marks to ensure
+#' readability and limits the number of displayed components to a maximum of 16
+#' subplots.
+#' Users can specify which components to display using the `sel_components`
+#' argument:
 #' \itemize{
-#'   \item \code{"sigma2"}: evolution of the residual variance.
-#'   \item \code{"beta_s"}: estimated coefficients for the variables subject to
-#'   selection.
-#'   \item \code{"beta_ns"}: estimated coefficients for the variables not
-#'   subject to selection.
-#'   \item \code{"gamma_s"}: estimated random effects covariance components
-#'   subject to selection.
-#'   \item \code{"gamma_ns"}: estimated random effects covariance components not
-#'   subject to selection.
+#'   \item If omitted, the first 16 components are plotted.
+#'   \item `"random"` randomly selects up to 16 components.
+#'   \item `"top:n"` selects the *n* components with the highest variance across
+#'   iterations.
+#' }
+#' For `coef_phi_sel` and `variance_phi_sel`, the argument `phi` must refer to a
+#' parameter that is subject to selection (i.e., within `phi_to_select_idx`).
+#' Conversely, for `coef_phi_non_sel` and `variance_phi_non_sel`, `phi` must
+#' correspond to a non-selected parameter (within `phi_not_to_select_idx`).
+#' Incompatible combinations will trigger an error.
+#'
+#' @return
+#' A [`ggplot2`](https://ggplot2.tidyverse.org/) object showing the evolution
+#' of the specified component across SAEM iterations. The plot is also printed
+#' to the active graphical device. Returns `invisible(NULL)` if no data is
+#' available for the requested component.
+#'
+#'
+#' @examples
+#' \dontrun{
+#' # Example usage (assuming `res` is an object of class 'saemResults'):
+#' convergence_plot(res, component = "sigma2")
+#' convergence_plot(res, component = "coef_phi_sel", sel_components = "top:8")
 #' }
 #'
-#' @param res_saem An object of class \linkS4class{saemResults}.
-#' @param component A character string indicating which component to plot.
-#'   Must be one of \code{"sigma2"}, \code{"beta_s"}, \code{"beta_ns"},
-#'   \code{"gamma_s"}, \code{"gamma_ns"}.
-#' @param sel_components A character vector specifying which elements of
-#'   the selected matrix to track. Elements must be of the form \code{"(i,j)"}.
-#'   At most 16 components are shown. Special values:
-#'   \itemize{
-#'     \item if missing, the first 16 components are chosen,
-#'     \item if \code{"random"}, 16 components are chosen at random,
-#'     \item if \code{"top:n"}, the \code{n} most variable components are shown.
-#'   }
-#'   Ignored if \code{component = "sigma2"}.
-#'
-#' @return A \pkg{ggplot2} object showing the evolution of the
-#'   requested parameter(s) across SAEM iterations.
-#'
 #' @export
+#' @rdname convergence_plot
 setGeneric(
   "convergence_plot",
   function(res_saem, component, sel_components, ...) {
@@ -237,9 +268,18 @@ setMethod(
         ))
     } else {
       stop(
-        paste0(
-          "'component' must be one of: 'sigma2', 'beta_s', 'beta_ns', ",
-          "'gamma_s', 'gamma_ns'."
+        sprintf(
+          "'component' must be one of: %s.",
+          paste(
+            shQuote(c(
+              "sigma2",
+              "coef_phi_sel",
+              "coef_phi_non_sel",
+              "variance_phi_sel",
+              "variance_phi_non_sel"
+            )),
+            collapse = ", "
+          )
         )
       )
     }
