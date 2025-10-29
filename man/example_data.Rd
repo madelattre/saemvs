@@ -3,7 +3,6 @@
 \docType{data}
 \name{example_data}
 \alias{example_data}
-\alias{example_data_list}
 \title{Example datasets for saemvs}
 \format{
 \strong{\code{example_data_list}}
@@ -48,11 +47,3 @@ The simulated data correspond to 200 individuals, each measured over
 time, with 200 candidate covariates for variable selection.
 Only a subset of these covariates truly influences the model parameters.
 }
-\examples{
-data("example_data_list")
-str(example_data_list)
-
-data("example_data_df")
-str(example_data_df)
-}
-\keyword{datasets}
