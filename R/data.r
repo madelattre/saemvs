@@ -41,11 +41,27 @@
 #' containing 200 candidate covariates.}
 #' }
 #'
-#' @examples
-#' data("example_data_list")
-#' str(example_data_list)
+
+NULL
+
+
+#' Example dataset: df_long
 #'
-#' data("example_data_df")
-#' str(example_data_df)
-"example_data_list"
-"example_data_df"
+#' Long-format simulated data for saemvs.
+#' @docType data
+#' @name df_long
+NULL
+
+#' Example dataset: df_cov
+#'
+#' Covariate matrix for saemvs.
+#' @docType data
+#' @name df_cov
+NULL
+
+#' Example dataset: example_data_list
+#'
+#' List-format simulated data for saemvs.
+#' @docType data
+#' @name example_data_list
+NULL
