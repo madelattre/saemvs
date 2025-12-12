@@ -143,7 +143,11 @@ setClass(
 #'
 #' @return An object of class \code{saemvsData}.
 #' @export
-saemvsData <- function(y, t, x_candidates = NULL, x_forced = NULL) {
+saemvsData <- function(# nolint:   object_name_linter.
+    y,
+    t,
+    x_candidates = NULL,
+    x_forced = NULL) {
   methods::new("saemvsData",
     y_series     = y,
     t_series     = t,
@@ -156,105 +160,112 @@ saemvsData <- function(y, t, x_candidates = NULL, x_forced = NULL) {
 #'
 #' @description
 #' Creates a \code{saemvsData} object from a dataset containing longitudinal
-#' observations and a dataset containing covariates.
-#' The function splits the longitudinal data by individual to build
-#' \code{y_series} and \code{t_series}, and constructs \code{x_candidates}
-#' and \code{x_forced} matrices from the covariates dataset.
-#' @param long_df data.frame containing the longitudinal measurements.
-#' Must include columns for individual identifier, response, and time.
-#' @param covar_df data.frame containing covariates (one row per individual).
-#' @param id_col name of the column identifying individuals (must exist in
-#' both dataframes).
-#' @param y_col name of the response column in \code{long_df}.
-#' @param t_col name of the time column in \code{long_df}.
-#' @param x_candidates_cols vector of column names in \code{covar_df} to use as
-#' candidate covariates (optional). If NULL, all columns except \code{id_col}
-#' are used.
-#' @param x_forced_cols vector of column names in \code{covar_df} to use as
-#' forced covariates (optional).
+#' observations and covariates, using a formula-based interface.
+#'
+#' @param formula A two-sided formula specifying the structure of the data.
+#' The formula should have the form:
+#' \code{y ~ . + repeated(time) + group(id) [+ forced_vars] [- excluded_vars]}
+#'
+#' Where:
+#' \itemize{
+#'   \item \code{y} is the response variable.
+#'   \item \code{.} expands to all variables in \code{data} except \code{y},
+#'   \code{id}, \code{time}, and excluded variables. These become candidates
+#'   for variable selection.
+#'   \item \code{repeated(time)} specifies the time variable.
+#'   \item \code{group(id)} specifies the individual identifier variable.
+#'   \item Variables prefixed with \code{+} are forced into the model
+#'   (always included in the final model).
+#'   \item Variables prefixed with \code{-} are excluded from the model
+#'   (never considered).
+#' }
+#'
+#' @param data data.frame containing all variables mentioned in the formula
+#' (longitudinal measurements and covariates).
 #'
 #' @return An object of class \code{saemvsData}.
 #'
 #' @details
-#' The function ensures that the order of individuals in \code{y_series}
-#' matches the order of rows in \code{x_candidates} and \code{x_forced}.
+#' The function automatically splits the longitudinal data by individual to
+#'  build
+#' \code{y_series} and \code{t_series}, and constructs \code{x_candidates}
+#' and \code{x_forced} matrices from the covariate columns.
 #'
 #' @examples
-#' # Example longitudinal data
+#' # Example with full merged data
 #' long_df <- data.frame(
 #'   id = rep(1:2, each = 5),
-#'   t = rep(1:5, 2),
-#'   y = rnorm(10)
+#'   time = rep(1:5, 2),
+#'   y = rnorm(10),
+#'   x1 = rep(c(0.5, 1.5), each = 5),
+#'   x2 = rep(c(2, 3), each = 5),
+#'   x3 = rep(c(1, 2), each = 5)
 #' )
 #'
-#' # Example covariate data
-#' covar_df <- data.frame(
-#'   id = 1:2,
-#'   x1 = rnorm(2),
-#'   x2 = rnorm(2)
-#' )
-#'
-#' # Create saemvsData object
+#' # Use all variables as candidates except x3 (which is excluded)
 #' d <- saemvsDataFromDFs(
-#'   long_df, covar_df,
-#'   id_col = "id", y_col = "y", t_col = "t",
-#'   x_candidates_cols = c("x1"),
-#'   x_forced_cols = c("x2")
+#'   formula = y ~ . + repeated(time) + group(id) - x3,
+#'   data = long_df
+#' )
+#'
+#' # Force x1 to be included, exclude x3, use x2 as candidate
+#' d <- saemvsDataFromDFs(
+#'   formula = y ~ . + x1 + repeated(time) + group(id) - x3,
+#'   data = long_df
 #' )
 #'
 #' @export
-saemvsDataFromDFs <- function(long_df,
-                              covar_df,
-                              id_col,
-                              y_col,
-                              t_col,
-                              x_candidates_cols = NULL,
-                              x_forced_cols = NULL) {
+saemvsData_from_df <- function(formula, # nolint:  object_name_linter.
+                               data) {
+  variable_names <- get_variables_from_formula(formula)
+
   # Check that required columns exist
-  for (nm in c(id_col, y_col, t_col)) {
-    if (!nm %in% names(long_df)) {
-      stop(sprintf("Column '%s' is missing in long_df.", nm))
+  for (nm in unlist(variable_names)) {
+    if (!nm %in% names(data)) {
+      stop(sprintf("Column '%s' is missing in data.", nm))
     }
   }
-  if (!id_col %in% names(covar_df)) {
-    stop(sprintf("Column '%s' is missing in covar_df.", id_col))
-  }
+
+  # Extract and validate column names
+  id_col <- variable_names$id
+  y_col <- variable_names$y
+  t_col <- variable_names$t
+  x_forced_cols <- variable_names$forced
+  x_excluded_cols <- variable_names$excluded
+
+  # Define reserved columns (those not available as candidates)
+  reserved <- unique(c(id_col, t_col, y_col, x_forced_cols, x_excluded_cols))
+  reserved <- reserved[!is.na(reserved)]
+  x_candidates_cols <- setdiff(names(data), reserved)
 
   # Split longitudinal data by individual
+  long_df <- data[, c(y_col, id_col, t_col)]
   split_data <- split(long_df, long_df[[id_col]])
-  ids_long <- names(split_data)
 
   # Create y_series and t_series as lists
   y_series <- lapply(split_data, function(df) df[[y_col]])
   t_series <- lapply(split_data, function(df) df[[t_col]])
 
-  # Reorder covariate dataframe to match the order of individuals in long_df
-  covar_df_ordered <- covar_df[match(ids_long, covar_df[[id_col]]), ]
-  if (any(is.na(covar_df_ordered[[id_col]]))) {
-    stop("Some individuals in long_df are not present in covar_df.")
-  }
+  # Extract covariate dataframe with unique individuals
+  covar_df <- data[, setdiff(names(data), c(y_col, t_col))]
+  covar_df <- covar_df[!duplicated(covar_df[[id_col]]), ]
 
   # Determine forced covariates
   if (!is.null(x_forced_cols)) {
-    x_forced <- as.matrix(covar_df_ordered[, x_forced_cols, drop = FALSE])
-    if (!is.numeric(x_forced)) stop("x_forced must be numeric.")
+    x_forced <- as.matrix(covar_df[, x_forced_cols, drop = FALSE])
+    if (!is.numeric(x_forced)) {
+      stop("x_forced must be numeric.")
+    }
   } else {
     x_forced <- NULL
-    x_forced_cols <- character(0)
   }
 
   # Determine candidate covariates
-  if (is.null(x_candidates_cols)) {
-    # Use all columns except id and forced covariates
-    x_candidates_cols <- setdiff(
-      colnames(covar_df_ordered),
-      c(id_col, x_forced_cols)
-    )
-  }
   if (length(x_candidates_cols) > 0) {
-    x_candidates <-
-      as.matrix(covar_df_ordered[, x_candidates_cols, drop = FALSE])
-    if (!is.numeric(x_candidates)) stop("x_candidates must be numeric.")
+    x_candidates <- as.matrix(covar_df[, x_candidates_cols, drop = FALSE])
+    if (!is.numeric(x_candidates)) {
+      stop("x_candidates must be numeric.")
+    }
   } else {
     x_candidates <- NULL
   }
@@ -374,12 +385,14 @@ setClass(
 
 #' Internal constructor for saemvsProcessedData
 #' @keywords internal
-saemvsProcessedData <- function(x_phi_to_select = NULL,
-                                x_phi_not_to_select = NULL,
-                                tx_x_phi_to_select = NULL,
-                                kron_tx_x_phi_to_select = NULL,
-                                x_phi_not_to_select_list = NULL,
-                                ...) {
+saemvsProcessedData <- function(
+    # nolint:  object_name_linter.
+    x_phi_to_select = NULL,
+    x_phi_not_to_select = NULL,
+    tx_x_phi_to_select = NULL,
+    kron_tx_x_phi_to_select = NULL,
+    x_phi_not_to_select_list = NULL,
+    ...) {
   methods::new("saemvsProcessedData",
     x_phi_to_select          = x_phi_to_select,
     x_phi_not_to_select      = x_phi_not_to_select,
@@ -414,6 +427,13 @@ setClass(
     phi_fixed_idx = "numericORNULL",
     x_forced_support = "matrixORNULL"
   ),
+  # > f <- function(t, a, b, c) exp(t*a+b)*c
+  # > names(formals(f))
+  # [1] "t" "a" "b" "c"
+
+  # forced_support = list(c = c("toto", "tutu", "titi"))
+
+
   prototype = list(
     model_func = function(phi, t) numeric(0),
     phi_dim = as.integer(1),
@@ -509,6 +529,7 @@ setClass(
 #' @return An object of class \code{saemvsModel}.
 #' @export
 saemvsModel <- function(
+    # nolint:  object_name_linter.
     g, phi_dim, phi_to_select_idx = NULL, phi_fixed_idx = NULL,
     x_forced_support = matrix(numeric(0), nrow = 0, ncol = 0)) {
   methods::new("saemvsModel",
@@ -644,9 +665,11 @@ setClass(
 #' }
 #'
 #' @export
-saemvsHyperSlab <- function(slab_parameter = 12000,
-                            cov_re_prior_scale,
-                            cov_re_prior_df = 1) {
+saemvsHyperSlab <- function(
+    # nolint:  object_name_linter.
+    slab_parameter = 12000,
+    cov_re_prior_scale,
+    cov_re_prior_df = 1) {
   methods::new("saemvsHyperSlab",
     slab_parameter = slab_parameter,
     cov_re_prior_scale = cov_re_prior_scale,
@@ -704,8 +727,10 @@ setClass(
 #' @keywords internal
 #' @return An object of class \code{saemvsHyperSpikeAndSlab}
 #' @name saemvsHyperSpikeAndSlab
-saemvsHyperSpikeAndSlab <- function(spike_parameter,
-                                    hyper_slab) {
+saemvsHyperSpikeAndSlab <- function(
+    # nolint:  object_name_linter.
+    spike_parameter,
+    hyper_slab) {
   methods::new("saemvsHyperSpikeAndSlab",
     spike_parameter = spike_parameter,
     slab_parameter = hyper_slab@slab_parameter,
@@ -871,12 +896,14 @@ setClass(
 #' @param default Logical. If TRUE, ignore all slots except intercept.
 #' @return An object of class \code{saemvsInit}.
 #' @export
-saemvsInit <- function(intercept,
-                       beta_forced = NULL,
-                       beta_candidates = NULL,
-                       cov_re = matrix(numeric(0), nrow = 0, ncol = 0),
-                       sigma2 = 1,
-                       default = FALSE) {
+saemvsInit <- function(
+    # nolint:  object_name_linter.
+    intercept,
+    beta_forced = NULL,
+    beta_candidates = NULL,
+    cov_re = matrix(numeric(0), nrow = 0, ncol = 0),
+    sigma2 = 1,
+    default = FALSE) {
   methods::new("saemvsInit",
     intercept = intercept,
     beta_forced = if (default) NULL else beta_forced,
@@ -945,17 +972,19 @@ setClass(
 #' @param inclusion_prob Numeric vector or NULL. Inclusion probabilities for
 #'  phi components.
 #' @return An object of class \code{saemvsProcessedInit}.
-saemvsProcessedInit <- function(beta_to_select = NULL,
-                                beta_not_to_select = NULL,
-                                gamma_to_select = NULL,
-                                gamma_not_to_select = NULL,
-                                sigma2 = 1,
-                                inclusion_prob = numeric(0),
-                                intercept,
-                                beta_forced,
-                                beta_candidates,
-                                cov_re,
-                                default) {
+saemvsProcessedInit <- function(
+    # nolint:  object_name_linter.
+    beta_to_select = NULL,
+    beta_not_to_select = NULL,
+    gamma_to_select = NULL,
+    gamma_not_to_select = NULL,
+    sigma2 = 1,
+    inclusion_prob = numeric(0),
+    intercept,
+    beta_forced,
+    beta_candidates,
+    cov_re,
+    default) {
   methods::new("saemvsProcessedInit",
     beta_to_select = beta_to_select,
     beta_not_to_select = beta_not_to_select,
@@ -1137,16 +1166,18 @@ setClass(
 #'
 #' @return An object of class \code{saemvsTuning}.
 #' @export
-saemvsTuning <- function(niter = 500,
-                         nburnin = 350,
-                         niter_mh = 5,
-                         kernel_mh = "random_walk",
-                         covariance_decay = 0.98,
-                         mh_proposal_scale = 1.0,
-                         spike_values_grid,
-                         n_is_samples = 10000,
-                         seed = 220916,
-                         nb_workers = 4) {
+saemvsTuning <- function(
+    # nolint:  object_name_linter.
+    niter = 500,
+    nburnin = 350,
+    niter_mh = 5,
+    kernel_mh = "random_walk",
+    covariance_decay = 0.98,
+    mh_proposal_scale = 1.0,
+    spike_values_grid,
+    n_is_samples = 10000,
+    seed = 220916,
+    nb_workers = 4) {
   step <- c(
     rep(1, nburnin - 1),
     1 / ((1:(niter - nburnin + 1))^(2 / 3))
