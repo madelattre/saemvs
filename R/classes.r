@@ -187,8 +187,7 @@ saemvsData <- function(# nolint:   object_name_linter.
 #'
 #' @details
 #' The function automatically splits the longitudinal data by individual to
-#'  build
-#' \code{y_series} and \code{t_series}, and constructs \code{x_candidates}
+#' build \code{y_series} and \code{t_series}, and constructs \code{x_candidates}
 #' and \code{x_forced} matrices from the covariate columns.
 #'
 #' @examples
@@ -203,13 +202,13 @@ saemvsData <- function(# nolint:   object_name_linter.
 #' )
 #'
 #' # Use all variables as candidates except x3 (which is excluded)
-#' d <- saemvsDataFromDFs(
+#' d <- saemvsData_from_df(
 #'   formula = y ~ . + repeated(time) + group(id) - x3,
 #'   data = long_df
 #' )
 #'
 #' # Force x1 to be included, exclude x3, use x2 as candidate
-#' d <- saemvsDataFromDFs(
+#' d <- saemvsData_from_df(
 #'   formula = y ~ . + x1 + repeated(time) + group(id) - x3,
 #'   data = long_df
 #' )
@@ -262,6 +261,73 @@ saemvsData_from_df <- function(formula, # nolint:  object_name_linter.
 
   # Determine candidate covariates
   if (length(x_candidates_cols) > 0) {
+    x_candidates <- as.matrix(covar_df[, x_candidates_cols, drop = FALSE])
+    if (!is.numeric(x_candidates)) {
+      stop("x_candidates must be numeric.")
+    }
+  } else {
+    x_candidates <- NULL
+  }
+
+  saemvsData(
+    y = y_series,
+    t = t_series,
+    x_candidates = x_candidates,
+    x_forced = x_forced
+  )
+}
+
+#' @keywords internal
+#' @noRd
+saemvsDataFromDFs <- function(long_df,
+                              covar_df,
+                              id_col,
+                              y_col,
+                              t_col,
+                              x_candidates_cols = NULL,
+                              x_forced_cols = NULL) {
+  # Validation
+  for (col in c(id_col, y_col, t_col)) {
+    if (!col %in% names(long_df)) {
+      stop(sprintf("Column '%s' is missing in long_df.", col))
+    }
+  }
+
+  for (col in unique(c(id_col, x_candidates_cols, x_forced_cols))) {
+    if (!is.na(col) && !col %in% names(covar_df)) {
+      stop(sprintf("Column '%s' is missing in covar_df.", col))
+    }
+  }
+
+  # Check that all individuals in long_df are in covar_df
+  individuals_long <- unique(long_df[[id_col]])
+  individuals_covar <- unique(covar_df[[id_col]])
+  if (!all(individuals_long %in% individuals_covar)) {
+    stop("Some individuals in long_df are not present in covar_df.")
+  }
+
+  # Split longitudinal data by individual
+  split_data <- split(long_df, long_df[[id_col]])
+
+  # Create y_series and t_series as lists
+  y_series <- lapply(split_data, function(df) df[[y_col]])
+  t_series <- lapply(split_data, function(df) df[[t_col]])
+
+  # Extract covariate dataframe with unique individuals
+  covar_df <- covar_df[!duplicated(covar_df[[id_col]]), ]
+
+  # Determine forced covariates
+  if (!is.null(x_forced_cols) && length(x_forced_cols) > 0) {
+    x_forced <- as.matrix(covar_df[, x_forced_cols, drop = FALSE])
+    if (!is.numeric(x_forced)) {
+      stop("x_forced must be numeric.")
+    }
+  } else {
+    x_forced <- NULL
+  }
+
+  # Determine candidate covariates
+  if (!is.null(x_candidates_cols) && length(x_candidates_cols) > 0) {
     x_candidates <- as.matrix(covar_df[, x_candidates_cols, drop = FALSE])
     if (!is.numeric(x_candidates)) {
       stop("x_candidates must be numeric.")
