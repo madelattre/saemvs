@@ -105,7 +105,7 @@ setMethod(
 #' the MAP setting to the MLE setting, updating the support of forced and
 #' selected covariates accordingly.
 #'
-#' @param model An object of class \code{saemvsModel}.
+#' @param model An object of class \code{saemvsProcessedModel}.
 #' @param cand_support A binary matrix indicating candidate covariate support
 #' (rows = covariates, columns = parameters).
 #'
@@ -121,7 +121,7 @@ setGeneric(
 
 setMethod(
   "map_to_mle_model",
-  signature(model = "saemvsModel", cand_support = "matrix"),
+  signature(model = "saemvsProcessedModel", cand_support = "matrix"),
   function(model, cand_support) {
     if (!is.matrix(cand_support)) {
       stop("'cand_support' must be a matrix.")
@@ -153,7 +153,6 @@ setMethod(
     phi_unselect_idx <- setdiff(all_phi_idx, model@phi_to_select_idx)
     perm <- c(model@phi_to_select_idx, phi_unselect_idx)
     inv_perm <- match(seq_along(perm), perm)
-
     new_support <- merge_support(
       model@x_forced_support,
       selected_support_matrix,
@@ -162,8 +161,8 @@ setMethod(
       inv_perm
     )
 
-    saemvsModel(
-      g = model@model_func,
+    methods::new("saemvsProcessedModel",
+      model_func = model@model_func,
       phi_dim = model@phi_dim,
       phi_fixed_idx = model@phi_fixed_idx,
       x_forced_support = new_support
@@ -196,7 +195,7 @@ setGeneric(
 setMethod(
   "map_to_mle_init",
   signature(
-    init = "saemvsProcessedInit", model = "saemvsModel",
+    init = "saemvsProcessedInit", model = "saemvsProcessedModel",
     cand_support = "matrix"
   ),
   function(init, model, cand_support) {

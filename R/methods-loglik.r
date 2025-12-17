@@ -6,7 +6,8 @@
 #'
 #' @param data A \code{saemvsData} object containing the response and design
 #' matrices.
-#' @param model A \code{saemvsModel} object defining the model structure.
+#' @param model A \code{saemvsProcessedModel} object defining the model
+#'  structure.
 #' @param tuning_algo A \code{saemvsTuning} object containing tuning settings
 #' (e.g., number of Monte Carlo samples).
 #' @param param A list with parameter estimates. Must contain:
@@ -46,7 +47,7 @@ setMethod(
   "loglik",
   signature(
     data = "saemvsData",
-    model = "saemvsModel",
+    model = "saemvsProcessedModel",
     tuning_algo = "saemvsTuning",
     param = "list",
     pen = "character",
@@ -105,6 +106,6 @@ setMethod(
       -2 * loglike
     )
 
-    return(biclike)
+    return(biclike) # nolint: return-linter
   }
 )

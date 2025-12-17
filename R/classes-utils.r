@@ -1,3 +1,42 @@
+#' @title Extract variables and special declarations from a model formula
+#'
+#' @description
+#' Internal utility that parses a model formula used in \code{saemvsData}
+#' construction. The formula is expected to follow an extended syntax of the
+#' form:
+#' \preformatted{
+#'   y ~ . + repeated(time) + group(id)
+#' }
+#'
+#' In addition to the standard response and covariates, this function extracts:
+#' \itemize{
+#'   \item the response variable,
+#'   \item the grouping (subject) variable via \code{group()},
+#'   \item the repeated-measure (time) variable via \code{repeated()},
+#'   \item covariates explicitly included or excluded in the formula.
+#' }
+#'
+#' The dot (\code{.}) is detected but not expanded at this stage, as its
+#' resolution requires access to the data. Expansion is deferred to the data
+#' preprocessing stage.
+#'
+#' @param f A model formula specifying the response, covariates, and special
+#'   terms \code{group()} and \code{repeated()}.
+#'
+#' @return A named list with components:
+#' \describe{
+#'   \item{y}{Character scalar giving the response variable name.}
+#'   \item{id}{Character scalar giving the subject/group identifier, or
+#'     \code{NULL} if not specified.}
+#'   \item{t}{Character scalar giving the time variable, or \code{NULL} if not
+#'     specified.}
+#'   \item{forced}{Character vector of covariates explicitly included in the
+#'     formula, or \code{NULL}.}
+#'   \item{excluded}{Character vector of covariates explicitly excluded via
+#'     subtraction, or \code{NULL}.}
+#' }
+#'
+#' @keywords internal
 get_variables_from_formula <- function(f) {
   # Parse formula of form: y ~ . + repeated(time) + group(id)
   # [+ forced_vars] [- excluded_vars]
@@ -125,4 +164,113 @@ get_variables_from_formula <- function(f) {
     forced = forced,
     excluded = excluded
   ))
+}
+
+#' @title Standardize a user-defined model function to \code{function(phi, t)}
+#'
+#' @description
+#' Internal helper that converts a user-supplied model function into a
+#' standardized form with signature \code{function(phi, t)}.
+#'
+#' The function body is rewritten so that:
+#' \itemize{
+#'   \item individual model parameters are replaced by indexed elements of
+#'     \code{phi},
+#'   \item the user-defined time variable is renamed to \code{t}.
+#' }
+#'
+#' This transformation allows the internal SAEMVS algorithms to operate on a
+#' uniform model representation, independently of how the user specified the
+#' model.
+#'
+#' @param g_user A user-defined model function, either of the form
+#'   \code{function(phi, t)} or \code{function(t, p1, p2, ...)}.
+#'
+#' @return A function with signature \code{function(phi, t)} equivalent to the
+#'   original model.
+#'
+#' @keywords internal
+make_phi_fn <- function(g_user) {
+  fmls <- names(formals(g_user))
+  if ("phi" %in% fmls) return(g_user)
+
+  time_name <- fmls[1]
+  param_names <- if (length(fmls) > 1) fmls[-1] else character(0)
+
+  body_txt <- paste(deparse(body(g_user)), collapse = "\n")
+
+  for (i in seq_along(param_names)) {
+    pattern <- paste0("\\b", param_names[i], "\\b")
+    replacement <- paste0("phi[", i, "]")
+    body_txt <- gsub(pattern, replacement, body_txt)
+  }
+  body_txt <- gsub(paste0("\\b", time_name, "\\b"), "t", body_txt)
+
+  new_txt <- paste0("function(phi, t) ", body_txt)
+  eval(parse(text = new_txt), envir = environment(g_user))
+}
+
+#' @title Validate forced covariate declarations for model parameters
+#'
+#' @description
+#' Internal validation helper for the \code{x_forced_support} argument of
+#' \code{saemvsModel}. This function checks that forced covariate declarations
+#' are provided as a named list mapping model parameter names to covariate
+#'  names.
+#'
+#' The function ensures that:
+#' \itemize{
+#'   \item the object is either \code{NULL} or a named list,
+#'   \item all names correspond to valid model parameters,
+#'   \item each list element is a character vector of covariate names.
+#' }
+#'
+#' An empty list is allowed and indicates that no covariates are forced in the
+#' model.
+#'
+#' @param x A named list or \code{NULL}. Each element corresponds to a model
+#'   parameter and contains the names of covariates that must be forced for that
+#'   parameter.
+#' @param phi_names Character vector giving the valid model parameter names.
+#'
+#' @return The validated \code{x_forced_support} object (possibly an empty
+#'  list).
+#'
+#' @keywords internal
+validate_x_forced_support <- function(x, phi_names) {
+
+  if (is.null(x)) {
+    return(list())
+  }
+
+  if (!is.list(x)) {
+    stop("'x_forced_support' must be NULL or a named list.")
+  }
+
+  if (length(x) == 0) {
+    return(x)
+  }
+
+  if (is.null(names(x)) || any(names(x) == "")) {
+    stop("'x_forced_support' must be a named list of model parameters.")
+  }
+
+  bad_phi <- setdiff(names(x), phi_names)
+  if (length(bad_phi) > 0) {
+    stop(
+      "Unknown parameter(s) in 'x_forced_support': ",
+      paste(bad_phi, collapse = ", ")
+    )
+  }
+
+  for (nm in names(x)) {
+    if (!is.character(x[[nm]])) {
+      stop(
+        "Element '", nm,
+        "' of 'x_forced_support' must be a character vector of covariate names."
+      )
+    }
+  }
+
+  x
 }

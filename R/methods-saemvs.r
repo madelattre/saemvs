@@ -104,11 +104,11 @@ setMethod(
       )
     }
 
-    if (is.null(model@phi_to_select_idx) ||
-      (length(model@phi_to_select_idx) == 0)) {
+    if (is.null(model@phi_to_select) ||
+          (length(model@phi_to_select) == 0)) {
       stop(
         paste0(
-          "'phi_to_select_idx' must contain at least one parameter index",
+          "'phi_to_select' must contain at least one parameter",
           " for variable selection."
         )
       )
@@ -116,10 +116,11 @@ setMethod(
 
     spike_values_grid <- tuning_algo@spike_values_grid
 
-    check_data(data, model)
-    data_processed <- prepare_data(data, model)
-    check_init(init, data_processed, model)
-    init_alg <- prepare_init(init, model, data_processed)
+    check_data_and_model(data, model)
+    model_processed <- prepare_model(data, model)
+    data_processed <- prepare_data(data, model_processed)
+    check_init(init, data_processed, model_processed)
+    init_alg <- prepare_init(init, model_processed, data_processed)
 
     message("SAEMVS: step 1/2")
     progressr::with_progress({
@@ -128,10 +129,10 @@ setMethod(
       map_runs <- safe_future_map(
         spike_values_grid,
         function(nu0) {
-          compile_model(model@model_func)
+          compile_model(model_processed@model_func)
           fh <- saemvsHyperSpikeAndSlab(nu0, hyperparam)
           res <- saemvs_one_map_run(
-            data_processed, model, init_alg, tuning_algo, fh
+            data_processed, model_processed, init_alg, tuning_algo, fh
           )
           p()
           res
@@ -162,9 +163,9 @@ setMethod(
       criterion_results <- safe_future_map(
         unique_support_indices,
         function(k) {
-          compile_model(model@model_func)
+          compile_model(model_processed@model_func)
           saemvs_one_ic_run(
-            k, support, data_processed, model, init_alg,
+            k, support, data_processed, model_processed, init_alg,
             tuning_algo, pen
           )
         },
@@ -195,13 +196,13 @@ setMethod(
       unique_support = support[unique_support_indices],
       support_mapping = support_index_mapping,
       spike_values_grid = tuning_algo@spike_values_grid,
-      phi_fixed_idx = model@phi_fixed_idx,
-      phi_to_select_idx = model@phi_to_select_idx,
+      phi_fixed_idx = model_processed@phi_fixed_idx,
+      phi_to_select_idx = model_processed@phi_to_select_idx,
       forced_variables_idx = forced_variables_idx,
       selected_variables_idx = selected_variables_idx
     )
 
-    return(res)
+    return(res) # nolint : return_linter
   }
 )
 
@@ -264,7 +265,8 @@ safe_future_map <- function(.x, .f, ..., workers = 1, seed = NULL) {
 #'
 #' @param data An object of class \link[=saemvsData-class]{saemvsData}
 #'   containing the dataset (observations and design matrices).
-#' @param model An object of class \link[=saemvsModel-class]{saemvsModel}
+#' @param model An object of class
+#' \link[=saemvsProcessedModel-class]{saemvsProcessedModel}
 #'   specifying the model structure and indices of parameters subject
 #'   to selection (\code{phi_to_select_idx}).
 #' @param init An object of class \link[=saemvsInit-class]{saemvsInit}
@@ -310,7 +312,7 @@ setMethod(
   "saemvs_one_map_run",
   signature(
     data = "saemvsProcessedData",
-    model = "saemvsModel",
+    model = "saemvsProcessedModel",
     init = "saemvsProcessedInit",
     tuning_algo = "saemvsTuning",
     hyperparam = "saemvsHyperSpikeAndSlab"
@@ -354,7 +356,7 @@ setMethod(
       support = support,
       beta = beta_map
     )
-    return(res)
+    return(res) # nolint : return-linter
   }
 )
 
@@ -372,7 +374,8 @@ setMethod(
 #'   candidate support obtained from MAP estimation (\code{saemvs_one_map_run}).
 #' @param data An object of class \link[=saemvsData-class]{saemvsData},
 #' the dataset.
-#' @param model An object of class \link[=saemvsModel-class]{saemvsModel},
+#' @param model An object of class
+#'  \link[=saemvsProcessedModel-class]{saemvsProcessedModel},
 #' specifying model structure and indices of parameters subject to selection.
 #' @param init An object of class \link[=saemvsInit-class]{saemvsInit},
 #' providing initialization for SAEM.
@@ -419,7 +422,7 @@ setMethod(
     k = "integer",
     support = "list",
     data = "saemvsProcessedData",
-    model = "saemvsModel",
+    model = "saemvsProcessedModel",
     init = "saemvsProcessedInit",
     tuning_algo = "saemvsTuning",
     pen = "character"
@@ -445,8 +448,8 @@ setMethod(
       )
       forced_rows <- integer(0)
       active_candidate_idx <- which(rowSums(cand_support[-1, ,
-        drop = FALSE
-      ]) > 0)
+                                              drop = FALSE
+                                            ]) > 0)
       selected_rows <- active_candidate_idx
     } else {
       cand_support <- matrix(as.numeric(support[[k]]),
@@ -456,8 +459,8 @@ setMethod(
       cand_support <- cand_support[-idx_forced_phi_sel, , drop = FALSE]
       forced_rows <- idx_forced_phi_sel
       active_candidate_idx <- which(rowSums(cand_support[-1, ,
-        drop = FALSE
-      ]) > 0)
+                                              drop = FALSE
+                                            ]) > 0)
       selected_rows <- active_candidate_idx
     }
     new_data <- map_to_mle_data(data, cand_support)
@@ -486,7 +489,7 @@ setMethod(
     )
 
 
-    return(list(
+    return(list( # nolint : return_linter
       ll = ll, mle_param = mle_param,
       forced_variables_idx = forced_rows,
       selected_variables_idx = selected_rows
@@ -559,13 +562,14 @@ setMethod(
       hyperparam
     )
 
-    check_data(data, model)
-    data_processed <- prepare_data(data, model)
-    check_init(init, data_processed, model)
-    init_alg <- prepare_init(init, model, data_processed)
+    check_data_and_model(data, model)
+    model_processed <- prepare_model(data, model)
+    data_processed <- prepare_data(data, model_processed)
+    check_init(init, data_processed, model_processed)
+    init_alg <- prepare_init(init, model_processed, data_processed)
 
     saem_state <- run_saem(
-      data_processed, model, init_alg, tuning_algo, full_hyperparam
+      data_processed, model_processed, init_alg, tuning_algo, full_hyperparam
     )
 
     res <- methods::new(
@@ -582,6 +586,6 @@ setMethod(
       )
     )
 
-    return(res)
+    return(res) # nolint : return_linter
   }
 )

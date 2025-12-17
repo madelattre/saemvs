@@ -19,54 +19,86 @@
 #'
 #' @keywords internal
 setGeneric(
-  "check_data",
+  "check_data_and_model",
   function(data, model) {
-    standardGeneric("check_data")
+    standardGeneric("check_data_and_model")
   }
 )
 
 setMethod(
-  "check_data",
+  "check_data_and_model",
   signature(data = "saemvsData", model = "saemvsModel"),
   function(data, model) {
+
     n_ind <- length(data@y_series)
 
-    if (length(model@phi_to_select_idx) > 0 && is.null(data@x_candidates)) {
+    ## ---- Parameter selection ----
+    if (length(model@phi_to_select) > 0 && is.null(data@x_candidates)) {
       stop(
         sprintf(
           paste0(
-            "Parameter selection requested (%d phi_to_select_idx), ",
+            "Parameter selection requested (%d phi_to_select), ",
             "but 'x_candidates' is missing."
           ),
-          length(model@phi_to_select_idx)
+          length(model@phi_to_select)
         )
       )
     }
 
-    if (!is.null(data@x_candidates) && nrow(data@x_candidates) != n_ind) {
+    if (!is.null(data@x_candidates) &&
+          nrow(data@x_candidates) != n_ind) {
       stop(sprintf(
         "'x_candidates' must have %d rows (matching y_series); got %d.",
         n_ind, nrow(data@x_candidates)
       ))
     }
 
-    if (!is.null(data@x_forced) && !is.null(model@x_forced_support)) {
-      if (!is.matrix(data@x_forced)) stop("'x_forced' must be a matrix.")
-      if (!is.numeric(data@x_forced)) stop("'x_forced' must be numeric.")
-      if (ncol(data@x_forced) != nrow(model@x_forced_support)) {
+    ## ---- Forced covariates (logical consistency only) ----
+    xfs <- model@x_forced_support
+
+    if (!is.null(xfs) && length(xfs) > 0) {
+
+      ## data must declare forced covariates
+      if (is.null(data@x_forced)) {
         stop(
-          sprintf(
-            paste0(
-              "Number of columns in 'x_forced' (%d) must equal number of rows ",
-              "in 'x_forced_support' (%d)."
-            ),
-            ncol(data@x_forced), nrow(model@x_forced_support)
+          "Some covariates were declared for forced inclusion in the model ",
+          "but no forced covariates were declared in the data."
+        )
+      }
+
+      if (!is.matrix(data@x_forced)) {
+        stop("'x_forced' must be a matrix.")
+      }
+
+      if (!is.numeric(data@x_forced)) {
+        stop("'x_forced' must be numeric.")
+      }
+
+      if (is.null(colnames(data@x_forced))) {
+        stop("'x_forced' must have column names corresponding to covariates.")
+      }
+
+      ## ---- Check covariate names ----
+      covs_in_model <- unique(unlist(xfs, use.names = FALSE))
+      covs_in_data <- colnames(data@x_forced)
+
+      missing_covs <- setdiff(covs_in_model, covs_in_data)
+
+      if (length(missing_covs) > 0) {
+        stop(
+          paste0(
+            "Some covariates were declared for forced inclusion in the model ",
+            "but were not declared as forced covariates in the data: ",
+            paste(missing_covs, collapse = ", ")
           )
         )
       }
     }
+
+    invisible(TRUE)
   }
 )
+
 
 #' Check Initial Values Consistency
 #'
@@ -75,7 +107,7 @@ setMethod(
 #'
 #' @param init An object of class \code{saemvsInit}.
 #' @param data An object of class \code{saemvsData}.
-#' @param model An object of class \code{saemvsModel}.
+#' @param model An object of class \code{saemvsProcessedModel}.
 #'
 #' @details
 #' Performs the following checks:
@@ -97,7 +129,9 @@ setGeneric(
 
 setMethod(
   "check_init",
-  signature(init = "saemvsInit", data = "saemvsData", model = "saemvsModel"),
+  signature(init = "saemvsInit",
+            data = "saemvsData",
+            model = "saemvsProcessedModel"),
   function(init, data, model) {
     n_phi <- length(init@intercept)
     if (n_phi != model@phi_dim) {
@@ -109,7 +143,7 @@ setMethod(
 
     if (!is.null(init@beta_candidates)) {
       if (!is.matrix(init@beta_candidates) ||
-        ncol(init@beta_candidates) != n_phi) {
+            ncol(init@beta_candidates) != n_phi) {
         stop(
           sprintf(
             paste0(
@@ -147,7 +181,7 @@ setMethod(
     }
 
     if (!is.matrix(init@cov_re) || nrow(init@cov_re) != n_phi ||
-      ncol(init@cov_re) != n_phi) {
+          ncol(init@cov_re) != n_phi) {
       stop(sprintf(
         "'cov_re' must be a %dx%d numeric matrix; got %dx%d.",
         n_phi, n_phi, nrow(init@cov_re), ncol(init@cov_re)
@@ -205,7 +239,7 @@ setMethod(
     }
 
     if (!is.numeric(init@sigma2) || length(init@sigma2) != 1 ||
-      init@sigma2 <= 0) {
+          init@sigma2 <= 0) {
       stop("'sigma2' must be a single strictly positive number.")
     }
   }
@@ -217,7 +251,7 @@ setMethod(
 #' prior are consistent with the SAEMVS model and tuning parameters.
 #'
 #' @param hyper An object of class \code{saemvsHyperSpikeAndSlab}.
-#' @param model An object of class \code{saemvsModel}.
+#' @param model An object of class \code{saemvsProcessedModel}.
 #' @param tuning An object of class \code{saemvsTuning}.
 #'
 #' @details
@@ -242,7 +276,7 @@ setGeneric(
 setMethod(
   "check_hyper",
   signature(
-    hyper = "saemvsHyperSpikeAndSlab", model = "saemvsModel",
+    hyper = "saemvsHyperSpikeAndSlab", model = "saemvsProcessedModel",
     tuning = "saemvsTuning"
   ),
   function(hyper, model, tuning) {
@@ -250,7 +284,7 @@ setMethod(
 
     if (nb_selected > 0) {
       if (!is.null(hyper@inclusion_prob_prior_a) &&
-        length(hyper@inclusion_prob_prior_a) != nb_selected) {
+            length(hyper@inclusion_prob_prior_a) != nb_selected) {
         stop(
           sprintf(
             paste0(
@@ -263,7 +297,7 @@ setMethod(
         )
       }
       if (!is.null(hyper@inclusion_prob_prior_b) &&
-        length(hyper@inclusion_prob_prior_b) != nb_selected) {
+            length(hyper@inclusion_prob_prior_b) != nb_selected) {
         stop(
           sprintf(
             paste0(
@@ -277,7 +311,7 @@ setMethod(
       }
       if (!is.null(hyper@cov_re_prior_scale)) {
         if (!is.matrix(hyper@cov_re_prior_scale) ||
-          !is.numeric(hyper@cov_re_prior_scale)) {
+              !is.numeric(hyper@cov_re_prior_scale)) {
           stop("'cov_re_prior_scale' must be a numeric matrix.")
         }
         if (any(dim(hyper@cov_re_prior_scale) != nb_selected)) {
@@ -291,7 +325,7 @@ setMethod(
     }
 
     if (!is.null(tuning@spike_values_grid) &&
-      length(tuning@spike_values_grid) > 0) {
+          length(tuning@spike_values_grid) > 0) {
       if (!all(tuning@spike_values_grid < hyper@slab_parameter)) {
         stop(
           paste0(

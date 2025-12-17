@@ -16,6 +16,11 @@ setClassUnion("numericORNULL", c("numeric", "NULL"))
 #' @keywords internal
 setClassUnion("listORNULL", c("list", "NULL"))
 
+#' @title Class Union: character or NULL
+#' @description Internal union class used in slots that may contain
+#' a character vector or be \code{NULL}.
+#' @keywords internal
+setClassUnion("characterORNULL", c("character", "NULL"))
 
 #' @title saemvsData class
 #' @description A class to store user-provided data for the SAEMVS algorithm.
@@ -451,8 +456,7 @@ setClass(
 
 #' Internal constructor for saemvsProcessedData
 #' @keywords internal
-saemvsProcessedData <- function(
-    # nolint:  object_name_linter.
+saemvsProcessedData <- function(# nolint:  object_name_linter.
     x_phi_to_select = NULL,
     x_phi_not_to_select = NULL,
     tx_x_phi_to_select = NULL,
@@ -469,23 +473,33 @@ saemvsProcessedData <- function(
   )
 }
 
-#' @title saemvsModel class
-#' @description Represents a model for SAEMVS, including the model function and
-#' the indices of fixed or subject to selection parameters in phi.
+#' @title Internal processed SAEMVS model
 #'
-#' @slot model_func A function of form `function(phi, t)` returning predicted
-#' values.
-#' @slot phi_dim Integer: total number of phi parameters.
-#' @slot phi_to_select_idx Integer vector or NULL: indices of phi parameters
-#'   on which variable selection will be performed.
-#' @slot phi_fixed_idx Integer vector or NULL: indices of phi parameters
-#'   that are fixed (i.e. without random variability).
-#' @slot x_forced_support Numeric matrix or NULL: design matrix for covariates
-#'   that are forced in the model. Must have phi_dim columns.
+#' @description
+#' Internal representation of a SAEMVS model used by the estimation and
+#' variable selection algorithms.
 #'
-#' @exportClass saemvsModel
+#' This class is not intended to be created or manipulated directly by users.
+#' It stores a fully processed version of a \code{saemvsModel}, where all
+#' parameters are indexed numerically and forced covariate information is
+#' encoded as a binary design matrix.
+#'
+#' @slot model_func A function of the form \code{function(phi, t)} returning
+#'   predicted values for given parameter vector \code{phi} and time \code{t}.
+#' @slot phi_dim Integer. Total number of model parameters (\code{phi}).
+#' @slot phi_to_select_idx Integer vector or \code{NULL}. Indices of parameters
+#'   on which covariate selection is performed.
+#' @slot phi_fixed_idx Integer vector or \code{NULL}. Indices of parameters that
+#'   are fixed (i.e. without random variability).
+#' @slot x_forced_support Numeric matrix or \code{NULL}. Binary support matrix
+#'   encoding forced covariate effects. Columns correspond to model parameters
+#'   (length \code{phi_dim}); rows correspond to covariates. A value of 1
+#'   indicates that the covariate is forced for the corresponding parameter.
+#'
+#' @keywords internal
+
 setClass(
-  "saemvsModel",
+  "saemvsProcessedModel",
   slots = list(
     model_func = "function",
     phi_dim = "numeric",
@@ -493,13 +507,6 @@ setClass(
     phi_fixed_idx = "numericORNULL",
     x_forced_support = "matrixORNULL"
   ),
-  # > f <- function(t, a, b, c) exp(t*a+b)*c
-  # > names(formals(f))
-  # [1] "t" "a" "b" "c"
-
-  # forced_support = list(c = c("toto", "tutu", "titi"))
-
-
   prototype = list(
     model_func = function(phi, t) numeric(0),
     phi_dim = as.integer(1),
@@ -529,50 +536,174 @@ setClass(
     # Check indices
     if (!(
       (is.null(object@phi_to_select_idx) ||
-        all(object@phi_to_select_idx >= 1 &
-          object@phi_to_select_idx <= object@phi_dim))
+         all(object@phi_to_select_idx >= 1 &
+               object@phi_to_select_idx <= object@phi_dim))
     )
     ) {
       return("
       'phi_to_select_idx' must contain integers between 1 and 'phi_dim'.
       ")
-    }
 
-
-
-
-    if (!(
-      (is.null(object@phi_fixed_idx)) ||
-        all(object@phi_fixed_idx >= 1 &
-          object@phi_fixed_idx <= object@phi_dim)
-    )
-    ) {
-      return("
+      if (!(
+        (is.null(object@phi_fixed_idx)) ||
+          all(object@phi_fixed_idx >= 1 &
+                object@phi_fixed_idx <= object@phi_dim)
+      )
+      ) {
+        return("
       'phi_not_to_select_idx' must contain integers between 1 and 'phi_dim'.
       ")
+      }
+
+      # No overlap
+      if (
+        length(intersect(object@phi_to_select_idx, object@phi_fixed_idx)) > 0
+      ) {
+        return("'phi_to_select_idx' and 'phi_fixed_idx' must not overlap.")
+      }
+
+      # x_forced_support
+      supp <- object@x_forced_support
+      if (!is_empty_support(supp)) {
+        if (!is.matrix(supp)) {
+          return("'x_forced_support' must be a matrix or NULL.")
+        }
+        if (ncol(supp) != object@phi_dim) {
+          return(paste0(
+            "'x_forced_support' must have ", object@phi_dim,
+            " rows (one per phi)."
+          ))
+        }
+        if (!all(supp %in% c(0, 1))) {
+          return("'x_forced_support' must only contain 0 or 1.")
+        }
+      }
+    }
+    TRUE
+  }
+)
+
+#' @title SAEMVS model specification
+#'
+#' @description
+#' User-facing specification of a SAEMVS model.
+#'
+#' This class provides an intuitive interface for defining a nonlinear mixed
+#' effects model, specifying parameters subject to covariate selection,
+#' specifying fixed parameters (i.e. without random variability), and
+#' declaring covariates that must be forced into the model.
+#'
+#' Internally, a \code{saemvsModel} is validated and converted into a
+#' \code{saemvsProcessedModel} before being passed to the estimation algorithm.
+#'
+#' @slot model_func A function defining the structural model. It must be of the
+#'   form \code{function(t, ...)} where the additional arguments correspond to
+#'  model parameters.
+#' @slot phi_to_select Character vector or \code{NULL}. Names of parameters on
+#'   which covariate selection will be performed.
+#' @slot phi_fixed Character vector or \code{NULL}. Names of parameters that are
+#'   fixed (i.e. without random variability).
+#' @slot x_forced_support Named list or \code{NULL}. Each element corresponds to
+#'   a model parameter and contains a character vector of covariate names that
+#'   must be forced for this parameter.
+#' @slot phi_names Character vector or \code{NULL}. Names of the model
+#' parameters.
+#'
+#' @exportClass saemvsModel
+
+setClass(
+  "saemvsModel",
+  slots = list(
+    model_func = "function",
+    phi_to_select = "characterORNULL",
+    phi_fixed = "characterORNULL",
+    x_forced_support = "listORNULL",
+    phi_names = "characterORNULL"
+  ),
+  prototype = list(
+    model_func = function(t) numeric(0),
+    phi_to_select = NULL,
+    phi_fixed = NULL,
+    x_forced_support = NULL,
+    phi_names = NULL
+  ),
+  validity = function(object) {
+    phi_names <- object@phi_names
+
+    ## ---- phi_names ----
+    if (!is.null(phi_names)) {
+      if (!is.character(phi_names)) {
+        return("'phi_names' must be a character vector.")
+      }
+      if (any(phi_names == "")) {
+        return("'phi_names' must not contain empty names.")
+      }
+      if (anyDuplicated(phi_names)) {
+        return("'phi_names' must not contain duplicated names.")
+      }
     }
 
-
-
-    # No overlap
-    if (length(intersect(object@phi_to_select_idx, object@phi_fixed_idx)) > 0) {
-      return("'phi_to_select_idx' and 'phi_fixed_idx' must not overlap.")
+    ## ---- phi_to_select ----
+    if (!is.null(object@phi_to_select) && !is.null(phi_names)) {
+      bad <- setdiff(object@phi_to_select, phi_names)
+      if (length(bad) > 0) {
+        return(
+          paste(
+            "Unknown parameter(s) in 'phi_to_select':",
+            paste(bad, collapse = ", ")
+          )
+        )
+      }
     }
 
-    # x_forced_support
-    supp <- object@x_forced_support
-    if (!is_empty_support(supp)) {
-      if (!is.matrix(supp)) {
-        return("'x_forced_support' must be a matrix or NULL.")
+    ## ---- phi_fixed ----
+    if (!is.null(object@phi_fixed) && !is.null(phi_names)) {
+      bad <- setdiff(object@phi_fixed, phi_names)
+      if (length(bad) > 0) {
+        return(
+          paste(
+            "Unknown parameter(s) in 'phi_fixed':",
+            paste(bad, collapse = ", ")
+          )
+        )
       }
-      if (ncol(supp) != object@phi_dim) {
-        return(paste0(
-          "'x_forced_support' must have ", object@phi_dim,
-          " columns (one per phi)."
-        ))
+    }
+
+    ## ---- x_forced_support ----
+    x <- object@x_forced_support
+
+    if (!is.null(x)) {
+      if (!is.list(x)) {
+        return("'x_forced_support' must be a list.")
       }
-      if (!all(supp %in% c(0, 1))) {
-        return("'x_forced_support' must only contain 0 or 1.")
+
+      if (length(x) > 0) {
+        if (is.null(names(x)) || any(names(x) == "")) {
+          return("'x_forced_support' must be a named list.")
+        }
+
+        if (!is.null(phi_names)) {
+          bad <- setdiff(names(x), phi_names)
+          if (length(bad) > 0) {
+            return(
+              paste(
+                "Unknown parameter(s) in 'x_forced_support':",
+                paste(bad, collapse = ", ")
+              )
+            )
+          }
+        }
+
+        for (nm in names(x)) {
+          if (!is.character(x[[nm]])) {
+            return(
+              paste0(
+                "Element '", nm,
+                "' of 'x_forced_support' must be a character vector of covariate names." # nolint: line_length_linter.
+              )
+            )
+          }
+        }
       }
     }
 
@@ -581,32 +712,92 @@ setClass(
 )
 
 #' @rdname saemvsModel
-#' @title Constructor for saemvsModel
+#' @title Construct a SAEMVS model
 #'
-#' @param g Function of form `function(phi, t)` returning predicted values.
-#' @param phi_dim Integer: total number of phi parameters.
-#' @param phi_to_select_idx Integer vector (optional): indices of phi
-#'  parameters for variable selection.
-#' @param phi_fixed_idx Integer vector (optional): indices of fixed phi
-#' parameters (no random variability).
-#' @param x_forced_support Numeric matrix or NULL: design matrix for forced
-#'  covariates (phi_dim columns).
+#' @description
+#' Creates a \code{saemvsModel} object from a user-defined model function and
+#' optional parameter selection and covariate forcing specifications.
+#'
+#' The model function is provided with explicit parameter arguments
+#' (\code{function(t, param1, param2, ...)}). Parameter names are automatically
+#' inferred from the function signature.
+#'
+#' @param g A function defining the structural model. Must return predicted
+#'   values and depend on time and model parameters.
+#' @param phi_to_select Character vector or \code{NULL}. Names of parameters on
+#'   which covariate selection will be performed.
+#' @param phi_fixed Character vector or \code{NULL}. Names of parameters that
+#'   are fixed (i.e. without random variability).
+#' @param x_forced_support Named list or \code{NULL}. Forced covariate
+#'   specification. Each list element corresponds to a parameter name and
+#'   contains the names of covariates that must be forced for that parameter.
 #'
 #' @return An object of class \code{saemvsModel}.
+#'
+#' @seealso \code{\link{saemvsProcessedModel}}
+#'
 #' @export
-saemvsModel <- function(
-    # nolint:  object_name_linter.
-    g, phi_dim, phi_to_select_idx = NULL, phi_fixed_idx = NULL,
-    x_forced_support = matrix(numeric(0), nrow = 0, ncol = 0)) {
-  methods::new("saemvsModel",
+saemvsModel <- function(# nolint:  object_name_linter.
+    g,
+    phi_to_select = NULL,
+    phi_fixed = NULL,
+    x_forced_support = NULL) {
+  if (!is.function(g)) {
+    stop("'g' must be a function.")
+  }
+
+  fmls <- names(formals(g))
+  if (length(fmls) == 0) {
+    stop("Model function 'g' must have at least one argument for time.")
+  }
+
+  # ---- Model definition ----
+
+  phi_names <- names(formals(g))[-1]
+  phi_dim <- length(names(formals(g))) - 1
+
+  param_names <- if (length(fmls) > 1) fmls[-1] else character(0)
+  n_param <- length(param_names)
+
+  if (is.null(phi_dim)) {
+    phi_dim <- n_param
+  } else {
+    phi_dim <- as.integer(phi_dim)
+    if (phi_dim != n_param) {
+      stop(
+        sprintf(
+          "'phi_dim' (%d) does not match number of model parameters (%d).",
+          phi_dim, n_param
+        )
+      )
+    }
+  }
+
+  if (is.null(phi_names)) {
+    phi_names <- param_names
+  } else if (length(phi_names) != phi_dim) {
+    stop("'phi_names' length must equal 'phi_dim'.")
+  }
+
+
+  phi_dim <- as.integer(phi_dim)
+
+  # ---- x_forced_support validation ----
+
+  x_forced_support <- validate_x_forced_support(
+    x_forced_support,
+    phi_names = phi_names
+  )
+
+  methods::new(
+    "saemvsModel",
     model_func = g,
-    phi_dim = phi_dim,
-    phi_to_select_idx = phi_to_select_idx,
-    phi_fixed_idx = phi_fixed_idx,
-    x_forced_support = x_forced_support
+    phi_to_select = phi_to_select,
+    phi_fixed = phi_fixed,
+    x_forced_support = x_forced_support,
+    phi_names = phi_names
   )
 }
-
 
 
 #' @title saemvsHyperSlab
@@ -731,8 +922,7 @@ setClass(
 #' }
 #'
 #' @export
-saemvsHyperSlab <- function(
-    # nolint:  object_name_linter.
+saemvsHyperSlab <- function(# nolint:  object_name_linter.
     slab_parameter = 12000,
     cov_re_prior_scale,
     cov_re_prior_df = 1) {
@@ -793,8 +983,7 @@ setClass(
 #' @keywords internal
 #' @return An object of class \code{saemvsHyperSpikeAndSlab}
 #' @name saemvsHyperSpikeAndSlab
-saemvsHyperSpikeAndSlab <- function(
-    # nolint:  object_name_linter.
+saemvsHyperSpikeAndSlab <- function(# nolint:  object_name_linter.
     spike_parameter,
     hyper_slab) {
   methods::new("saemvsHyperSpikeAndSlab",
@@ -962,8 +1151,7 @@ setClass(
 #' @param default Logical. If TRUE, ignore all slots except intercept.
 #' @return An object of class \code{saemvsInit}.
 #' @export
-saemvsInit <- function(
-    # nolint:  object_name_linter.
+saemvsInit <- function(# nolint:  object_name_linter.
     intercept,
     beta_forced = NULL,
     beta_candidates = NULL,
@@ -1038,8 +1226,7 @@ setClass(
 #' @param inclusion_prob Numeric vector or NULL. Inclusion probabilities for
 #'  phi components.
 #' @return An object of class \code{saemvsProcessedInit}.
-saemvsProcessedInit <- function(
-    # nolint:  object_name_linter.
+saemvsProcessedInit <- function(# nolint:  object_name_linter.
     beta_to_select = NULL,
     beta_not_to_select = NULL,
     gamma_to_select = NULL,
@@ -1232,8 +1419,7 @@ setClass(
 #'
 #' @return An object of class \code{saemvsTuning}.
 #' @export
-saemvsTuning <- function(
-    # nolint:  object_name_linter.
+saemvsTuning <- function(# nolint:  object_name_linter.
     niter = 500,
     nburnin = 350,
     niter_mh = 5,
@@ -1425,7 +1611,7 @@ setClass(
     # Check beta_to_select
     if (!is.null(object@beta_to_select)) {
       if (!is.list(object@beta_to_select) ||
-        !all(vapply(object@beta_to_select, is.matrix, logical(1)))) {
+            !all(vapply(object@beta_to_select, is.matrix, logical(1)))) {
         return("'beta_to_select' must be a list of matrices.")
       }
     }
@@ -1433,7 +1619,7 @@ setClass(
     # Check beta_not_to_select
     if (!is.null(object@beta_not_to_select)) {
       if (!is.list(object@beta_not_to_select) ||
-        !all(vapply(object@beta_not_to_select, is.matrix, logical(1)))) {
+            !all(vapply(object@beta_not_to_select, is.matrix, logical(1)))) {
         return("'beta_not_to_select' must be a list of matrices.")
       }
     }
@@ -1441,7 +1627,7 @@ setClass(
     # Check gamma_to_select
     if (!is.null(object@gamma_to_select)) {
       if (!is.list(object@gamma_to_select) ||
-        !all(vapply(object@gamma_to_select, is.matrix, logical(1)))) {
+            !all(vapply(object@gamma_to_select, is.matrix, logical(1)))) {
         return("'gamma_to_select' must be a list of matrices.")
       }
     }
@@ -1449,7 +1635,7 @@ setClass(
     # Check gamma_not_to_select
     if (!is.null(object@gamma_not_to_select)) {
       if (!is.list(object@gamma_not_to_select) ||
-        !all(vapply(object@gamma_not_to_select, is.matrix, logical(1)))) {
+            !all(vapply(object@gamma_not_to_select, is.matrix, logical(1)))) {
         return("'gamma_not_to_select' must be a list of matrices.")
       }
     }

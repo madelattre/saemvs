@@ -1,3 +1,129 @@
+#' @title Prepare a SAEMVS model for estimation
+#'
+#' @description
+#' Internal method that prepares a user-defined \code{saemvsModel} for use by
+#' the SAEMVS estimation and variable selection algorithms.
+#'
+#' This function converts a high-level model specification into a
+#' \code{saemvsProcessedModel} by:
+#' \itemize{
+#'   \item resolving parameter names into numeric indices,
+#'   \item transforming the model function into a standardized
+#'     \code{function(phi, t)} form,
+#'   \item encoding forced covariate declarations into a binary support matrix.
+#' }
+#'
+#' The resulting support matrix has one row per covariate and one column per
+#' model parameter (\code{phi}). A value of 1 indicates that the covariate is
+#' forced for the corresponding parameter.
+#'
+#' This function is not intended to be called directly by users.
+#'
+#' @param data An object of class \code{saemvsData} containing the dataset and
+#'   covariate information.
+#' @param model An object of class \code{saemvsModel} describing the model
+#'   structure and covariate selection rules.
+#'
+#' @return An object of class \code{saemvsProcessedModel}, suitable for use by
+#'   internal SAEMVS algorithms.
+#'
+#' @keywords internal
+#'
+#' @seealso \code{\link{saemvsModel}}, \code{\link{saemvsProcessedModel}}
+
+setGeneric(
+  "prepare_model",
+  function(data, model) {
+    standardGeneric("prepare_model")
+  }
+)
+
+setMethod(
+  "prepare_model",
+  signature(data = "saemvsData", model = "saemvsModel"),
+  function(data, model) {
+
+    phi_names <- model@phi_names
+    n_phi <- length(phi_names)
+
+    phi_to_select_idx <-
+      if (length(model@phi_to_select) == 0) NULL
+      else match(model@phi_to_select, phi_names)
+
+    phi_fixed_idx <-
+      if (length(model@phi_fixed) == 0) NULL
+      else match(model@phi_fixed, phi_names)
+
+    if (is.null(data@x_forced)) {
+
+      forced_support_matrix <- matrix(
+        0L,
+        nrow = 0,
+        ncol = n_phi,
+        dimnames = list(NULL, phi_names)
+      )
+
+      return(
+        methods::new(
+          "saemvsProcessedModel",
+          model_func = make_phi_fn(model@model_func),
+          phi_dim = n_phi,
+          phi_to_select_idx = phi_to_select_idx,
+          phi_fixed_idx = phi_fixed_idx,
+          x_forced_support = forced_support_matrix
+        )
+      )
+    }
+
+    if (is.null(colnames(data@x_forced))) {
+      stop("Forced covariates in data must have column names.")
+    }
+
+    cov_names <- colnames(data@x_forced)
+    n_cov <- length(cov_names)
+
+    forced_support_matrix <- matrix(
+      0L,
+      nrow = n_cov,
+      ncol = n_phi,
+      dimnames = list(cov_names, phi_names)
+    )
+
+    if (is.null(model@x_forced_support) ||
+        length(model@x_forced_support) == 0) {
+
+      return(
+        methods::new(
+          "saemvsProcessedModel",
+          model_func = make_phi_fn(model@model_func),
+          phi_dim = n_phi,
+          phi_to_select_idx = phi_to_select_idx,
+          phi_fixed_idx = phi_fixed_idx,
+          x_forced_support = forced_support_matrix
+        )
+      )
+    }
+
+    for (phi in intersect(names(model@x_forced_support), phi_names)) {
+
+      covs_phi <- model@x_forced_support[[phi]]
+
+      forced_support_matrix[covs_phi, phi] <- 1L
+    }
+
+    methods::new(
+      "saemvsProcessedModel",
+      model_func = make_phi_fn(model@model_func),
+      phi_dim = n_phi,
+      phi_to_select_idx = phi_to_select_idx,
+      phi_fixed_idx = phi_fixed_idx,
+      x_forced_support = forced_support_matrix
+    )
+  }
+)
+
+
+
 #' Prepare processed design matrices for SAEMVS model fitting
 #'
 #' Internal method that constructs design matrices and related structures
@@ -19,7 +145,7 @@
 #'   Contains observed time series \code{y_series}, covariates to be selected
 #'   (\code{x_candidates}), and forced covariates (\code{x_forced}).
 #'
-#' @param model A \code{\linkS4class{saemvsModel}} object.
+#' @param model A \code{\linkS4class{saemvsProcessedModel}} object.
 #'   Provides model dimension (\code{phi_dim}), indices of parameters
 #'   subject to selection (\code{phi_to_select_idx}), and the forced support
 #'   structure (\code{x_forced_support}).
@@ -67,7 +193,7 @@ setGeneric(
 
 setMethod(
   "prepare_data",
-  signature(data = "saemvsData", model = "saemvsModel"),
+  signature(data = "saemvsData", model = "saemvsProcessedModel"),
   function(data, model) {
     n_obs <- length(data@y_series)
 
@@ -121,7 +247,8 @@ setMethod(
     if (is_empty_support(forced_support)) {
       x_not_to_select_design <- matrix(1, nrow = n_obs)
     } else if (length(phi_not_to_select_indices) == 0 ||
-      is_empty_support(forced_support[, phi_not_to_select_indices])) {
+        is_empty_support(forced_support[, phi_not_to_select_indices])
+    ) {
       ## No unselected parameters or no forced covariates among them
       x_not_to_select_design <- matrix(1, nrow = n_obs)
     } else {
@@ -165,7 +292,7 @@ setMethod(
       x_phi_not_to_select_list = x_not_to_select_list
     )
 
-    return(data_processed)
+    return(data_processed) # nolint: return-linter
   }
 )
 
@@ -179,10 +306,10 @@ setMethod(
 #' @param init An object of class \code{saemvsInit} containing initial values
 #'   for intercepts, candidate betas, forced betas, covariance of random
 #'   effects, and residual variance.
-#' @param model An object of class \code{saemvsModel} defining the model
-#' structure, including indices of parameters subject to selection
+#' @param model An object of class \code{saemvsProcessedModel} defining
+#' the model structure, including indices of parameters subject to selection
 #'   (\code{phi_to_select_idx}) and forced covariate support
-#'   (\code{x_forced_support}).
+#' (\code{x_forced_support}).
 #'
 #' @return An object of class \code{saemvsProcessedInit} containing:
 #' \describe{
@@ -225,7 +352,7 @@ setGeneric(
 setMethod(
   "prepare_init",
   signature(
-    init = "saemvsInit", model = "saemvsModel",
+    init = "saemvsInit", model = "saemvsProcessedModel",
     data_processed = "saemvsProcessedData"
   ),
   function(init, model, data_processed) {
@@ -343,7 +470,7 @@ setMethod(
       default = init@default
     )
 
-    return(init_processed)
+    return(init_processed) # nolint: return-linter
   }
 )
 
@@ -361,7 +488,8 @@ setMethod(
 #' hyperparameters.
 #' @param data A \code{saemvsProcessedData} object containing the processed data
 #' for the algorithm.
-#' @param model A \code{saemvsModel} object representing the model structure.
+#' @param model A \code{saemvsProcessedModel} object representing the model
+#'  structure.
 #'
 #' @return A \code{saemvsHyperSlab} object with completed and validated
 #' hyperparameters.
@@ -397,7 +525,7 @@ setMethod(
   signature(
     hyper = "saemvsHyperSlab",
     data = "saemvsProcessedData",
-    model = "saemvsModel"
+    model = "saemvsProcessedModel"
   ),
   function(hyper, data, model) {
     n_selected <- length(model@phi_to_select_idx)
@@ -439,7 +567,7 @@ setMethod(
       )
     }
 
-    return(hyper)
+    return(hyper) # nolint: return-linter
   }
 )
 
@@ -450,7 +578,7 @@ setMethod(
 #' with fields aligned with the original object slots.
 #'
 #' @param data A \code{saemvsProcessedData} object.
-#' @param model A \code{saemvsModel} object.
+#' @param model A \code{saemvsProcessedModel} object.
 #' @param tuning_algo A \code{saemvsTuning} object.
 #' @param init A \code{saemvsProcessedInit} object.
 #' @param hyperparam A \code{saemvsHyperSlab} object.
@@ -469,7 +597,7 @@ setMethod(
   "make_config",
   signature(
     data = "saemvsProcessedData",
-    model = "saemvsModel",
+    model = "saemvsProcessedModel",
     tuning_algo = "saemvsTuning",
     init = "saemvsProcessedInit",
     hyperparam = "saemvsHyperSlab"
@@ -581,6 +709,6 @@ setMethod(
       num_parameters_not_to_select = n_phi_not_to_select
     )
 
-    return(config)
+    return(config) # nolint: return-linter
   }
 )

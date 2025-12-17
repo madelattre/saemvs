@@ -60,7 +60,7 @@ expand_to_list <- function(x_mat, support, q) {
   x_list <- lapply(split(x_mat, row(x_mat)), matrix, nrow = 1)
   x_q_list <- lapply(x_list, function(x) replicate(q, x, simplify = FALSE))
   x <- lapply(x_q_list, x_per_indiv_rcpp, supp_index)
-  return(x)
+  return(x) # nolint: return-linter
 }
 
 #' Apply shrinkage to a covariance matrix
@@ -126,7 +126,7 @@ shrink_covariance_matrix <- function(
   }
   d <- nrow(sigma_old)
   if (!is.numeric(shrink_indices) || any(shrink_indices < 1) ||
-    any(shrink_indices > d)) {
+        any(shrink_indices > d)) {
     stop(sprintf(
       "%s: shrink_indices must be integers between 1 and %d",
       fun_name, d
@@ -156,7 +156,7 @@ shrink_covariance_matrix <- function(
     }
   }
 
-  return(sigma_new)
+  return(sigma_new) # nolint: return-linter
 }
 
 #' Zero out specified rows and columns of a matrix
@@ -195,7 +195,7 @@ zero_out_shrinked <- function(mat, indices) {
   }
 
   if (!all(indices %in% seq_len(nrow(mat))) ||
-    !all(indices %in% seq_len(ncol(mat)))) {
+        !all(indices %in% seq_len(ncol(mat)))) {
     stop(
       paste0(
         "zero_out_shrinked: 'indices' contain values outside ",
@@ -207,7 +207,7 @@ zero_out_shrinked <- function(mat, indices) {
   mat_zeroed <- mat
   mat_zeroed[indices, ] <- 0
   mat_zeroed[, indices] <- 0
-  return(mat_zeroed)
+  return(mat_zeroed) # nolint: return-linter
 }
 
 
@@ -286,7 +286,7 @@ merge_support <- function(
   }
 
 
-  return(combined_support)
+  return(combined_support) # nolint: return-linter
 }
 
 
@@ -329,7 +329,7 @@ is_empty_support <- function(support) {
   if (all(support == 0)) {
     return(TRUE)
   }
-  return(FALSE)
+  return(FALSE) # nolint: return-linter
 }
 
 #' Check if a matrix is empty
@@ -375,7 +375,7 @@ is_empty_matrix <- function(mat) {
   if (nrow(mat) == 0 || ncol(mat) == 0) {
     return(TRUE)
   }
-  return(FALSE)
+  return(FALSE) # nolint: return-linter
 }
 
 
@@ -417,7 +417,7 @@ extract_rows_with_ones <- function(mat) {
     return(integer(0))
   }
   res <- which(apply(mat, 1, function(x) any(x == 1)))
-  return(res)
+  return(res) # nolint: return-linter
 }
 
 #' Extract a sub-support matrix by column indices
@@ -475,5 +475,5 @@ extract_sub_support <- function(support, idx) {
   if (all(submat == 0)) {
     return(NULL)
   }
-  return(submat)
+  return(submat) # nolint: return-linter
 }

@@ -21,7 +21,7 @@
 #'
 #' @param data An object of class \code{saemvsData}.
 #'   Contains the observed data and related metadata.
-#' @param model An object of class \code{saemvsModel}.
+#' @param model An object of class \code{saemvsProcessedModel}.
 #'   Describes the statistical model, including covariates and random effect
 #'   structure.
 #' @param init An object of class \code{saemvsInit}.
@@ -74,7 +74,7 @@ setMethod(
   "run_saem",
   signature(
     data = "saemvsProcessedData",
-    model = "saemvsModel",
+    model = "saemvsProcessedModel",
     init = "saemvsProcessedInit",
     tuning_algo = "saemvsTuning",
     hyperparam = "saemvsHyperSpikeAndSlab"
@@ -120,6 +120,6 @@ setMethod(
       }
     )
 
-    return(state)
+    return(state) # nolint: return-linter
   }
 )
