@@ -93,6 +93,20 @@ setMethod(
           )
         )
       }
+
+      extra_covs <- setdiff(covs_in_data, covs_in_model)
+
+      if (length(extra_covs) > 0) {
+        stop(
+          paste0(
+            "Some covariates were declared as forced in the data ",
+            "but are not used as forced covariates in the model: ",
+            paste(extra_covs, collapse = ", ")
+          )
+        )
+      }
+
+
     }
 
     invisible(TRUE)
