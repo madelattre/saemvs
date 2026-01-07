@@ -15,27 +15,56 @@
 #' parameters not subject to selection.
 #' @param config Internal configuration object containing data, model matrices,
 #' and MH parameters.
+#' The \code{config} object must include:
+#'   \itemize{
+#'     \item \code{y_series}, \code{t_series}: observations and time points,
+#'     \item \code{x_phi_to_select}, \code{x_phi_not_to_select}:
+#' design matrices,
+#'     \item \code{parameters_to_select_indices},
+#'  \code{parameters_not_to_select_indices}: indices of parameters
+#' for selection,
+#'     \item \code{num_mh_iterations}: number of MH iterations per SAEM
+#' iteration,
+#'     \item \code{mh_proposal_scale}: scaling factor for proposal distribution,
+#'     \item \code{mh_kernel_type}: kernel type for MH updates,
+#'     \item \code{num_series}: number of independent series.
+#'   }
 #' @param iteration Integer specifying the current iteration of the SAEM
 #' algorithm.
-#' @param state List containing the current latent state, including:
+#' @param state List containing the current latent state and model parameters,
+#'   including:
 #'   \itemize{
-#'     \item \code{phi}: list of latent parameter matrices per iteration
-#'     \item \code{mprop_mh}: list of proposal mean matrices per iteration
-#'     \item \code{vprop_mh}: list of proposal covariance matrices per iteration
-#'     \item \code{beta_to_select}: list of regression coefficient matrices for
-#'     parameters to select
-#'     \item \code{beta_not_to_select}: list of regression coefficient matrices
-#'     for parameters not to select
-#'     \item \code{gamma_to_select}: list of covariance matrices for parameters
-#'     to select
-#'     \item \code{gamma_not_to_select}: list of covariance matrices for
-#'     parameters not to select
-#'   }
-#' @return Updated \code{state} list with new latent parameters or proposal
+#'     \item \code{phi}: list of latent parameter matrices per iteration,
+#'     \item \code{mprop_mh}: list of proposal mean matrices per iteration,
+#'     \item \code{vprop_mh}: list of proposal covariance matrices per
+#' iteration,
+#'     \item \code{beta_to_select}, \code{beta_not_to_select}: regression
+#' coefficients,
+#'     \item \code{gamma_to_select}, \code{gamma_not_to_select}: covariance
 #' matrices.
+#'   }
+#'   This list is updated in place by the MH steps and proposal update
+#' functions.
+#' @param backend A list containing compiled model functions and helper
+#'   routines used to perform Metropolis-Hastings updates for latent
+#'   parameters.
+#' @return Updated \code{state} list:
+#'   \itemize{
+#'     \item \code{metropolis_s_step()}: updates \code{phi} for the next
+#' iteration,
+#'     \item \code{update_proposal_mh_all()}: updates \code{mprop_mh} and
+#' \code{vprop_mh} for all parameters,
+#'     \item \code{update_proposal_mh_to_select()}: updates only the to-select
+#'  parameters,
+#'     \item \code{update_proposal_mh_not_to_select()}: updates only the
+#' not-to-select parameters.
+#'   }
+
 #' @keywords internal
-metropolis_s_step <- function(config, iteration, state) {
-  sampled_phi <- metropolis_vector_cpp(
+#' @note These functions are intended for internal use within the SAEM-MCMC
+#' algorithm and should not be called directly in user code.
+metropolis_s_step <- function(config, iteration, state, backend) {
+  sampled_phi <- backend$metropolis_vector(
     y = config$y_series,
     t = config$t_series,
     phi_current = split(state$phi[[iteration]], row(state$phi[[iteration]])),
@@ -54,7 +83,7 @@ metropolis_s_step <- function(config, iteration, state) {
     nrow = config$num_series,
     byrow = TRUE
   )
-  return(state)
+  return(state) # nolint: return-linter
 }
 
 #' @rdname metropolis_s_step
@@ -77,7 +106,7 @@ update_proposal_mh_all <- function(config, iteration, state) {
   ] <-
     state$gamma_not_to_select[[iteration + 1]]
 
-  return(state)
+  return(state) # nolint: return-linter
 }
 
 #' @rdname metropolis_s_step
@@ -91,11 +120,11 @@ update_proposal_mh_to_select <- function(config, iteration, state) {
   ] <-
     state$gamma_to_select[[iteration + 1]]
 
-  return(state)
+  return(state) # nolint: return-linter
 }
 
 #' @rdname metropolis_s_step
-update_proposal_mh_not_to_select <- function(config, iteration, state) {
+update_proposal_mh_not_to_select <- function(config, iteration, state) { # nolint: object_length_linter
   state$mprop_mh[[iteration + 1]][, config$parameters_not_to_select_indices] <-
     config$x_phi_not_to_select %*% state$beta_not_to_select[[iteration + 1]]
 
@@ -105,5 +134,5 @@ update_proposal_mh_not_to_select <- function(config, iteration, state) {
   ] <-
     state$gamma_not_to_select[[iteration + 1]]
 
-  return(state)
+  return(state) # nolint: return-linter
 }

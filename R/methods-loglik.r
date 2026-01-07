@@ -1,34 +1,49 @@
 #' Compute log-likelihood (or penalized log-likelihood) for a SAEMVS model
 #'
-#' This internal function computes the (penalized) log-likelihood of the data
-#' given the model and parameter estimates. The method supports different
-#' penalty types including "BIC" and "e-BIC".
+#' Internal function to compute the (penalized) log-likelihood of the data
+#' given the model and parameter estimates. Supports different penalties
+#' such as "BIC" and "e-BIC".
 #'
-#' @param data A \code{saemvsData} object containing the response and design
-#' matrices.
+#' @param data A \code{saemvsData} object containing the response variables
+#'   and design matrices.
 #' @param model A \code{saemvsProcessedModel} object defining the model
-#'  structure.
-#' @param tuning_algo A \code{saemvsTuning} object containing tuning settings
-#' (e.g., number of Monte Carlo samples).
-#' @param param A list with parameter estimates. Must contain:
+#'  structure,
+#'   including covariates, random effects, and indices of parameters to select.
+#' @param tuning_algo A \code{saemvsTuning} object specifying algorithmic
+#'   tuning parameters such as number of Monte Carlo samples.
+#' @param param A list of parameter estimates with components:
 #'   \describe{
 #'     \item{beta}{Matrix of fixed-effect coefficients.}
 #'     \item{gamma}{Covariance matrix of random effects.}
 #'     \item{sigma2}{Residual variance.}
 #'   }
-#' @param pen Character string specifying the penalty. One of "BIC", "e-BIC",
-#' or no penalty.
-#' @param p Numeric, number of candidate covariates (for e-BIC computation).
-#' Consider renaming to \code{num_covariates} for clarity.
-#' @param phi_to_select_idx Integer vector indicating which covariates
-#' (columns of the design matrix) are subject to selection. Used for computing
-#' the penalization term in BIC/e-BIC.
-#' @param nb_forced_beta Integer specifying the number of covariates that are
-#' forced to be included in the model. This is used to adjust the penalization
-#' term in the e-BIC computation.
-#' @return Numeric value of the penalized log-likelihood (BIC or e-BIC).
-#' @keywords internal
+#' @param pen Character string specifying the penalty type. One of
+#'   \code{"BIC"}, \code{"e-BIC"}, or \code{""} for no penalty.
+#' @param p Numeric. Total number of candidate covariates (used for e-BIC).
+#' @param phi_to_select_idx Integer vector of indices of covariates subject
+#'   to selection (used to adjust the penalization term).
+#' @param nb_forced_beta Integer. Number of covariates forced to be included
+#'   in the model (affects penalization in e-BIC).
+#' @param backend A list of compiled functions (e.g., \code{g_vector}) for
+#'   evaluating model predictions efficiently.
 #'
+#' @return Numeric. The penalized log-likelihood (BIC or e-BIC) value.
+#'
+#' @details
+#' The function proceeds as follows:
+#' \enumerate{
+#'   \item Preprocess the data using \code{prepare_data()}.
+#'   \item For each subject/series, generate Monte Carlo samples of the latent
+#'         parameters (\code{phi}) from a multivariate normal distribution
+#'         with mean \(\beta \times X\) and covariance \(\gamma\).
+#'   \item Compute the likelihood contribution for each series using
+#'         the model function in \code{backend$g_vector}.
+#'   \item Sum over all series to obtain the total log-likelihood.
+#'   \item Apply the specified penalty ("BIC" or "e-BIC") using the number of
+#'         selected covariates and forced covariates.
+#' }
+#'
+#' @keywords internal
 setGeneric(
   "loglik",
   function(data,
@@ -38,7 +53,8 @@ setGeneric(
            pen,
            p,
            phi_to_select_idx,
-           nb_forced_beta) {
+           nb_forced_beta,
+           backend) {
     standardGeneric("loglik")
   }
 )
@@ -53,7 +69,8 @@ setMethod(
     pen = "character",
     p = "numeric",
     phi_to_select_idx = "numeric",
-    nb_forced_beta = "numeric"
+    nb_forced_beta = "numeric",
+    backend = "list"
   ),
   function(data,
            model,
@@ -62,7 +79,7 @@ setMethod(
            pen,
            p,
            phi_to_select_idx,
-           nb_forced_beta) {
+           nb_forced_beta, backend) {
     data <- prepare_data(data, model)
 
     num_samples <- tuning_algo@n_is_samples
@@ -86,7 +103,7 @@ setMethod(
 
     log_lik_i <- function(i) {
       contribution <- sum(apply(phi_samples[[i]], 1, function(phi_i) {
-        exp(-sum((yi[[i]] - g_vector_cpp(phi_i, ti[[i]]))^2) / (2 * sigma2))
+        exp(-sum((yi[[i]] - backend$g_vector(phi_i, ti[[i]]))^2) / (2 * sigma2))
       }))
 
       log((2 * pi * sigma2)^(-ni[i] / 2) * contribution / num_samples)

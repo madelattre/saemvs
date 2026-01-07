@@ -5,8 +5,9 @@
 #' It supports both BIC and extended BIC (e-BIC) as model selection criteria.
 #'
 #' This method explores a grid of spike variances (`nu0`) in parallel,
-#' fits MAP estimates for each candidate support, and then evaluates unique
-#' supports with the chosen information criterion to select the best model.
+#' fits MAP estimates for each spike value, derives candidate supports,
+#' and then evaluates unique supports with the chosen information
+#' criterion to select the best model.
 #'
 #' @param data An object of class \link[=saemvsData-class]{saemvsData}
 #'   containing the dataset (observations and design matrices).
@@ -24,6 +25,11 @@
 #' hyperparameters for the slab prior.
 #' @param pen Character string indicating the model selection criterion. Must be
 #' either `"BIC"` or `"e-BIC"`.
+#' @param use_cpp Logical. If `TRUE` (default), the C++ backend of the model
+#' function is compiled and used. If `FALSE`, a non-C++ (R-based) backend
+#' may be used. The model function is compiled on each worker when running
+#' in parallel.
+
 #'
 #' @details
 #' The procedure is carried out in two steps:
@@ -34,15 +40,31 @@
 #'   with the chosen information criterion (`pen`) to select the most
 #'   appropriate model.
 #' }
+#' A support corresponds to a specific subset of parameters (among
+#' `phi_to_select_idx`) that are included in the model, typically represented
+#' as a binary inclusion pattern obtained after thresholding the MAP estimates.
+#' For a given support, covariates are partitioned into:
+#' \itemize{
+#'   \item \emph{forced variables}, which are always included in the model
+#'   (e.g., fixed effects or parameters not subject to spike-and-slab
+#'  selection),
+#'   \item \emph{selected variables}, which are actively selected by the
+#'   spike-and-slab procedure among the candidate parameters.
+#' }
+
 #'
 #' Parallel execution is handled using the `future` and `furrr` packages.
-#' The model function (C++ code) must be compiled on each worker before
-#' execution.
-#'
+#' When `use_cpp = TRUE`, the model C++ code is compiled multiple times:
+#' once before the first step, and again within each parallel worker during
+#' both the MAP estimation step and the information-criterion evaluation step.
+#' This ensures that each worker has access to a valid compiled backend.
+
 #' @return An object of class \code{\linkS4class{saemvsResults}} containing:
 #' \itemize{
 #'   \item `criterion`: The selection criterion used (`"BIC"` or `"e-BIC"`).
-#'   \item `criterion_values`: Values of the criterion for each unique support.
+#'   \item `criterion_values`: Values of the selected information criterion
+#'   (BIC or e-BIC), computed from the log-likelihood of the MLE associated
+#'   with each unique support.
 #'   \item `thresholds`: Thresholds computed for each spike value.
 #'   \item `beta_map`: MAP estimates of regression parameters for each spike
 #'   value.
@@ -78,7 +100,7 @@
 #' @export
 setGeneric(
   "saemvs",
-  function(data, model, init, tuning_algo, hyperparam, pen) {
+  function(data, model, init, tuning_algo, hyperparam, pen, use_cpp = TRUE) {
     standardGeneric("saemvs")
   }
 )
@@ -93,7 +115,7 @@ setMethod(
     tuning_algo = "saemvsTuning", hyperparam = "saemvsHyperSlab",
     pen = "character"
   ),
-  function(data, model, init, tuning_algo, hyperparam, pen) {
+  function(data, model, init, tuning_algo, hyperparam, pen, use_cpp = TRUE) {
     # --- Step 1: Argument checks ---
     if (!pen %in% c("e-BIC", "BIC")) {
       stop(
@@ -122,17 +144,21 @@ setMethod(
     check_init(init, data_processed, model_processed)
     init_alg <- prepare_init(init, model_processed, data_processed)
 
+    compile_model(model_processed@model_func, use_cpp)
+
     message("SAEMVS: step 1/2")
     progressr::with_progress({
       p <- progressr::progressor(along = spike_values_grid)
-
       map_runs <- safe_future_map(
         spike_values_grid,
         function(nu0) {
-          compile_model(model_processed@model_func)
+          backend <- compile_model(
+            model_processed@model_func, use_cpp,
+            silent = TRUE
+          )
           fh <- saemvsHyperSpikeAndSlab(nu0, hyperparam)
           res <- saemvs_one_map_run(
-            data_processed, model_processed, init_alg, tuning_algo, fh
+            data_processed, model_processed, init_alg, tuning_algo, fh, backend
           )
           p()
           res
@@ -163,10 +189,13 @@ setMethod(
       criterion_results <- safe_future_map(
         unique_support_indices,
         function(k) {
-          compile_model(model_processed@model_func)
+          backend <- compile_model(
+            model_processed@model_func, use_cpp,
+            silent = TRUE
+          )
           saemvs_one_ic_run(
             k, support, data_processed, model_processed, init_alg,
-            tuning_algo, pen
+            tuning_algo, pen, backend
           )
         },
         workers = tuning_algo@nb_workers,
@@ -263,14 +292,16 @@ safe_future_map <- function(.x, .f, ..., workers = 1, seed = NULL) {
 #' This function is used internally by \code{\link{saemvs}} to explore
 #' different spike variances and extract candidate supports.
 #'
-#' @param data An object of class \link[=saemvsData-class]{saemvsData}
-#'   containing the dataset (observations and design matrices).
+#' @param data An object of class
+#' \link[=saemvsProcessedData-class]{saemvsProcessedData}
+#' containing the processed dataset (observations and design matrices),
+#' as returned by internal preprocessing steps.
 #' @param model An object of class
 #' \link[=saemvsProcessedModel-class]{saemvsProcessedModel}
-#'   specifying the model structure and indices of parameters subject
-#'   to selection (\code{phi_to_select_idx}).
-#' @param init An object of class \link[=saemvsInit-class]{saemvsInit}
-#'   providing initial values for the SAEM algorithm.
+#'   specifying the processed model structure and indices of parameters subject
+#' @param init An object of class
+#' \link[=saemvsProcessedInit-class]{saemvsProcessedInit}
+#' providing processed initial values for the SAEM algorithm.
 #' @param tuning_algo An object of class
 #' \link[=saemvsTuning-class]{saemvsTuning}
 #'   defining algorithmic parameters such as the number of iterations
@@ -279,31 +310,41 @@ safe_future_map <- function(.x, .f, ..., workers = 1, seed = NULL) {
 #' \link[=saemvsHyperSpikeAndSlab-class]{saemvsHyperSpikeAndSlab}
 #'   containing hyperparameters of the spike-and-slab prior (spike variance,
 #'   slab variance, and mixing proportion).
+#' @param backend A list containing the compiled model backend (typically
+#'   generated by \code{\link{compile_model}}), used by \code{\link{run_saem}}
+#'   to evaluate the model likelihood and its derivatives.
+
 #'
 #' @details
 #' The function runs the SAEM algorithm via \code{\link{run_saem}}, then
 #' constructs the MAP estimates of coefficients and derives the support set by
 #' thresholding \eqn{\beta} coefficients.
-#'
-#' Special handling is performed for parameters that are forced to be in the
-#' model (\code{x_forced_support}). These are always marked as selected in the
-#' support matrix.
+#' Threshold values are computed from the spike-and-slab hyperparameters
+#' (spike variance, slab variance, and mixing proportions) and are applied
+#' uniformly across parameters to determine inclusion based on the magnitude
+#' of the MAP estimates.
+#' Forced covariates (specified in \code{x_forced_support}) are inserted
+#' at the top of the support matrix (after the intercept) and are always
+#' marked as selected, regardless of the thresholding step.
 #'
 #' The returned support matrix includes the intercept term as the first row.
 #'
 #' @return A \code{list} with elements:
 #' \itemize{
 #'   \item \code{threshold} Vector of threshold values applied to coefficients.
-#'   \item \code{support} Logical matrix indicating selected variables
-#'         across iterations (including intercept).
-#'   \item \code{beta} Matrix of MAP coefficient estimates.
+#'   \item \code{support} Logical matrix indicating which variables are
+#'   selected in the final MAP solution. Rows correspond to variables
+#'   subject to selection (with the intercept as the first row), and
+#'   columns correspond to model parameters. Variables that are forced
+#'   into the model are always marked as \code{TRUE}.
+#'  \item \code{beta} Matrix of MAP coefficient estimates.
 #' }
 #'
 #' @keywords internal
 #' @seealso \code{\link{saemvs}}, \code{\link{run_saem}}
 setGeneric(
   "saemvs_one_map_run",
-  function(data, model, init, tuning_algo, hyperparam) {
+  function(data, model, init, tuning_algo, hyperparam, backend) {
     standardGeneric("saemvs_one_map_run")
   }
 )
@@ -315,10 +356,11 @@ setMethod(
     model = "saemvsProcessedModel",
     init = "saemvsProcessedInit",
     tuning_algo = "saemvsTuning",
-    hyperparam = "saemvsHyperSpikeAndSlab"
+    hyperparam = "saemvsHyperSpikeAndSlab",
+    backend = "list"
   ),
-  function(data, model, init, tuning_algo, hyperparam) {
-    map <- run_saem(data, model, init, tuning_algo, hyperparam)
+  function(data, model, init, tuning_algo, hyperparam, backend) {
+    map <- run_saem(data, model, init, tuning_algo, hyperparam, backend)
     forced_support <- extract_sub_support(
       model@x_forced_support,
       model@phi_to_select_idx
@@ -369,21 +411,31 @@ setMethod(
 #' This function is used internally by \code{\link{saemvs}} in the second step
 #' of the SAEMVS algorithm to rank candidate supports obtained from MAP runs.
 #'
-#' @param k Integer index of the candidate support to be evaluated.
-#' @param support A list of logical or numeric matrices, each encoding a
-#'   candidate support obtained from MAP estimation (\code{saemvs_one_map_run}).
-#' @param data An object of class \link[=saemvsData-class]{saemvsData},
-#' the dataset.
+#' @param k Integer index indicating which element of the \code{support} list
+#'   is evaluated (i.e., \code{support[[k]]}).
+#' @param support A list of logical or numeric matrices, each representing
+#'   a candidate support. Rows correspond to covariates subject to selection
+#'   (with the intercept as the first row), and columns correspond to model
+#'   parameters. Forced covariates may be included as leading rows and are
+#'   handled separately.
+#' @param data An object of class
+#' \link[=saemvsProcessedData-class]{saemvsProcessedData},
+#' containing the processed dataset restricted to candidate variables.
 #' @param model An object of class
 #'  \link[=saemvsProcessedModel-class]{saemvsProcessedModel},
 #' specifying model structure and indices of parameters subject to selection.
-#' @param init An object of class \link[=saemvsInit-class]{saemvsInit},
-#' providing initialization for SAEM.
+#' @param init An object of class
+#' \link[=saemvsProcessedInit-class]{saemvsProcessedInit},
+#' providing processed initialization values for SAEM under the restricted
+#' model.
 #' @param tuning_algo An object of class
 #' \link[=saemvsTuning-class]{saemvsTuning}, containing algorithmic tuning
 #' parameters (e.g. number of iterations).
 #' @param pen Character string, the information criterion to use. Must be either
 #' \code{"BIC"} or \code{"e-BIC"}.
+#' @param backend A list containing the compiled model backend (typically
+#'   produced by \code{\link{compile_model}}), used for likelihood evaluation
+#'   and SAEM-based MLE estimation.
 #'
 #' @details
 #' The function restricts the model to the variables specified in
@@ -403,6 +455,11 @@ setMethod(
 #'       \item \code{beta} Estimated regression coefficients.
 #'       \item \code{gamma} Estimated variances for the random effects.
 #'       \item \code{sigma2} Estimated residual variance.
+#'   \item \code{forced_variables_idx} Integer vector giving the row indices
+#'   (within the support matrix) of covariates that were forced into the model.
+#'   \item \code{selected_variables_idx} Integer vector giving the row indices
+#'   of covariates that were actively selected among the candidate covariates
+#'   (excluding forced ones).
 #'     }
 #' }
 #'
@@ -411,7 +468,7 @@ setMethod(
 #' \code{\link{loglik}}
 setGeneric(
   "saemvs_one_ic_run",
-  function(k, support, data, model, init, tuning_algo, pen) {
+  function(k, support, data, model, init, tuning_algo, pen, backend) {
     standardGeneric("saemvs_one_ic_run")
   }
 )
@@ -425,9 +482,10 @@ setMethod(
     model = "saemvsProcessedModel",
     init = "saemvsProcessedInit",
     tuning_algo = "saemvsTuning",
-    pen = "character"
+    pen = "character",
+    backend = "list"
   ),
-  function(k, support, data, model, init, tuning_algo, pen) {
+  function(k, support, data, model, init, tuning_algo, pen, backend) {
     p <- dim(data@x_candidates)[2]
 
     if (!is_empty_support(model@x_forced_support)) {
@@ -448,8 +506,8 @@ setMethod(
       )
       forced_rows <- integer(0)
       active_candidate_idx <- which(rowSums(cand_support[-1, ,
-                                              drop = FALSE
-                                            ]) > 0)
+        drop = FALSE # nolint: indent_linter
+      ]) > 0)
       selected_rows <- active_candidate_idx
     } else {
       cand_support <- matrix(as.numeric(support[[k]]),
@@ -459,8 +517,8 @@ setMethod(
       cand_support <- cand_support[-idx_forced_phi_sel, , drop = FALSE]
       forced_rows <- idx_forced_phi_sel
       active_candidate_idx <- which(rowSums(cand_support[-1, ,
-                                              drop = FALSE
-                                            ]) > 0)
+        drop = FALSE # nolint: indent_linter
+      ]) > 0)
       selected_rows <- active_candidate_idx
     }
     new_data <- map_to_mle_data(data, cand_support)
@@ -474,7 +532,7 @@ setMethod(
 
     mle <- run_saem(
       new_data_processed, new_model, new_processed_init, tuning_algo,
-      new_full_hyperparam
+      new_full_hyperparam, backend
     )
 
     mle_param <- list(
@@ -485,7 +543,7 @@ setMethod(
 
     ll <- loglik(
       new_data, new_model, tuning_algo, mle_param, pen, p,
-      model@phi_to_select_idx, nb_forced_beta
+      model@phi_to_select_idx, nb_forced_beta, backend
     )
 
 
