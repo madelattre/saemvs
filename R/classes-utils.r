@@ -166,17 +166,17 @@ get_variables_from_formula <- function(f) {
   ))
 }
 
-#' @title Standardize a user-defined model function to \code{function(phi, t)}
+#' @title Standardize a user-defined model function to \code{function(t, phi)}
 #'
 #' @description
 #' Internal helper that converts a user-supplied model function into a
-#' standardized form with signature \code{function(phi, t)}.
+#' standardized form with signature \code{function(t, phi)}.
 #'
 #' The function body is rewritten so that:
 #' \itemize{
+#'   \item the user-defined time variable is renamed to \code{t},
 #'   \item individual model parameters are replaced by indexed elements of
-#'     \code{phi},
-#'   \item the user-defined time variable is renamed to \code{t}.
+#'     \code{phi}.
 #' }
 #'
 #' This transformation allows the internal SAEMVS algorithms to operate on a
@@ -184,31 +184,89 @@ get_variables_from_formula <- function(f) {
 #' model.
 #'
 #' @param g_user A user-defined model function, either of the form
-#'   \code{function(phi, t)} or \code{function(t, p1, p2, ...)}.
+#'   \code{function(t, p1, p2, ...)}.
 #'
-#' @return A function with signature \code{function(phi, t)} equivalent to the
+#' @return A function with signature \code{function(t, phi)} equivalent to the
 #'   original model.
 #'
 #' @keywords internal
+
 make_phi_fn <- function(g_user) {
   fmls <- names(formals(g_user))
-  if ("phi" %in% fmls) return(g_user)
+  if (length(fmls) < 1) {
+    stop("Function must have at least one argument (time)")
+  }
 
   time_name <- fmls[1]
   param_names <- if (length(fmls) > 1) fmls[-1] else character(0)
 
-  body_txt <- paste(deparse(body(g_user)), collapse = "\n")
+  # Recursive AST transformer
+  transform_expr <- function(expr) {
 
-  for (i in seq_along(param_names)) {
-    pattern <- paste0("\\b", param_names[i], "\\b")
-    replacement <- paste0("phi[", i, "]")
-    body_txt <- gsub(pattern, replacement, body_txt)
+    # NULL / empty expressions
+    if (is.null(expr) || length(expr) == 0) {
+      return(expr)
+    }
+
+    # Atomic literals: numeric, logical, character, etc.
+    if (is.atomic(expr)) {
+      return(expr)
+    }
+
+    # Symbol (variable name)
+    if (is.name(expr)) {
+      name <- as.character(expr)
+
+      if (name == time_name) {
+        return(as.symbol("t"))
+      }
+
+      idx <- match(name, param_names)
+      if (!is.na(idx)) {
+        # Replace parameter by phi[idx]
+        return(substitute(phi[I], list(I = as.numeric(idx))))
+      }
+
+      # Any other symbol: leave untouched
+      return(expr)
+    }
+
+    # Call
+    if (is.call(expr)) {
+      op <- expr[[1]]
+
+      # Special case: assignment
+      if (as.character(op) %in% c("<-", "=", "<<-")) {
+        # LHS must NOT be transformed
+        lhs <- expr[[2]]
+        rhs <- expr[[3]]
+        return(as.call(list(
+          op,
+          lhs,
+          transform_expr(rhs)
+        )))
+      }
+
+      # General call: transform arguments only
+      new_args <- lapply(as.list(expr)[-1], transform_expr)
+      return(as.call(c(list(op), new_args)))
+    }
+
+    # Fallback (should not happen often)
+    expr
   }
-  body_txt <- gsub(paste0("\\b", time_name, "\\b"), "t", body_txt)
 
-  new_txt <- paste0("function(phi, t) ", body_txt)
-  eval(parse(text = new_txt), envir = environment(g_user))
+  # Transform body
+  new_body <- transform_expr(body(g_user))
+
+  # Build new function: function(t, phi)
+  new_fn <- function(t, phi) {}
+  body(new_fn) <- new_body
+  environment(new_fn) <- .GlobalEnv
+  new_fn
+
 }
+
 
 #' @title Validate forced covariate declarations for model parameters
 #'
