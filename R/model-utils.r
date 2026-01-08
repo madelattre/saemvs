@@ -99,7 +99,10 @@ transpile_to_cpp <- function(
     "digamma" = "R::digamma",
     "trigamma" = "R::trigamma",
     "is.nan" = "std::isnan",
-    "is.na" = "R_IsNA"
+    "is.na" = "R_IsNA",
+    "sum" = "arma::sum",
+    "c" = "arma::vec",
+    "is.infinite" = "std::isinf"
   )
 
   # Supported binary operators
@@ -135,126 +138,153 @@ transpile_to_cpp <- function(
   }
 
   # Infer type and generate initialization code for environment variables
-  infer_and_init_env_var <- function(var_name) {
-    # Check if variable exists in function environment
-    if (!is.null(context$func_env)) {
-      if (exists(var_name, envir = context$func_env, inherits = FALSE)) {
-        var_value <- get(var_name, envir = context$func_env, inherits = FALSE)
+  # infer_and_init_env_var <- function(var_name) {
+  #   # Check if variable exists in function environment
+  #   if (!is.null(context$func_env)) {
+  #     if (exists(var_name, envir = context$func_env, inherits = TRUE)) { # modif TRUE/FALSE
+  #       var_value <- get(var_name, envir = context$func_env, inherits = TRUE) # modif TRUE/FALSE
 
-        # Infer type based on value
-        if (is.numeric(var_value)) {
-          if (length(var_value) == 1) {
-            # Scalar
-            return(list(
-              type = "double",
-              declaration = paste0(
-                "double ",
-                var_name,
-                " = ",
-                as.character(var_value),
-                ";"
-              )
-            ))
-          } else {
-            # Vector
-            values_str <- paste(var_value, collapse = ", ")
-            return(list(
-              type = "arma::vec",
-              declaration = paste0(
-                "arma::vec ",
-                var_name,
-                " = arma::vec({",
-                values_str, "});"
-              )
-            ))
-          }
-        } else if (is.logical(var_value)) {
-          if (length(var_value) == 1) {
-            return(list(
-              type = "bool",
-              declaration = paste0(
-                "bool ",
-                var_name,
-                " = ",
-                ifelse(var_value, "true", "false"),
-                ";"
-              )
-            ))
-          } else {
-            # Logical vector - convert to numeric
-            values_str <- paste(as.numeric(var_value), collapse = ", ")
-            return(list(
-              type = "arma::vec",
-              declaration = paste0(
-                "arma::vec ",
-                var_name,
-                " = arma::vec({",
-                values_str, "});"
-              )
-            ))
-          }
-        } else if (is.character(var_value)) {
-          # Character - not fully supported, but we'll try
-          if (length(var_value) == 1) {
-            return(list(
-              type = "std::string",
-              declaration = paste0(
-                "std::string ",
-                var_name,
-                " = \"",
-                var_value,
-                "\";"
-              )
-            ))
-          } else {
-            # Character vector - not supported,
-            # use first element
-            add_warning(paste(
-              "Character vector",
-              var_name,
-              "truncated to first element"
-            ))
-            return(list(
-              type = "std::string",
-              declaration = paste0(
-                "std::string ",
-                var_name,
-                " = \"",
-                var_value[1],
-                "\";"
-              )
-            ))
-          }
-        } else {
-          # Unknown type - default to double
-          add_warning(paste(
-            "Unknown type for variable",
-            var_name,
-            "- defaulting to double"
-          ))
-          return(list(
-            type = "double",
-            declaration = paste0("double ", var_name, " = 0.0;")
-          ))
-        }
-      }
-    }
-    # Variable not found in environment - default to double
-    return(list( # nolint: return_linter
-      type = "double",
-      declaration = paste0("double ", var_name, ";")
-    ))
-  }
+  #       # Infer type based on value
+  #       if (is.numeric(var_value)) {
+  #         if (length(var_value) == 1) {
+  #           # Scalar
+  #           return(list(
+  #             type = "double",
+  #             declaration = paste0(
+  #               "double ",
+  #               var_name,
+  #               " = ",
+  #               as.character(var_value),
+  #               ";"
+  #             )
+  #           ))
+  #         } else {
+  #           # Vector
+  #           values_str <- paste(var_value, collapse = ", ")
+  #           return(list(
+  #             type = "arma::vec",
+  #             declaration = paste0(
+  #               "arma::vec ",
+  #               var_name,
+  #               " = arma::vec({",
+  #               values_str, "});"
+  #             )
+  #           ))
+  #         }
+  #       } else if (is.logical(var_value)) {
+  #         if (length(var_value) == 1) {
+  #           return(list(
+  #             type = "bool",
+  #             declaration = paste0(
+  #               "bool ",
+  #               var_name,
+  #               " = ",
+  #               ifelse(var_value, "true", "false"),
+  #               ";"
+  #             )
+  #           ))
+  #         } else {
+  #           # Logical vector - convert to numeric
+  #           values_str <- paste(as.numeric(var_value), collapse = ", ")
+  #           return(list(
+  #             type = "arma::vec",
+  #             declaration = paste0(
+  #               "arma::vec ",
+  #               var_name,
+  #               " = arma::vec({",
+  #               values_str, "});"
+  #             )
+  #           ))
+  #         }
+  #       } else if (is.character(var_value)) {
+  #         # Character - not fully supported, but we'll try
+  #         if (length(var_value) == 1) {
+  #           return(list(
+  #             type = "std::string",
+  #             declaration = paste0(
+  #               "std::string ",
+  #               var_name,
+  #               " = \"",
+  #               var_value,
+  #               "\";"
+  #             )
+  #           ))
+  #         } else {
+  #           # Character vector - not supported,
+  #           # use first element
+  #           add_warning(paste(
+  #             "Character vector",
+  #             var_name,
+  #             "truncated to first element"
+  #           ))
+  #           return(list(
+  #             type = "std::string",
+  #             declaration = paste0(
+  #               "std::string ",
+  #               var_name,
+  #               " = \"",
+  #               var_value[1],
+  #               "\";"
+  #             )
+  #           ))
+  #         }
+  #       } else {
+  #         # Unknown type - default to double
+  #         add_warning(paste(
+  #           "Unknown type for variable",
+  #           var_name,
+  #           "- defaulting to double"
+  #         ))
+  #         return(list(
+  #           type = "double",
+  #           declaration = paste0("double ", var_name, " = 0.0;")
+  #         ))
+  #       }
+  #     }
+  #   }
+  #   # Variable not found in environment - default to double
+  #   return(list( # nolint: return_linter
+  #     type = "double",
+  #     declaration = paste0("double ", var_name, ";")
+  #   ))
+  # }
 
-  # Declare a variable if necessary
-  declare_variable <- function(var_name) {
+
+
+  declare_variable <- function(var_name, init_value = NULL) {
     if (!var_name %in% context$variables &&
           !var_name %in% context$param_names) {
       context$variables <- c(context$variables, var_name)
-      # Check environment and infer type
-      var_info <- infer_and_init_env_var(var_name)
-      context$declarations <- c(context$declarations, var_info$declaration)
+
+      # Déterminer type et déclaration selon init_value
+      if (!is.null(init_value)) {
+        if (is.numeric(init_value) && length(init_value) == 1) {
+          type <- "double"
+          decl <- paste0("double ", var_name, " = ", init_value, ";")
+        } else if (is.logical(init_value) && length(init_value) == 1) {
+          type <- "bool"
+          decl <- paste0(
+            "bool ", var_name, " = ", ifelse(init_value,
+              "true", "false"
+            ),
+            ";"
+          )
+        } else {
+          type <- "double"
+          decl <- paste0("double ", var_name, ";")
+          add_warning(paste("Unknown type for variable", 
+                            var_name, "- defaulting to double"))
+        }
+      } else {
+        # Pas d'init_value : fallback double
+        type <- "double"
+        decl <- paste0("double ", var_name, ";")
+      }
+
+      context$declarations <- c(context$declarations, decl)
+      return(type)
     }
+    return(NULL)
   }
 
   # Add a code line with proper indentation
@@ -834,19 +864,21 @@ transpile_to_cpp <- function(
 #'
 #' @examples
 #' \dontrun{
-#'   g_model <- function(phi, t) phi[1] * exp(-phi[2] * t)
-#'   backend <- build_backend_r(g_model)
-#'   samples <- backend$g_vector(c(1, 0.5), c(0, 1, 2, 3))
+#' g_model <- function(phi, t) phi[1] * exp(-phi[2] * t)
+#' backend <- build_backend_r(g_model)
+#' samples <- backend$g_vector(c(1, 0.5), c(0, 1, 2, 3))
 #' }
 #'
 #' @keywords internal
 build_backend_r <- function(g_fun) {
-  g_scalar <- function(phi, t) {
-    g_fun(phi, t)
+  g_scalar <- function(t, phi) {
+    if (is.matrix(phi) && nrow(phi) > 1) phi <- as.vector(phi)
+    g_fun(t, phi)
   }
 
-  g_vector <- function(phi, t) {
-    vapply(t, function(ti) g_fun(phi, ti), numeric(1))
+
+  g_vector <- function(t, phi) {
+    vapply(t, function(ti) g_fun(ti, phi), numeric(1))
   }
 
   rmvnorm <- function(mean, sigma) {
@@ -863,9 +895,8 @@ build_backend_r <- function(g_fun) {
     -0.5 * (k * log(2 * pi) + log(det(sigma)) + quadform)
   }
 
-  metropolis_vector <- function(
-      y, t, phi_current, mean_prop, var_prop_mat,
-      sigma2, niter_mh, kappa, kernel = "pop") {
+  metropolis_vector <- function(y, t, phi_current, mean_prop, var_prop_mat,
+                                sigma2, niter_mh, kappa, kernel = "pop") {
     n <- length(y)
     phi_chains <- vector("list", n)
     sd <- sqrt(sigma2)
@@ -894,8 +925,8 @@ build_backend_r <- function(g_fun) {
         logratio <- 0
 
         for (j in seq_len(ni)) {
-          mean_new <- g_scalar(phi_prop, t_i[j])
-          mean_old <- g_scalar(phi_old, t_i[j])
+          mean_new <- g_scalar(t_i[j], phi_prop)
+          mean_old <- g_scalar(t_i[j], phi_old)
           logratio <- logratio +
             dnorm(y_i[j], mean_new, sd, log = TRUE) -
             dnorm(y_i[j], mean_old, sd, log = TRUE)
@@ -986,7 +1017,7 @@ build_backend_r <- function(g_fun) {
 #'
 #' # Use compiled functions for inference
 #' samples <- backend$metropolis_vector(
-#' y, t, phi_init, mean_prop, var_prop, sigma2, niter
+#'   y, t, phi_init, mean_prop, var_prop, sigma2, niter
 #' )
 #' }
 #'
@@ -1003,10 +1034,10 @@ using namespace Rcpp;
 %s
 
 // [[Rcpp::export]]
-arma::vec g_vector_cpp(const arma::vec& phi, const arma::vec& t) {
+arma::vec g_vector_cpp(const arma::vec& t, const arma::vec& phi) {
   arma::vec out(t.n_elem);
   for (int i = 0; i < t.n_elem; i++)
-    out[i] = g_scalar_cpp(phi, t[i]);
+    out[i] = g_scalar_cpp(t[i], phi);
   return out;
 }
 
@@ -1066,8 +1097,8 @@ List metropolis_vector_cpp(
       double sd = std::sqrt(sigma2);
 
       for (int j = 0; j < ni; ++j) {
-        double mean_new = g_scalar_cpp(phi_prop, t_i[j]);
-        double mean_old = g_scalar_cpp(phi_old, t_i[j]);
+        double mean_new = g_scalar_cpp(t_i[j], phi_prop);
+        double mean_old = g_scalar_cpp(t_i[j], phi_old);
         logratio += R::dnorm(y_i[j], mean_new, sd, true)
                   - R::dnorm(y_i[j], mean_old, sd, true);
       }
@@ -1136,8 +1167,8 @@ List metropolis_vector_cpp(
 #'
 #' @examples
 #' \dontrun{
-#'   backend <- compile_model(my_model_func, use_cpp = TRUE)
-#'   backend_r <- compile_model(my_model_func, use_cpp = FALSE, silent = TRUE)
+#' backend <- compile_model(my_model_func, use_cpp = TRUE)
+#' backend_r <- compile_model(my_model_func, use_cpp = FALSE, silent = TRUE)
 #' }
 #'
 #' @seealso
