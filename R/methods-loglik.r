@@ -103,7 +103,7 @@ setMethod(
 
     log_lik_i <- function(i) {
       contribution <- sum(apply(phi_samples[[i]], 1, function(phi_i) {
-        exp(-sum((yi[[i]] - backend$g_vector(phi_i, ti[[i]]))^2) / (2 * sigma2))
+        exp(-sum((yi[[i]] - backend$g_vector(ti[[i]], phi_i))^2) / (2 * sigma2))
       }))
 
       log((2 * pi * sigma2)^(-ni[i] / 2) * contribution / num_samples)

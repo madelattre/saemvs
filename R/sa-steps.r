@@ -45,7 +45,7 @@ sa_step_to_select <- function(config, iteration, state, backend) {
     seq_along(config$y_series),
     function(i) {
       sum((config$y_series[[i]] -
-             config$model_function(phi_matrix[i, ], config$t_series[[i]]))^2)
+             config$model_function(config$t_series[[i]], phi_matrix[i, ]))^2)
     },
     numeric(1)
   )
@@ -107,7 +107,7 @@ sa_step_not_to_select <- function(config, iteration, state, backend) {
     seq_along(config$y_series),
     function(i) {
       sum((config$y_series[[i]] -
-             config$model_function(phi_matrix[i, ], config$t_series[[i]]))^2)
+             config$model_function(config$t_series[[i]], phi_matrix[i, ]))^2)
     },
     numeric(1)
   )
@@ -177,7 +177,7 @@ sa_step_all <- function(config, iteration, state, backend) {
     seq_along(config$y_series),
     function(i) {
       sum((config$y_series[[i]] -
-             backend$g_vector(phi_matrix[i, ], config$t_series[[i]]))^2)
+             backend$g_vector(config$t_series[[i]], phi_matrix[i, ]))^2)
     },
     numeric(1)
   )
