@@ -391,6 +391,7 @@ setMethod(
     nu0_grid <- res_saemvs@spike_values_grid
     nb_nu0 <- length(nu0_grid)
     pen <- res_saemvs@criterion
+    phi_names <- res_saemvs@phi_names[res_saemvs@phi_to_select_idx]
 
     p <- dim(support[[1]])[1] - 1
     q <- dim(support[[1]])[2]
@@ -439,13 +440,13 @@ setMethod(
         ggplot2::xlab(expression(paste("log(", nu[0], " ) "))) +
         ggplot2::ylab(expression(hat(beta))) +
         ggplot2::theme(legend.position = "none") +
-        ggplot2::ggtitle(bquote("Parameter " ~ varphi[.(m)])) +
+        ggplot2::ggtitle(paste("Parameter ", phi_names[m])) +
         ggplot2::geom_vline(
           xintercept = x_min, color = "red",
           linetype = "dashed"
         )
     }
 
-    return(list(reg_plot = g, ebic_plot = g2))
+    return(list(reg_plot = g, ebic_plot = g2)) # nolint: return_linter
   }
 )
