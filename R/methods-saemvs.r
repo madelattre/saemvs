@@ -231,7 +231,10 @@ setMethod(
       phi_fixed_idx = model_processed@phi_fixed_idx,
       phi_to_select_idx = model_processed@phi_to_select_idx,
       forced_variables_idx = forced_variables_idx,
-      selected_variables_idx = selected_variables_idx
+      selected_variables_idx = selected_variables_idx,
+      phi_names = model@phi_names,
+      x_candidates_names = data@x_candidates_names,
+      x_forced_names = data@x_forced_names
     )
 
     return(res) # nolint : return_linter
