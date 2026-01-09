@@ -282,72 +282,6 @@ saemvsData_from_df <- function(formula, # nolint:  object_name_linter.
   )
 }
 
-#' @keywords internal
-#' @noRd
-saemvsDataFromDFs <- function(long_df,
-                              covar_df,
-                              id_col,
-                              y_col,
-                              t_col,
-                              x_candidates_cols = NULL,
-                              x_forced_cols = NULL) {
-  # Validation
-  for (col in c(id_col, y_col, t_col)) {
-    if (!col %in% names(long_df)) {
-      stop(sprintf("Column '%s' is missing in long_df.", col))
-    }
-  }
-
-  for (col in unique(c(id_col, x_candidates_cols, x_forced_cols))) {
-    if (!is.na(col) && !col %in% names(covar_df)) {
-      stop(sprintf("Column '%s' is missing in covar_df.", col))
-    }
-  }
-
-  # Check that all individuals in long_df are in covar_df
-  individuals_long <- unique(long_df[[id_col]])
-  individuals_covar <- unique(covar_df[[id_col]])
-  if (!all(individuals_long %in% individuals_covar)) {
-    stop("Some individuals in long_df are not present in covar_df.")
-  }
-
-  # Split longitudinal data by individual
-  split_data <- split(long_df, long_df[[id_col]])
-
-  # Create y_series and t_series as lists
-  y_series <- lapply(split_data, function(df) df[[y_col]])
-  t_series <- lapply(split_data, function(df) df[[t_col]])
-
-  # Extract covariate dataframe with unique individuals
-  covar_df <- covar_df[!duplicated(covar_df[[id_col]]), ]
-
-  # Determine forced covariates
-  if (!is.null(x_forced_cols) && length(x_forced_cols) > 0) {
-    x_forced <- as.matrix(covar_df[, x_forced_cols, drop = FALSE])
-    if (!is.numeric(x_forced)) {
-      stop("x_forced must be numeric.")
-    }
-  } else {
-    x_forced <- NULL
-  }
-
-  # Determine candidate covariates
-  if (!is.null(x_candidates_cols) && length(x_candidates_cols) > 0) {
-    x_candidates <- as.matrix(covar_df[, x_candidates_cols, drop = FALSE])
-    if (!is.numeric(x_candidates)) {
-      stop("x_candidates must be numeric.")
-    }
-  } else {
-    x_candidates <- NULL
-  }
-
-  saemvsData(
-    y = y_series,
-    t = t_series,
-    x_candidates = x_candidates,
-    x_forced = x_forced
-  )
-}
 
 
 
@@ -456,7 +390,7 @@ setClass(
 
 #' Internal constructor for saemvsProcessedData
 #' @keywords internal
-saemvsProcessedData <- function(# nolint:  object_name_linter.
+saemvsProcessedData <- function( # nolint:  object_name_linter.
     x_phi_to_select = NULL,
     x_phi_not_to_select = NULL,
     tx_x_phi_to_select = NULL,
@@ -508,7 +442,7 @@ setClass(
     x_forced_support = "matrixORNULL"
   ),
   prototype = list(
-    model_func = function(phi, t) numeric(0),
+    model_func = function(t, phi) numeric(0),
     phi_dim = as.integer(1),
     phi_to_select_idx = integer(0),
     phi_fixed_idx = integer(0),
@@ -737,7 +671,7 @@ setClass(
 #' @seealso \code{\link{saemvsProcessedModel}}
 #'
 #' @export
-saemvsModel <- function(# nolint:  object_name_linter.
+saemvsModel <- function( # nolint:  object_name_linter.
     g,
     phi_to_select = NULL,
     phi_fixed = NULL,
@@ -922,7 +856,7 @@ setClass(
 #' }
 #'
 #' @export
-saemvsHyperSlab <- function(# nolint:  object_name_linter.
+saemvsHyperSlab <- function( # nolint:  object_name_linter.
     slab_parameter = 12000,
     cov_re_prior_scale,
     cov_re_prior_df = 1) {
@@ -983,7 +917,7 @@ setClass(
 #' @keywords internal
 #' @return An object of class \code{saemvsHyperSpikeAndSlab}
 #' @name saemvsHyperSpikeAndSlab
-saemvsHyperSpikeAndSlab <- function(# nolint:  object_name_linter.
+saemvsHyperSpikeAndSlab <- function( # nolint:  object_name_linter.
     spike_parameter,
     hyper_slab) {
   methods::new("saemvsHyperSpikeAndSlab",
@@ -1151,7 +1085,7 @@ setClass(
 #' @param default Logical. If TRUE, ignore all slots except intercept.
 #' @return An object of class \code{saemvsInit}.
 #' @export
-saemvsInit <- function(# nolint:  object_name_linter.
+saemvsInit <- function( # nolint:  object_name_linter.
     intercept,
     beta_forced = NULL,
     beta_candidates = NULL,
@@ -1226,7 +1160,7 @@ setClass(
 #' @param inclusion_prob Numeric vector or NULL. Inclusion probabilities for
 #'  phi components.
 #' @return An object of class \code{saemvsProcessedInit}.
-saemvsProcessedInit <- function(# nolint:  object_name_linter.
+saemvsProcessedInit <- function( # nolint:  object_name_linter.
     beta_to_select = NULL,
     beta_not_to_select = NULL,
     gamma_to_select = NULL,
@@ -1419,7 +1353,7 @@ setClass(
 #'
 #' @return An object of class \code{saemvsTuning}.
 #' @export
-saemvsTuning <- function(# nolint:  object_name_linter.
+saemvsTuning <- function( # nolint:  object_name_linter.    
     niter = 500,
     nburnin = 350,
     niter_mh = 5,
