@@ -1603,10 +1603,10 @@ setClass(
 #'
 #' @slot beta_to_select A list of matrices containing the estimated regression
 #'   coefficients for covariates that are related with the components of
-#' `phi` that are subject to selection (\code{phi_to_select}) at each iteration.
+#' `phi` that are subject to selection (\code{phi_to_select_idx}) at each iteration.
 #' @slot beta_not_to_select A list of matrices containing the estimated
 #'  regression coefficients for covariates that are related with the components
-#'  of `phi` that are not subject to selection (\code{phi_not_to_select}) at
+#'  of `phi` that are not subject to selection (\code{phi_not_to_select_idx}) at
 #'  each iteration.
 #' @slot gamma_to_select A list of covariance matrices estimated at each
 #' iteration for the random effects associated with \code{phi_to_select}.
@@ -1614,6 +1614,17 @@ setClass(
 #'  iteration for the random effects associated with \code{phi_not_to_select}.
 #' @slot sigma2 A numeric vector of estimated residual variances at each
 #'  iteration.
+#' @slot phi_to_select_idx Numeric vector or NULL. Indices of components of
+#'   \eqn{\phi} that are subject to variable selection.
+#' @slot phi_not_to_select_idx Numeric vector or NULL. Indices of components of
+#'   \eqn{\phi} that are not subject to variable selection.
+#' @slot phi_names Character vector or NULL. Names of all \eqn{\phi} components,
+#'   used for labeling and summaries.
+#' @slot x_candidates_names Character vector or NULL. Names of candidate
+#'   covariates associated with \code{beta_to_select}.
+#' @slot x_forced_names Character vector or NULL. Names of forced covariates
+#'   associated with \code{beta_not_to_select}.
+
 #'
 setClass(
   "saemResults",
@@ -1624,7 +1635,10 @@ setClass(
     gamma_not_to_select = "listORNULL",
     sigma2 = "numericORNULL",
     phi_to_select_idx = "numericORNULL",
-    phi_not_to_select_idx = "numericORNULL"
+    phi_not_to_select_idx = "numericORNULL",
+    phi_names = "characterORNULL",
+    x_candidates_names = "characterORNULL",
+    x_forced_names = "characterORNULL"
   ),
   prototype = list(
     beta_to_select = NULL,
@@ -1633,7 +1647,10 @@ setClass(
     gamma_not_to_select = NULL,
     sigma2 = NULL,
     phi_to_select_idx = NULL,
-    phi_not_to_select_idx = NULL
+    phi_not_to_select_idx = NULL,
+    phi_names = NULL,
+    x_candidates_names = NULL,
+    x_forced_names = NULL
   ),
   validity = function(object) {
     # Check beta_to_select
