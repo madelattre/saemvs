@@ -277,6 +277,11 @@ saemvsData <- function( # nolint:  object_name_linter.
 #' @export
 saemvsData_from_df <- function(formula, # nolint:  object_name_linter.
                                data) {
+
+  if (anyNA(data)) {
+    stop("Data contains missing values. Please remove all NA values from the dataframe before proceeding.") # nolint: line_length_linter.
+  }
+  
   variable_names <- get_variables_from_formula(formula)
 
   # Check that required columns exist
