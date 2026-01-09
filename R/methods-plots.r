@@ -86,9 +86,21 @@ setMethod(
     phi_to_select_idx <- res_saem@phi_to_select_idx
     phi_not_to_select_idx <- res_saem@phi_not_to_select_idx
 
+    phi_names <- res_saem@phi_names
+    x_candidates_names <- res_saem@x_candidates_names
+    x_forced_names <- res_saem@x_forced_names
+
     if (!is.null(phi)) {
+      if (!(phi %in% phi_names)) {
+        stop(
+          sprintf("Parameter '%s' is not present in phi_names of the SAEM object.", phi) # nolint: line_length_linter
+        )
+      }
+
+      phi_idx <- which(phi_names == phi)
+
       if (component %in% c("coef_phi_sel", "variance_phi_sel")) {
-        if (is.null(phi_to_select_idx) || !(phi %in% phi_to_select_idx)) {
+        if (is.null(phi_to_select_idx) || !(phi_idx %in% phi_to_select_idx)) {
           stop(
             sprintf(
               paste0(
@@ -102,7 +114,7 @@ setMethod(
         }
       } else if (component %in% c("coef_phi_non_sel", "variance_phi_non_sel")) {
         if (is.null(phi_not_to_select_idx) ||
-          !(phi %in% phi_not_to_select_idx)) {
+              !(phi_idx %in% phi_not_to_select_idx)) {
           stop(
             sprintf(
               paste0(
@@ -182,24 +194,55 @@ setMethod(
 
       # --- Create facet labels according to component ---
       make_facet_label <- function(comp, i, j) {
-        if (comp == "coef_phi_sel") {
-          paste0("\u03C6", phi_to_select_idx[j], ", var. ", i - 1)
+
+        # intercept
+        var_label <- if (i == 1) {
+          "intercept"
+        } else if (comp == "coef_phi_sel") {
+          x_candidates_names[i - 1]
         } else if (comp == "coef_phi_non_sel") {
-          paste0("\u03C6", phi_not_to_select_idx[j], ", var. ", i - 1)
+          x_forced_names[i - 1]
+        } else {
+          NA
+        }
+
+        if (comp == "coef_phi_sel") {
+          paste0(
+            phi_names[phi_to_select_idx[j]],
+            ", ",
+            var_label
+          )
+
+        } else if (comp == "coef_phi_non_sel") {
+          paste0(
+            phi_names[phi_not_to_select_idx[j]],
+            ", ",
+            var_label
+          )
+
         } else if (comp == "variance_phi_sel") {
           paste0(
-            "cov(", "\u03C6", phi_to_select_idx[i],
-            ", \u03C6", phi_to_select_idx[j], ")"
+            "cov(",
+            phi_names[phi_to_select_idx[i]],
+            ", ",
+            phi_names[phi_to_select_idx[j]],
+            ")"
           )
+
         } else if (comp == "variance_phi_non_sel") {
           paste0(
-            "cov(", "\u03C6", phi_not_to_select_idx[i],
-            ", \u03C6", phi_not_to_select_idx[j], ")"
+            "cov(",
+            phi_names[phi_not_to_select_idx[i]],
+            ", ",
+            phi_names[phi_not_to_select_idx[j]],
+            ")"
           )
         } else {
           NA
         }
       }
+
+
 
       df$facet_label <- mapply(make_facet_label, component, df$i, df$j)
       possible_components <- unique(df$facet_label)
@@ -219,7 +262,7 @@ setMethod(
         n <- as.numeric(sub("top:", "", sel_components))
 
         if (!is.null(phi)) {
-          df_col <- base::subset(df, j == phi)
+          df_col <- base::subset(df, j == phi_idx)
         } else {
           df_col <- df
         }
