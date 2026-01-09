@@ -575,7 +575,11 @@ setMethod(
 #' @param tuning_algo A \link[=saemvsTuning-class]{saemvsTuning} object
 #' specifying algorithm hyperparameters.
 #' @param hyperparam A \link[=saemvsHyperSlab-class]{saemvsHyperSlab} object
-#' defining the slab prior.
+#' defining the slab prior. Internally combined with a spike value to form
+#' a \code{saemvsHyperSpikeAndSlab} object.
+#' @param use_cpp Logical. If TRUE (default), the model function is compiled
+#'   to C++ for faster execution. If FALSE, a pure R backend is used.
+
 #'
 #' @return A \link[=saemResults-class]{saemResults} object containing estimated
 #' parameters.
@@ -590,6 +594,11 @@ setMethod(
 #'   \item Return parameter estimates packaged in a `saemResults` object.
 #' }
 #'
+#' @note
+#' This function is intended for testing and debugging purposes only.
+#' It does not perform variable selection across a grid of spike values
+#' and should not be used for final model comparison.
+#'
 #' @examples
 #' \dontrun{
 #' test_results <- test_saemvs(
@@ -602,7 +611,7 @@ setMethod(
 #' @export
 setGeneric(
   "test_saemvs",
-  function(data, model, init, tuning_algo, hyperparam) {
+  function(data, model, init, tuning_algo, hyperparam, use_cpp = TRUE) {
     standardGeneric("test_saemvs")
   }
 )
@@ -618,22 +627,26 @@ setMethod(
     tuning_algo = "saemvsTuning",
     hyperparam = "saemvsHyperSlab"
   ),
-  function(data, model, init, tuning_algo, hyperparam) {
-    compile_model(model@model_func)
+  function(data, model, init, tuning_algo, hyperparam, use_cpp = TRUE) {
+    check_data_and_model(data, model)
+    model_processed <- prepare_model(data, model)
+    backend <- compile_model(
+      model_processed@model_func, use_cpp,
+      silent = TRUE
+    )
 
     full_hyperparam <- saemvsHyperSpikeAndSlab(
       tuning_algo@spike_values_grid[1],
       hyperparam
     )
 
-    check_data_and_model(data, model)
-    model_processed <- prepare_model(data, model)
     data_processed <- prepare_data(data, model_processed)
     check_init(init, data_processed, model_processed)
     init_alg <- prepare_init(init, model_processed, data_processed)
 
     saem_state <- run_saem(
-      data_processed, model_processed, init_alg, tuning_algo, full_hyperparam
+      data_processed, model_processed, init_alg, tuning_algo, full_hyperparam,
+      backend
     )
 
     res <- methods::new(
@@ -643,11 +656,14 @@ setMethod(
       gamma_to_select = saem_state$gamma_to_select,
       gamma_not_to_select = saem_state$gamma_not_to_select,
       sigma2 = saem_state$sigma2,
-      phi_to_select_idx = model@phi_to_select_idx,
+      phi_to_select_idx = model_processed@phi_to_select_idx,
       phi_not_to_select_idx = setdiff(
-        seq_len(model@phi_dim),
-        model@phi_to_select_idx
-      )
+        seq_len(model_processed@phi_dim),
+        model_processed@phi_to_select_idx
+      ),
+      phi_names = model@phi_names,
+      x_candidates_names = data@x_candidates_names,
+      x_forced_names = data@x_forced_names
     )
 
     return(res) # nolint : return_linter
