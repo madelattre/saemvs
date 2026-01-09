@@ -52,76 +52,97 @@ setMethod(
     fixed_param_idx <- saem_results@phi_fixed_idx
     phi_to_select_idx <- saem_results@phi_to_select_idx
 
+    x_candidates_names <- saem_results@x_candidates_names %||% character(0)
+    x_forced_names <- saem_results@x_forced_names %||% character(0)
+
+
     best_model_idx <- which.min(saem_results@criterion_values)
 
     forced_variables_idx <- saem_results@forced_variables_idx[[best_model_idx]]
-    selected_variables_idx <-
-      saem_results@selected_variables_idx[[best_model_idx]]
-
+    selected_variables_idx <- saem_results@selected_variables_idx[[best_model_idx]] # nolint: line_length_linter
 
     best_support_matrix <- saem_results@unique_support[[best_model_idx]]
     support_dim <- dim(best_support_matrix)
     num_phi_sel <- support_dim[2]
 
+    # Récupération des noms de phi
+    phi_names <- saem_results@phi_names
+
+
     cat("\n---- Selected Variables ----\n")
     cat("----------------------------\n\n")
     for (j in seq_len(num_phi_sel)) {
-      # Candidate rows exclude intercept (row 1) and forced covariates
+      # Candidate rows excluent l'intercept (row 1) et les covariables forcées
       candidate_rows <- setdiff(
-        seq_len(support_dim[1])[-1],
-        forced_variables_idx + 1
+        seq_len(support_dim[1])[-1], forced_variables_idx + 1
       )
       selected_rel <- which(best_support_matrix[candidate_rows, j] == TRUE)
       if (length(selected_rel) > 0) {
         selected_abs <- intersect(selected_rel, selected_variables_idx)
+        selected_abs_names <- character(0)
+        if (length(selected_abs) > 0 && length(x_candidates_names) > 0) {
+          selected_abs_names <- x_candidates_names[selected_abs]
+        }
         cat(sprintf(
-          "  - \u03C6%d : %s\n", phi_to_select_idx[j],
-          paste(selected_abs, collapse = ", ")
+          "  - %s : %s\n", phi_names[phi_to_select_idx[j]],
+          if (length(selected_abs_names) > 0) {
+            paste(selected_abs_names, collapse = ", ")
+          } else {
+            "(none)"
+          }
         ))
       } else {
-        cat(sprintf("  - \u03C6%d : (none)\n", phi_to_select_idx[j]))
+        cat(sprintf("  - %s : (none)\n", phi_names[phi_to_select_idx[j]]))
       }
     }
 
-
     beta_est <- saem_results@mle_estimates[[best_model_idx]]$beta
     gamma_est <- saem_results@mle_estimates[[best_model_idx]]$gamma
-    num_phi <- dim(beta_est)[2]
 
-    colnames(beta_est) <- paste0("\u03C6", seq_len(num_phi))
+
+    colnames(beta_est) <- phi_names
 
     row_labels <- character(nrow(beta_est))
     row_labels[1] <- "\u03BC"
 
+    # Forced variables
     if (length(forced_variables_idx) > 0) {
-      forced_rows <- 1 + seq_along(forced_variables_idx) # 1 (intercept)
+      forced_rows <- 1 + seq_along(forced_variables_idx) # 1 = intercept # nolint: commented_code_linter
       for (i in seq_along(forced_rows)) {
-        row_labels[forced_rows[i]] <- paste0("forced_", forced_variables_idx[i])
+        idx <- forced_variables_idx[i]
+        if (length(x_forced_names) >= idx) {
+          name <- x_forced_names[idx]
+        } else {
+          name <- paste0("forced_", idx)
+        }
+        row_labels[forced_rows[i]] <- name
       }
     } else {
       forced_rows <- integer(0)
     }
 
+    # Selected variables
     if (length(selected_variables_idx) > 0) {
       candidate_rows <- setdiff(2:nrow(beta_est), forced_rows)
       if (length(candidate_rows) != length(selected_variables_idx)) {
-        warning(
-          "Mismatch between selected_variables_idx and available beta rows."
-        )
+        warning("Mismatch between selected_variables_idx and available beta rows.") # nolint: line_length_linter
       }
       for (i in seq_along(selected_variables_idx)) {
-        row_labels[candidate_rows[i]] <- paste0(
-          "selected_",
-          selected_variables_idx[i]
-        )
+        idx <- selected_variables_idx[i]
+        if (length(x_candidates_names) >= idx) {
+          name <- x_candidates_names[idx]
+        } else {
+          name <- paste0("selected_", idx)
+        }
+        row_labels[candidate_rows[i]] <- name
       }
     }
 
+
     rownames(beta_est) <- row_labels
 
-    colnames(gamma_est) <- paste0("\u03C6", seq_len(num_phi))
-    rownames(gamma_est) <- paste0("\u03C6", seq_len(num_phi))
-
+    colnames(gamma_est) <- phi_names
+    rownames(gamma_est) <- phi_names
 
     cat("\n---- Estimated Parameters ----\n")
     cat("------------------------------\n\n")
