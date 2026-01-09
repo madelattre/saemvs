@@ -36,7 +36,11 @@ setClassUnion("characterORNULL", c("character", "NULL"))
 #' (rows = individuals, columns = covariates).
 #' @slot x_forced matrix or NULL. Matrix of forced covariates
 #' (rows = individuals, columns = covariates).
-#'
+#' @slot x_candidates_names character vector or NULL.
+#'   Names of the candidate covariates, should match columns of x_candidates.
+#' @slot x_forced_names character vector or NULL.
+#'   Names of the forced covariates, should match columns of x_forced.
+
 #' @section Validity:
 #' \itemize{
 #'   \item \code{y_series} and \code{t_series} must have the same length.
@@ -44,7 +48,7 @@ setClassUnion("characterORNULL", c("character", "NULL"))
 #'  vectors of the same length.
 #'   \item If provided, \code{x_candidates} and \code{x_forced} must each have
 #'  as many rows as the length of \code{y_series}.
-#'   \item If provided, , \code{x_candidates} and \code{x_forced} must not have
+#'   \item If provided, \code{x_candidates} and \code{x_forced} must not have
 #'  any columns in common.
 #'   \item All matrices must be numeric.
 #' }
@@ -64,13 +68,17 @@ setClass(
     y_series     = "list",
     t_series     = "list",
     x_candidates = "matrixORNULL",
-    x_forced     = "matrixORNULL"
+    x_forced     = "matrixORNULL",
+    x_candidates_names = "characterORNULL",
+    x_forced_names     = "characterORNULL"
   ),
   prototype = list(
     y_series     = list(),
     t_series     = list(),
     x_candidates = NULL,
-    x_forced     = NULL
+    x_forced     = NULL,
+    x_candidates_names = NULL,
+    x_forced_names     = NULL
   ),
   validity = function(object) {
     n <- length(object@y_series)
@@ -131,6 +139,34 @@ setClass(
           }
         }
       }
+
+      # Check that names match the number of columns
+      if (!is.null(object@x_candidates_names)) {
+        if (is.null(object@x_candidates)) {
+          return("'x_candidates_names' is provided but 'x_candidates' is NULL.")
+        }
+        if (length(object@x_candidates_names) != ncol(object@x_candidates)) {
+          return(sprintf(
+            "'x_candidates_names' must have %d elements (matching columns of x_candidates); currently %d.", # nolint: line_length_linter.
+            ncol(object@x_candidates),
+            length(object@x_candidates_names)
+          ))
+        }
+      }
+
+      if (!is.null(object@x_forced_names)) {
+        if (is.null(object@x_forced)) {
+          return("'x_forced_names' is provided but 'x_forced' is NULL.")
+        }
+        if (length(object@x_forced_names) != ncol(object@x_forced)) {
+          return(sprintf(
+            "'x_forced_names' must have %d elements (matching columns of x_forced); currently %d.", # nolint: line_length_linter.
+            ncol(object@x_forced),
+            length(object@x_forced_names)
+          ))
+        }
+      }
+
     }
 
     TRUE
@@ -157,7 +193,9 @@ saemvsData <- function(# nolint:   object_name_linter.
     y_series     = y,
     t_series     = t,
     x_candidates = x_candidates,
-    x_forced     = x_forced
+    x_forced     = x_forced,
+    x_candidates_names = colnames(x_candidates),
+    x_forced_names = colnames(x_forced)
   )
 }
 
@@ -274,11 +312,13 @@ saemvsData_from_df <- function(formula, # nolint:  object_name_linter.
     x_candidates <- NULL
   }
 
-  saemvsData(
-    y = y_series,
-    t = t_series,
+  methods::new("saemvsData",
+    y_series     = y_series,
+    t_series     = t_series,
     x_candidates = x_candidates,
-    x_forced = x_forced
+    x_forced     = x_forced,
+    x_candidates_names = colnames(x_candidates),
+    x_forced_names = colnames(x_forced)
   )
 }
 
@@ -1470,6 +1510,16 @@ saemvsTuning <- function( # nolint:  object_name_linter.
 #'   covariates that were selected by the variable selection procedure
 #'   (excluding forced covariates).
 #'
+#' @slot phi_to_select_idx Numeric vector. Indices of phi components
+#'   that are subject to variable selection.
+#'
+#' @slot phi_names Character vector or NULL. Names of all phi parameters,
+#'   used for display and summaries.
+#'
+#' @slot x_candidates_names Character vector or NULL. Names of candidate
+#'  covariates.
+#' @slot x_forced_names Character vector or NULL. Names of forced covariates.
+#'
 #' @details
 #' The class is mainly used as an internal result structure and is returned by
 #' functions implementing SAEMVS. Downstream methods such as
@@ -1491,7 +1541,10 @@ setClass(
     phi_fixed_idx = "numericORNULL",
     phi_to_select_idx = "numeric",
     forced_variables_idx = "list",
-    selected_variables_idx = "list"
+    selected_variables_idx = "list",
+    phi_names = "characterORNULL",
+    x_candidates_names = "characterORNULL",
+    x_forced_names = "characterORNULL"
   ),
   prototype = list(
     criterion = character(0),
@@ -1506,7 +1559,10 @@ setClass(
     phi_fixed_idx = numeric(0),
     phi_to_select_idx = numeric(0),
     forced_variables_idx = list(),
-    selected_variables_idx = list()
+    selected_variables_idx = list(),
+    phi_names = NULL,
+    x_candidates_names = NULL,
+    x_forced_names = NULL
   ),
   validity = function(object) {
     if (!object@criterion %in% c("BIC", "e-BIC")) {
