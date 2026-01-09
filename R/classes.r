@@ -184,18 +184,36 @@ setClass(
 #'
 #' @return An object of class \code{saemvsData}.
 #' @keywords internal
-saemvsData <- function(# nolint:   object_name_linter.
-    y,
-    t,
-    x_candidates = NULL,
-    x_forced = NULL) {
-  methods::new("saemvsData",
-    y_series     = y,
-    t_series     = t,
+saemvsData <- function( # nolint:  object_name_linter.
+  y,
+  t,
+  x_candidates = NULL,
+  x_forced = NULL
+) {
+  # Noms par défaut pour x_candidates
+  x_candidates_names <- if (!is.null(x_candidates)) {
+    cn <- colnames(x_candidates)
+    if (is.null(cn)) paste0("X", seq_len(ncol(x_candidates))) else cn
+  } else {
+    NULL
+  }
+
+  # Noms par défaut pour x_forced
+  x_forced_names <- if (!is.null(x_forced)) {
+    cn <- colnames(x_forced)
+    if (is.null(cn)) paste0("F", seq_len(ncol(x_forced))) else cn
+  } else {
+    NULL
+  }
+
+  methods::new(
+    "saemvsData",
+    y_series = y,
+    t_series = t,
     x_candidates = x_candidates,
-    x_forced     = x_forced,
-    x_candidates_names = colnames(x_candidates),
-    x_forced_names = colnames(x_forced)
+    x_forced = x_forced,
+    x_candidates_names = x_candidates_names,
+    x_forced_names = x_forced_names
   )
 }
 
@@ -312,13 +330,11 @@ saemvsData_from_df <- function(formula, # nolint:  object_name_linter.
     x_candidates <- NULL
   }
 
-  methods::new("saemvsData",
-    y_series     = y_series,
-    t_series     = t_series,
+  saemvsData(
+    y            = y_series,
+    t            = t_series,
     x_candidates = x_candidates,
-    x_forced     = x_forced,
-    x_candidates_names = colnames(x_candidates),
-    x_forced_names = colnames(x_forced)
+    x_forced     = x_forced
   )
 }
 
