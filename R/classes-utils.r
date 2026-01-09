@@ -193,9 +193,6 @@ get_variables_from_formula <- function(f) {
 
 make_phi_fn <- function(g_user) {
   fmls <- names(formals(g_user))
-  if (length(fmls) < 1) {
-    stop("Function must have at least one argument (time)")
-  }
 
   time_name <- fmls[1]
   param_names <- if (length(fmls) > 1) fmls[-1] else character(0)
