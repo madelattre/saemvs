@@ -577,6 +577,44 @@ setClass(
       }
     }
 
+    ## ---- model_func ----
+    g <- object@model_func
+
+    if (!is.function(g)) {
+      return("'model_func' must be a function.")
+    }
+
+    fmls <- names(formals(g))
+
+    ## At least two arguments: time + at least one parameter
+    if (length(fmls) < 2L) {
+      return(
+        "'model_func' must have at least two arguments: time and at least one parameter." # nolint: line_length_linter.
+      )
+    }
+
+    ## No dots
+    if ("..." %in% fmls) {
+      return("'model_func' must not use '...'.")
+    }
+
+    ## ---- Check return type (numeric scalar) ----
+    ## We evaluate the function on dummy inputs
+    t <- 0
+    pars <- rep(1, length(fmls) - 1)
+    names(pars) <- fmls[-1]
+
+    res <- try(
+      do.call(g, c(list(t = t), as.list(pars))),
+      silent = TRUE
+    )
+
+    if (inherits(res, "try-error"))
+      return("model_func cannot be evaluated on simple numeric inputs")
+
+    if (!is.numeric(res) || length(res) != 1L)
+      return("model_func must return a numeric scalar")
+
     ## ---- phi_to_select ----
     if (!is.null(object@phi_to_select) && !is.null(phi_names)) {
       bad <- setdiff(object@phi_to_select, phi_names)
