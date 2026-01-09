@@ -183,7 +183,7 @@ setClass(
 #' @param x_forced matrix or NULL, forced covariates.
 #'
 #' @return An object of class \code{saemvsData}.
-#' @export
+#' @keywords internal
 saemvsData <- function(# nolint:   object_name_linter.
     y,
     t,
