@@ -100,7 +100,9 @@
 #' @export
 setGeneric(
   "saemvs",
-  function(data, model, init, tuning_algo, hyperparam, pen, use_cpp = TRUE) {
+  function(
+    data, model, init, tuning_algo, hyperparam, pen = "e-BIC", use_cpp = TRUE
+  ) {
     standardGeneric("saemvs")
   }
 )
@@ -112,10 +114,11 @@ setMethod(
   "saemvs",
   signature(
     data = "saemvsData", model = "saemvsModel", init = "saemvsInit",
-    tuning_algo = "saemvsTuning", hyperparam = "saemvsHyperSlab",
-    pen = "character"
+    tuning_algo = "saemvsTuning", hyperparam = "saemvsHyperSlab"
   ),
-  function(data, model, init, tuning_algo, hyperparam, pen, use_cpp = TRUE) {
+  function(
+    data, model, init, tuning_algo, hyperparam, pen = "e-BIC", use_cpp = TRUE
+  ) {
     # --- Step 1: Argument checks ---
     if (!pen %in% c("e-BIC", "BIC")) {
       stop(
