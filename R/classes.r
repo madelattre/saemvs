@@ -1544,7 +1544,7 @@ saemvsTuning <- function( # nolint:  object_name_linter.
 #' @details
 #' The class is mainly used as an internal result structure and is returned by
 #' functions implementing SAEMVS. Downstream methods such as
-#' \code{\link{summary_saemvs}} make use of these slots for reporting.
+#' \code{\link{summary}} make use of these slots for reporting.
 #'
 #' @keywords internal
 setClass(
