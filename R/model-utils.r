@@ -1034,7 +1034,7 @@ build_backend_r <- function(g_fun) {
 #'    \item{ll(yi_list, ti_list, phi_samples, sigma2)}{Computes the
 #'  log-likelihood of observed data given parameter samples.}
 #' }
-#'   }
+#'
 #'
 #' @details
 #' When debug = FALSE, this function:

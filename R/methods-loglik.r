@@ -35,7 +35,7 @@
 #'   \item Preprocess the data using \code{prepare_data()}.
 #'   \item For each subject/series, generate Monte Carlo samples of the latent
 #'         parameters (\code{phi}) from a multivariate normal distribution
-#'         with mean \(\beta \times X\) and covariance \(\gamma\).
+#'         with mean \eqn{\(\beta \times X\)} and covariance \eqn{\(\gamma\)}.
 #'   \item Compute the likelihood contribution for each series using
 #'         the model function in \code{backend$g_vector}.
 #'   \item Sum over all series to obtain the total log-likelihood.

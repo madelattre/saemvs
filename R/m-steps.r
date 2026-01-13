@@ -112,7 +112,7 @@ m_step_not_to_select <- function(config, k, state, backend) {
 #'   \itemize{
 #'     \item \code{x_phi_to_select}: design matrix for parameters subject to
 #'  selection,
-#'     \item \code$tx_x_phi_to_select, \code$kron_tx_x_phi_to_select:
+#'     \item \code{tx_x_phi_to_select}, \code{kron_tx_x_phi_to_select}:
 #' precomputed matrices for M-step,
 #'     \item \code{num_series}: number of independent series,
 #'     \item \code{num_covariates_to_select}: number of covariates for
