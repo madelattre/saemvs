@@ -141,6 +141,9 @@ setMethod(
 
     spike_values_grid <- tuning_algo@spike_values_grid
 
+    nb_workers <- min(tuning_algo@nb_workers, length(spike_values_grid))
+    tuning_algo@nb_workers <- nb_workers
+
     check_data_and_model(data, model)
     model_processed <- prepare_model(data, model)
     data_processed <- prepare_data(data, model_processed)
@@ -187,6 +190,9 @@ setMethod(
       integer(1)
     ))
 
+    nb_workers <- min(tuning_algo@nb_workers, length(unique_support_indices))
+    tuning_algo@nb_workers <- nb_workers
+
     message("SAEMVS: step 2/2")
     progressr::with_progress({
       criterion_results <- safe_future_map(
@@ -212,6 +218,7 @@ setMethod(
       criterion_results, `[[`,
       "forced_variables_idx"
     )
+
     selected_variables_idx <- lapply(
       criterion_results, `[[`,
       "selected_variables_idx"
@@ -551,7 +558,6 @@ setMethod(
       new_data, new_model, tuning_algo, mle_param, pen, p,
       model@phi_to_select_idx, nb_forced_beta, backend
     )
-
 
     return(list( # nolint : return_linter
       ll = ll, mle_param = mle_param,
