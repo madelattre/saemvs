@@ -88,8 +88,6 @@ setMethod(
     ti <- data@t_series
 
     n <- length(yi)
-    ni <- lengths(yi)
-
 
     beta_x <- data@x_phi_not_to_select %*% param$beta
     beta_x_list <- split(beta_x, row(beta_x))
@@ -98,18 +96,10 @@ setMethod(
     sigma2 <- param$sigma2
 
     phi_samples <- lapply(beta_x_list, function(mu_i) {
-      mvnfast::rmvn(num_samples, mu = mu_i, sigma = gamma)
+      backend$rmvnorm_mat(mu_i, gamma, num_samples)
     })
 
-    log_lik_i <- function(i) {
-      contribution <- sum(apply(phi_samples[[i]], 1, function(phi_i) {
-        exp(-sum((yi[[i]] - backend$g_vector(ti[[i]], phi_i))^2) / (2 * sigma2))
-      }))
-
-      log((2 * pi * sigma2)^(-ni[i] / 2) * contribution / num_samples)
-    }
-
-    loglike <- sum(sapply(seq_along(yi), log_lik_i))
+    loglike <- backend$ll(yi, ti, phi_samples, sigma2)
 
     nb_selected_beta <- sum(model@x_forced_support[, phi_to_select_idx])
 

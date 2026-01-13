@@ -849,12 +849,17 @@ transpile_to_cpp <- function(
 #'     `g_fun` across multiple time points using `vapply`.}
 #'   \item{rmvnorm}{Generates random samples from a multivariate normal
 #'  distribution using `MASS::mvrnorm`. Requires the MASS package.}
+#'   \item{rmvnorm_mat(mean, sigma, n)}{Generates `n` draws from a
+#' multivariate normal distribution.}
 #'   \item{logdmvnorm}{Computes the log-density of a multivariate normal
 #'  distribution given a mean vector and covariance matrix.}
 #'   \item{metropolis_vector}{Implements a Metropolis-Hastings algorithm for
 #'  sampling from the posterior distribution of parameters. Supports
 #' population and random walk proposal kernels. Returns a list of sampled
 #'  parameter chains.}
+#'   \item{ll(yi_list, ti_list, phi_samples, sigma2)}{Computes the
+#'  log-likelihood for a list of observed responses `yi_list` over times
+#'  `ti_list`, given sampled parameters `phi_samples` and variance `sigma2`.}
 #'
 #' @details
 #' The `metropolis_vector` function performs adaptive Metropolis-Hastings
@@ -888,11 +893,40 @@ build_backend_r <- function(g_fun) {
     as.numeric(MASS::mvrnorm(1, mu = mean, Sigma = sigma))
   }
 
+  rmvnorm_mat <- function(mean, sigma, n) {
+    if (!requireNamespace("MASS", quietly = TRUE)) {
+      stop("Package MASS is required for R fallback.")
+    }
+    MASS::mvrnorm(n = n, mu = mean, Sigma = sigma)
+  }
+
   logdmvnorm <- function(x, mean, sigma) {
     k <- length(x)
     diff <- x - mean
     quadform <- drop(t(diff) %*% solve(sigma) %*% diff)
     -0.5 * (k * log(2 * pi) + log(det(sigma)) + quadform)
+  }
+
+  loglik <- function(yi_list, ti_list, phi_samples, sigma2) {
+    n <- length(yi_list)
+    loglike <- 0
+    for (i in seq_len(n)) {
+      yi <- yi_list[[i]]
+      ti <- ti_list[[i]]
+      ni <- length(yi)
+      n_samples <- nrow(phi_samples)
+      contribution <- 0
+      for (s in seq_len(n_samples)) {
+        phi_i <- phi_samples[s, ]
+        sumsq <- sum((yi -
+                        vapply(ti, function(tj) g_scalar(tj, phi_i),
+                               numeric(1)))^2)
+        contribution <- contribution + exp(-sumsq / (2 * sigma2))
+      }
+      loglike <- loglike +
+        log((2 * pi * sigma2)^(-ni/2) * contribution / n_samples)
+    }
+    loglike
   }
 
   metropolis_vector <- function(y, t, phi_current, mean_prop, var_prop_mat,
@@ -955,8 +989,10 @@ build_backend_r <- function(g_fun) {
     g_scalar = g_scalar,
     g_vector = g_vector,
     rmvnorm = rmvnorm,
+    rmvnorm_mat = rmvnorm_mat,
     logdmvnorm = logdmvnorm,
-    metropolis_vector = metropolis_vector
+    metropolis_vector = metropolis_vector,
+    ll = loglik
   )
 }
 
@@ -983,6 +1019,8 @@ build_backend_r <- function(g_fun) {
 #'       Takes phi (parameters vector) and t (times vector).}
 #'     \item{rmvnorm}{Generates random samples from a multivariate normal
 #'       distribution. Takes mean (vector) and sigma (covariance matrix).}
+#'     \item{rmvnorm_mat(mean, sigma, n)}{Generates `n` draws from a
+#'  multivariate normal distribution. Returns an `n x d` matrix.}
 #'     \item{logdmvnorm}{Computes log-probability density of multivariate
 #'  normal.
 #'       Takes x (observation vector), mean (vector), and sigma (covariance
@@ -993,6 +1031,9 @@ build_backend_r <- function(g_fun) {
 #'       var_prop_mat (proposal covariance), sigma2 (residual variance),
 #'       niter_mh (number of iterations), kappa (scaling factor), and
 #'       kernel (proposal type: "pop" or "random_walk").}
+#'    \item{ll(yi_list, ti_list, phi_samples, sigma2)}{Computes the
+#'  log-likelihood of observed data given parameter samples.}
+#' }
 #'   }
 #'
 #' @details
@@ -1044,6 +1085,41 @@ arma::vec g_vector_cpp(const arma::vec& t, const arma::vec& phi) {
 // [[Rcpp::export]]
 arma::vec rmvnorm_cpp(const arma::vec& mean, const arma::mat& sigma) {
   return mean + arma::chol(sigma) * arma::randn(mean.n_elem);
+}
+
+// [[Rcpp::export]]
+arma::mat rmvnorm_mat_cpp(const arma::vec& mean, const arma::mat& sigma, int n) {
+  int d = mean.n_elem;
+  arma::mat out(n, d);
+  arma::mat L = arma::chol(sigma); 
+  for (int i = 0; i < n; i++) {
+    out.row(i) = (mean + L * arma::randn(d)).t();
+  }
+return out;
+}
+
+// [[Rcpp::export]]
+double loglik_cpp(List yi_list, List ti_list, arma::mat phi_samples, double sigma2) {
+  int n = yi_list.size();
+  double loglike = 0.0;
+  for(int i = 0; i < n; i++) {
+    NumericVector yi = yi_list[i];
+    NumericVector ti = ti_list[i];
+    int ni = yi.size();
+    int n_samples = phi_samples.n_rows;
+    double contribution = 0.0;
+    for(int s = 0; s < n_samples; s++) {
+      double sumsq = 0.0;
+        for(int j = 0; j < ni; j++) {
+          arma::rowvec phi_i = phi_samples.row(s);
+          double g = g_scalar_cpp(ti[j], phi_i);
+          sumsq += pow(yi[j] - g, 2);
+        } 
+      contribution += exp(-sumsq / (2.0 * sigma2));
+    }
+    loglike += log(pow(2.0 * M_PI * sigma2, -ni/2.0) * contribution / n_samples);
+  }
+  return loglike;
 }
 
 // [[Rcpp::export]]
@@ -1138,8 +1214,10 @@ List metropolis_vector_cpp(
     g_scalar = g_scalar_cpp,
     g_vector = g_vector_cpp,
     rmvnorm = rmvnorm_cpp,
+    rmvnorm_mat = rmvnorm_mat_cpp,
     logdmvnorm = logdmvnorm_cpp,
-    metropolis_vector = metropolis_vector_cpp
+    metropolis_vector = metropolis_vector_cpp,
+    ll = loglik_cpp
   )
 }
 
