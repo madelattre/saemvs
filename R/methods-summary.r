@@ -11,7 +11,7 @@
 #'   parameters are zeroed out for clarity.
 #' }
 #'
-#' @param saem_results An object of class \code{saemvsResults} containing
+#' @param object An object of class \code{saemvsResults} containing
 #'   the output of a SAEMVS run.
 #' @param ... Additional arguments passed to methods or generic functions.
 #' Currently supported arguments:
@@ -29,44 +29,37 @@
 #' @examples
 #' \dontrun{
 #' # Assuming 'res' is a saemvsResults object from a SAEMVS run
-#' summary_saemvs(res)
+#' summary(res)
 #' }
 #'
+
+#' @rdname summary
 #' @export
-setGeneric(
-  "summary_saemvs",
-  function(saem_results, ...) {
-    standardGeneric("summary_saemvs")
-  }
-)
-
-#' @rdname summary_saemvs
-#' @exportMethod summary_saemvs
 setMethod(
-  "summary_saemvs",
+  "summary",
   signature(
-    saem_results = "saemvsResults"
+    object = "saemvsResults"
   ),
-  function(saem_results, ...) {
+  function(object, ...) {
     digits <- list(...)$digits %||% 3
-    fixed_param_idx <- saem_results@phi_fixed_idx
-    phi_to_select_idx <- saem_results@phi_to_select_idx
+    fixed_param_idx <- object@phi_fixed_idx
+    phi_to_select_idx <- object@phi_to_select_idx
 
-    x_candidates_names <- saem_results@x_candidates_names %||% character(0)
-    x_forced_names <- saem_results@x_forced_names %||% character(0)
+    x_candidates_names <- object@x_candidates_names %||% character(0)
+    x_forced_names <- object@x_forced_names %||% character(0)
 
 
-    best_model_idx <- which.min(saem_results@criterion_values)
+    best_model_idx <- which.min(object@criterion_values)
 
-    forced_variables_idx <- saem_results@forced_variables_idx[[best_model_idx]]
-    selected_variables_idx <- saem_results@selected_variables_idx[[best_model_idx]] # nolint: line_length_linter
+    forced_variables_idx <- object@forced_variables_idx[[best_model_idx]]
+    selected_variables_idx <- object@selected_variables_idx[[best_model_idx]] # nolint: line_length_linter
 
-    best_support_matrix <- saem_results@unique_support[[best_model_idx]]
+    best_support_matrix <- object@unique_support[[best_model_idx]]
     support_dim <- dim(best_support_matrix)
     num_phi_sel <- support_dim[2]
 
     # Récupération des noms de phi
-    phi_names <- saem_results@phi_names
+    phi_names <- object@phi_names
 
 
     cat("\n---- Selected Variables ----\n")
@@ -96,8 +89,8 @@ setMethod(
       }
     }
 
-    beta_est <- saem_results@mle_estimates[[best_model_idx]]$beta
-    gamma_est <- saem_results@mle_estimates[[best_model_idx]]$gamma
+    beta_est <- object@mle_estimates[[best_model_idx]]$beta
+    gamma_est <- object@mle_estimates[[best_model_idx]]$gamma
 
 
     colnames(beta_est) <- phi_names
