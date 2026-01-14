@@ -153,7 +153,7 @@ setMethod(
 )
 
 #' Summary of a specific support
-#' 
+#'
 #' Displays:
 #' \itemize{
 #'   \item Selected covariates for each \eqn{\phi} parameter
