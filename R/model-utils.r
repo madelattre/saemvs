@@ -1099,19 +1099,20 @@ return out;
 }
 
 // [[Rcpp::export]]
-double loglik_cpp(List yi_list, List ti_list, arma::mat phi_samples, double sigma2) {
+double loglik_cpp(List yi_list, List ti_list, List phi_samples_list, double sigma2) {
   int n = yi_list.size();
   double loglike = 0.0;
   for(int i = 0; i < n; i++) {
     NumericVector yi = yi_list[i];
     NumericVector ti = ti_list[i];
     int ni = yi.size();
+    arma::mat phi_samples = phi_samples_list[i];
     int n_samples = phi_samples.n_rows;
     double contribution = 0.0;
     for(int s = 0; s < n_samples; s++) {
       double sumsq = 0.0;
         for(int j = 0; j < ni; j++) {
-          arma::rowvec phi_i = phi_samples.row(s);
+          arma::vec phi_i = phi_samples.row(s).t().eval();
           double g = g_scalar_cpp(ti[j], phi_i);
           sumsq += pow(yi[j] - g, 2);
         } 
