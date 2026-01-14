@@ -224,6 +224,11 @@ setMethod(
       "selected_variables_idx"
     )
 
+    phi <- lapply(
+      criterion_results, `[[`,
+      "phi"
+    )
+
     res <- methods::new(
       "saemvsResults",
       criterion = pen,
@@ -241,7 +246,8 @@ setMethod(
       selected_variables_idx = selected_variables_idx,
       phi_names = model@phi_names,
       x_candidates_names = data@x_candidates_names,
-      x_forced_names = data@x_forced_names
+      x_forced_names = data@x_forced_names,
+      phi = phi
     )
 
     return(res) # nolint : return_linter
@@ -560,9 +566,11 @@ setMethod(
     )
 
     return(list( # nolint : return_linter
-      ll = ll, mle_param = mle_param,
+      ll = ll,
+      mle_param = mle_param,
       forced_variables_idx = forced_rows,
-      selected_variables_idx = selected_rows
+      selected_variables_idx = selected_rows,
+      phi = mle$phi
     ))
   }
 )
@@ -669,7 +677,8 @@ setMethod(
       ),
       phi_names = model@phi_names,
       x_candidates_names = data@x_candidates_names,
-      x_forced_names = data@x_forced_names
+      x_forced_names = data@x_forced_names,
+      phi = saem_state$phi
     )
 
     return(res) # nolint : return_linter

@@ -1565,7 +1565,8 @@ setClass(
     selected_variables_idx = "list",
     phi_names = "characterORNULL",
     x_candidates_names = "characterORNULL",
-    x_forced_names = "characterORNULL"
+    x_forced_names = "characterORNULL",
+    phi = "listORNULL"
   ),
   prototype = list(
     criterion = character(0),
@@ -1583,7 +1584,8 @@ setClass(
     selected_variables_idx = list(),
     phi_names = NULL,
     x_candidates_names = NULL,
-    x_forced_names = NULL
+    x_forced_names = NULL,
+    phi = NULL
   ),
   validity = function(object) {
     if (!object@criterion %in% c("BIC", "e-BIC")) {
@@ -1624,7 +1626,8 @@ setClass(
 #'
 #' @slot beta_to_select A list of matrices containing the estimated regression
 #'   coefficients for covariates that are related with the components of
-#' `phi` that are subject to selection (\code{phi_to_select_idx}) at each iteration.
+#' `phi` that are subject to selection (\code{phi_to_select_idx}) at each
+#'  iteration.
 #' @slot beta_not_to_select A list of matrices containing the estimated
 #'  regression coefficients for covariates that are related with the components
 #'  of `phi` that are not subject to selection (\code{phi_not_to_select_idx}) at
@@ -1659,7 +1662,8 @@ setClass(
     phi_not_to_select_idx = "numericORNULL",
     phi_names = "characterORNULL",
     x_candidates_names = "characterORNULL",
-    x_forced_names = "characterORNULL"
+    x_forced_names = "characterORNULL",
+    phi = "listORNULL"
   ),
   prototype = list(
     beta_to_select = NULL,
@@ -1671,7 +1675,8 @@ setClass(
     phi_not_to_select_idx = NULL,
     phi_names = NULL,
     x_candidates_names = NULL,
-    x_forced_names = NULL
+    x_forced_names = NULL,
+    phi = NULL
   ),
   validity = function(object) {
     # Check beta_to_select
