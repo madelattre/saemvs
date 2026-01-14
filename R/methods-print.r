@@ -23,6 +23,8 @@
 # Utility functions (internal, not exported)
 ############################################################
 
+#' @keywords internal
+#' @noRd
 format_matrix <- function(mat, max_rows = 5, max_cols = 5, digits = 3,
                           rownames = TRUE, colnames = TRUE,
                           phi_colnames = FALSE, phi_prefix = "phi") {
@@ -73,7 +75,8 @@ format_matrix <- function(mat, max_rows = 5, max_cols = 5, digits = 3,
   paste(c(header, txt), collapse = "\n")
 }
 
-
+#' @keywords internal
+#' @noRd
 format_vector <- function(
     x, max_length = 5, digits = 3, indent = "",
     full = FALSE) {
@@ -97,7 +100,8 @@ format_vector <- function(
   paste0("c(", txt, ")")
 }
 
-
+#' @keywords internal
+#' @noRd
 format_list_of_vectors <- function(lst,
                                    max_items = 3,
                                    max_vec_length = 5,
@@ -539,10 +543,6 @@ setMethod(
     cat(
       "- Number of spike values explored:",
       n_spike, "\n"
-    )
-    cat(
-      "- Number of candidate supports:",
-      n_support, "\n"
     )
     cat(
       "- Number of unique supports:",
