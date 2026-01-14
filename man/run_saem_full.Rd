@@ -4,13 +4,15 @@
 \alias{run_saem_full}
 \title{Run full SAEM algorithm}
 \usage{
-run_saem_full(config, state, sa_func, m_func, mh_update_func)
+run_saem_full(config, state, sa_func, m_func, mh_update_func, backend)
 }
 \arguments{
-\item{config}{List. Model configuration including number of iterations and
-algorithm settings.}
+\item{config}{List. Model configuration object containing algorithm settings,
+including the total number of iterations (\code{num_iterations}).}
 
-\item{state}{List. Initial state of the algorithm.}
+\item{state}{List. Initial state of the SAEM algorithm, containing latent
+variables, sufficient statistics, and model parameters. This state is
+updated in place (functionally) at each iteration.}
 
 \item{sa_func}{Function. Stochastic approximation step function (SA-step) to
 update sufficient statistics.}
@@ -18,12 +20,19 @@ update sufficient statistics.}
 \item{m_func}{Function. M-step function to update model parameters.}
 
 \item{mh_update_func}{Function. Metropolis-Hastings update function.}
+
+\item{backend}{A list containing the compiled model backend used throughout
+the SAEM iterations to evaluate the likelihood and perform model-specific
+computations.}
 }
 \value{
 Final \code{state} list after completing all SAEM iterations.
 }
 \description{
-Executes the full SAEM algorithm for all iterations, applying the specified
-SA-step, M-step, and Metropolis-Hastings update functions.
+At each iteration, this function delegates the actual computation to
+\code{\link{perform_saem_iteration}}, which sequentially applies the
+Metropolis, SA, M-step, and Metropolis–Hastings update functions.
+The number of iterations is fixed in advance, and no convergence or early
+stopping criterion is evaluated within this function.
 }
 \keyword{internal}

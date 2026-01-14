@@ -2,12 +2,28 @@
 % Please edit documentation in R/methods-saemvs.r
 \name{saemvs}
 \alias{saemvs}
-\alias{saemvs,saemvsData,saemvsModel,saemvsInit,saemvsTuning,saemvsHyperSlab,character-method}
+\alias{saemvs,saemvsData,saemvsModel,saemvsInit,saemvsTuning,saemvsHyperSlab-method}
 \title{Sparse Variable Selection with SAEM}
 \usage{
-saemvs(data, model, init, tuning_algo, hyperparam, pen)
+saemvs(
+  data,
+  model,
+  init,
+  tuning_algo,
+  hyperparam,
+  pen = "e-BIC",
+  use_cpp = TRUE
+)
 
-\S4method{saemvs}{saemvsData,saemvsModel,saemvsInit,saemvsTuning,saemvsHyperSlab,character}(data, model, init, tuning_algo, hyperparam, pen)
+\S4method{saemvs}{saemvsData,saemvsModel,saemvsInit,saemvsTuning,saemvsHyperSlab}(
+  data,
+  model,
+  init,
+  tuning_algo,
+  hyperparam,
+  pen = "e-BIC",
+  use_cpp = TRUE
+)
 }
 \arguments{
 \item{data}{An object of class \link[=saemvsData-class]{saemvsData}
@@ -31,12 +47,19 @@ hyperparameters for the slab prior.}
 
 \item{pen}{Character string indicating the model selection criterion. Must be
 either \code{"BIC"} or \code{"e-BIC"}.}
+
+\item{use_cpp}{Logical. If \code{TRUE} (default), the C++ backend of the model
+function is compiled and used. If \code{FALSE}, a non-C++ (R-based) backend
+may be used. The model function is compiled on each worker when running
+in parallel.}
 }
 \value{
 An object of class \code{\linkS4class{saemvsResults}} containing:
 \itemize{
 \item \code{criterion}: The selection criterion used (\code{"BIC"} or \code{"e-BIC"}).
-\item \code{criterion_values}: Values of the criterion for each unique support.
+\item \code{criterion_values}: Values of the selected information criterion
+(BIC or e-BIC), computed from the log-likelihood of the MLE associated
+with each unique support.
 \item \code{thresholds}: Thresholds computed for each spike value.
 \item \code{beta_map}: MAP estimates of regression parameters for each spike
 value.
@@ -62,8 +85,9 @@ It supports both BIC and extended BIC (e-BIC) as model selection criteria.
 }
 \details{
 This method explores a grid of spike variances (\code{nu0}) in parallel,
-fits MAP estimates for each candidate support, and then evaluates unique
-supports with the chosen information criterion to select the best model.
+fits MAP estimates for each spike value, derives candidate supports,
+and then evaluates unique supports with the chosen information
+criterion to select the best model.
 
 The procedure is carried out in two steps:
 \enumerate{
@@ -73,10 +97,23 @@ performed in parallel, producing supports, thresholds, and MAP estimates.
 with the chosen information criterion (\code{pen}) to select the most
 appropriate model.
 }
+A support corresponds to a specific subset of parameters (among
+\code{phi_to_select_idx}) that are included in the model, typically represented
+as a binary inclusion pattern obtained after thresholding the MAP estimates.
+For a given support, covariates are partitioned into:
+\itemize{
+\item \emph{forced variables}, which are always included in the model
+(e.g., fixed effects or parameters not subject to spike-and-slab
+selection),
+\item \emph{selected variables}, which are actively selected by the
+spike-and-slab procedure among the candidate parameters.
+}
 
 Parallel execution is handled using the \code{future} and \code{furrr} packages.
-The model function (C++ code) must be compiled on each worker before
-execution.
+When \code{use_cpp = TRUE}, the model C++ code is compiled multiple times:
+once before the first step, and again within each parallel worker during
+both the MAP estimation step and the information-criterion evaluation step.
+This ensures that each worker has access to a valid compiled backend.
 }
 \examples{
 \dontrun{

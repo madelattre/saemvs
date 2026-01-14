@@ -21,3 +21,4 @@ An object of class \code{saemvsData}.
 \description{
 Constructor for saemvsData
 }
+\keyword{internal}

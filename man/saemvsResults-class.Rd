@@ -14,7 +14,7 @@ by the SAEMVS algorithm and are not intended to be constructed manually.
 
 The class is mainly used as an internal result structure and is returned by
 functions implementing SAEMVS. Downstream methods such as
-\code{\link{summary_saemvs}} make use of these slots for reporting.
+\code{\link{summary}} make use of these slots for reporting.
 }
 \section{Slots}{
 
@@ -57,6 +57,17 @@ covariates that were forced into the model (always included).}
 \item{\code{selected_variables_idx}}{List. For each unique support, indices of
 covariates that were selected by the variable selection procedure
 (excluding forced covariates).}
+
+\item{\code{phi_to_select_idx}}{Numeric vector. Indices of phi components
+that are subject to variable selection.}
+
+\item{\code{phi_names}}{Character vector or NULL. Names of all phi parameters,
+used for display and summaries.}
+
+\item{\code{x_candidates_names}}{Character vector or NULL. Names of candidate
+covariates.}
+
+\item{\code{x_forced_names}}{Character vector or NULL. Names of forced covariates.}
 }}
 
 \keyword{internal}

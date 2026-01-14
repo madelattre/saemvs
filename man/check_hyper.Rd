@@ -9,7 +9,7 @@ check_hyper(hyper, model, tuning)
 \arguments{
 \item{hyper}{An object of class \code{saemvsHyperSpikeAndSlab}.}
 
-\item{model}{An object of class \code{saemvsModel}.}
+\item{model}{An object of class \code{saemvsProcessedModel}.}
 
 \item{tuning}{An object of class \code{saemvsTuning}.}
 }

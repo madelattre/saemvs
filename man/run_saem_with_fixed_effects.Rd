@@ -4,13 +4,29 @@
 \alias{run_saem_with_fixed_effects}
 \title{Run SAEM algorithm with fixed parameters}
 \usage{
-run_saem_with_fixed_effects(config, state, sa_func, m_func, mh_update_func)
+run_saem_with_fixed_effects(
+  config,
+  state,
+  sa_func,
+  m_func,
+  mh_update_func,
+  backend
+)
 }
 \arguments{
-\item{config}{List. Model configuration including number of iterations,
-burn-in period, and fixed parameter indices.}
+\item{config}{List. Model configuration object containing algorithm settings,
+including:
+\itemize{
+\item \code{num_iterations}: total number of SAEM iterations,
+\item \code{num_burnin}: number of burn-in iterations,
+\item \code{parameters_not_to_select_indices}: indices of parameters not
+subject to variable selection,
+\item \code{fixed_parameters_indices}: indices of parameters treated as
+fixed effects.
+}}
 
-\item{state}{List. Initial state of the algorithm.}
+\item{state}{List. Initial state of the algorithm. This object is
+iteratively updated at each iteration}
 
 \item{sa_func}{Function. Stochastic approximation step function (SA-step) to
 update sufficient statistics.}
@@ -18,6 +34,10 @@ update sufficient statistics.}
 \item{m_func}{Function. M-step function to update model parameters.}
 
 \item{mh_update_func}{Function. Metropolis-Hastings update function.}
+
+\item{backend}{A list containing the compiled model backend used to evaluate
+the likelihood and perform model-specific computations during the SAEM
+iterations.}
 }
 \value{
 Final \code{state} list after completing all SAEM iterations with
@@ -27,5 +47,16 @@ shrinkage for fixed effects.
 Executes the SAEM algorithm for models with both random and fixed effects.
 Shrinkage is applied to the covariance of fixed parameters after burn-in
 iterations.
+}
+\details{
+In this context, "fixed effects" refers to parameters that are not subject
+to variable selection and whose random-effect covariance matrix is
+progressively shrunk after the burn-in phase. These parameters are not
+fixed to constant values, but their variability is reduced over iterations.
+After the burn-in phase, shrinkage is progressively applied to the
+covariance matrix of the fixed-effect parameters. Shrinkage coefficients
+are computed from the diagonal elements of the covariance matrix at the
+end of burn-in and are applied multiplicatively at each subsequent
+iteration via \code{shrink_covariance_matrix}.
 }
 \keyword{internal}

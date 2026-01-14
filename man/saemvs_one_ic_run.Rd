@@ -4,22 +4,30 @@
 \alias{saemvs_one_ic_run}
 \title{Internal: EBIC/BIC Evaluation for a Candidate Support}
 \usage{
-saemvs_one_ic_run(k, support, data, model, init, tuning_algo, pen)
+saemvs_one_ic_run(k, support, data, model, init, tuning_algo, pen, backend)
 }
 \arguments{
-\item{k}{Integer index of the candidate support to be evaluated.}
+\item{k}{Integer index indicating which element of the \code{support} list
+is evaluated (i.e., \code{support[[k]]}).}
 
-\item{support}{A list of logical or numeric matrices, each encoding a
-candidate support obtained from MAP estimation (\code{saemvs_one_map_run}).}
+\item{support}{A list of logical or numeric matrices, each representing
+a candidate support. Rows correspond to covariates subject to selection
+(with the intercept as the first row), and columns correspond to model
+parameters. Forced covariates may be included as leading rows and are
+handled separately.}
 
-\item{data}{An object of class \link[=saemvsData-class]{saemvsData},
-the dataset.}
+\item{data}{An object of class
+\link[=saemvsProcessedData-class]{saemvsProcessedData},
+containing the processed dataset restricted to candidate variables.}
 
-\item{model}{An object of class \link[=saemvsModel-class]{saemvsModel},
+\item{model}{An object of class
+\link[=saemvsProcessedModel-class]{saemvsProcessedModel},
 specifying model structure and indices of parameters subject to selection.}
 
-\item{init}{An object of class \link[=saemvsInit-class]{saemvsInit},
-providing initialization for SAEM.}
+\item{init}{An object of class
+\link[=saemvsProcessedInit-class]{saemvsProcessedInit},
+providing processed initialization values for SAEM under the restricted
+model.}
 
 \item{tuning_algo}{An object of class
 \link[=saemvsTuning-class]{saemvsTuning}, containing algorithmic tuning
@@ -27,6 +35,10 @@ parameters (e.g. number of iterations).}
 
 \item{pen}{Character string, the information criterion to use. Must be either
 \code{"BIC"} or \code{"e-BIC"}.}
+
+\item{backend}{A list containing the compiled model backend (typically
+produced by \code{\link{compile_model}}), used for likelihood evaluation
+and SAEM-based MLE estimation.}
 }
 \value{
 A \code{list} with elements:
@@ -38,6 +50,11 @@ model:
 \item \code{beta} Estimated regression coefficients.
 \item \code{gamma} Estimated variances for the random effects.
 \item \code{sigma2} Estimated residual variance.
+\item \code{forced_variables_idx} Integer vector giving the row indices
+(within the support matrix) of covariates that were forced into the model.
+\item \code{selected_variables_idx} Integer vector giving the row indices
+of covariates that were actively selected among the candidate covariates
+(excluding forced ones).
 }
 }
 }

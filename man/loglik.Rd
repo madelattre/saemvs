@@ -12,45 +12,62 @@ loglik(
   pen,
   p,
   phi_to_select_idx,
-  nb_forced_beta
+  nb_forced_beta,
+  backend
 )
 }
 \arguments{
-\item{data}{A \code{saemvsData} object containing the response and design
-matrices.}
+\item{data}{A \code{saemvsData} object containing the response variables
+and design matrices.}
 
-\item{model}{A \code{saemvsModel} object defining the model structure.}
+\item{model}{A \code{saemvsProcessedModel} object defining the model
+structure,
+including covariates, random effects, and indices of parameters to select.}
 
-\item{tuning_algo}{A \code{saemvsTuning} object containing tuning settings
-(e.g., number of Monte Carlo samples).}
+\item{tuning_algo}{A \code{saemvsTuning} object specifying algorithmic
+tuning parameters such as number of Monte Carlo samples.}
 
-\item{param}{A list with parameter estimates. Must contain:
+\item{param}{A list of parameter estimates with components:
 \describe{
 \item{beta}{Matrix of fixed-effect coefficients.}
 \item{gamma}{Covariance matrix of random effects.}
 \item{sigma2}{Residual variance.}
 }}
 
-\item{pen}{Character string specifying the penalty. One of "BIC", "e-BIC",
-or no penalty.}
+\item{pen}{Character string specifying the penalty type. One of
+\code{"BIC"}, \code{"e-BIC"}, or \code{""} for no penalty.}
 
-\item{p}{Numeric, number of candidate covariates (for e-BIC computation).
-Consider renaming to \code{num_covariates} for clarity.}
+\item{p}{Numeric. Total number of candidate covariates (used for e-BIC).}
 
-\item{phi_to_select_idx}{Integer vector indicating which covariates
-(columns of the design matrix) are subject to selection. Used for computing
-the penalization term in BIC/e-BIC.}
+\item{phi_to_select_idx}{Integer vector of indices of covariates subject
+to selection (used to adjust the penalization term).}
 
-\item{nb_forced_beta}{Integer specifying the number of covariates that are
-forced to be included in the model. This is used to adjust the penalization
-term in the e-BIC computation.}
+\item{nb_forced_beta}{Integer. Number of covariates forced to be included
+in the model (affects penalization in e-BIC).}
+
+\item{backend}{A list of compiled functions (e.g., \code{g_vector}) for
+evaluating model predictions efficiently.}
 }
 \value{
-Numeric value of the penalized log-likelihood (BIC or e-BIC).
+Numeric. The penalized log-likelihood (BIC or e-BIC) value.
 }
 \description{
-This internal function computes the (penalized) log-likelihood of the data
-given the model and parameter estimates. The method supports different
-penalty types including "BIC" and "e-BIC".
+Internal function to compute the (penalized) log-likelihood of the data
+given the model and parameter estimates. Supports different penalties
+such as "BIC" and "e-BIC".
+}
+\details{
+The function proceeds as follows:
+\enumerate{
+\item Preprocess the data using \code{prepare_data()}.
+\item For each subject/series, generate Monte Carlo samples of the latent
+parameters (\code{phi}) from a multivariate normal distribution
+with mean \eqn{\(\beta \times X\)} and covariance \eqn{\(\gamma\)}.
+\item Compute the likelihood contribution for each series using
+the model function in \code{backend$g_vector}.
+\item Sum over all series to obtain the total log-likelihood.
+\item Apply the specified penalty ("BIC" or "e-BIC") using the number of
+selected covariates and forced covariates.
+}
 }
 \keyword{internal}

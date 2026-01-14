@@ -4,7 +4,15 @@
 \alias{perform_saem_iteration}
 \title{Perform a single SAEM iteration}
 \usage{
-perform_saem_iteration(k, config, state, sa_func, m_func, mh_update_func)
+perform_saem_iteration(
+  k,
+  config,
+  state,
+  sa_func,
+  m_func,
+  mh_update_func,
+  backend
+)
 }
 \arguments{
 \item{k}{Integer. Current iteration index.}
@@ -12,22 +20,33 @@ perform_saem_iteration(k, config, state, sa_func, m_func, mh_update_func)
 \item{config}{List. Model configuration including design matrices,
 hyperparameters, and algorithm settings.}
 
-\item{state}{List. Current state of the algorithm (phi, beta, gamma, alpha,
-etc.).}
+\item{state}{List. Current state of the SAEM algorithm, containing latent
+variables, sufficient statistics, and model parameters (e.g. \code{phi},
+\code{beta}, \code{gamma}, \code{alpha}). This object is successively
+updated and returned by each step of the iteration.}
 
 \item{sa_func}{Function. Stochastic approximation step function (SA-step) to
 update sufficient statistics.}
 
 \item{m_func}{Function. M-step function to update model parameters.}
 
-\item{mh_update_func}{Function. Optional function to update proposal
-distributions for the Metropolis step.}
+\item{mh_update_func}{Function. Function used to update the proposal
+distributions for the Metropolis–Hastings step. This function is called
+at each iteration and must be provided.}
+
+\item{backend}{A list containing the compiled model backend used to evaluate
+the likelihood and perform model-specific computations during the
+Metropolis, SA, and M-steps.}
 }
 \value{
 Updated \code{state} list after one SAEM iteration.
 }
 \description{
-Executes one iteration of the SAEM algorithm, including the Metropolis step,
-stochastic approximation (SA) step, M-step, and MH update.
+Executes one iteration of the SAEM algorithm, sequentially performing
+the Metropolis simulation step, the stochastic approximation (SA) step,
+the M-step, and a Metropolis–Hastings proposal update.
+This function acts as a lightweight orchestrator and does not implement
+model-specific logic itself; all computations are delegated to the
+functions passed as arguments.
 }
 \keyword{internal}

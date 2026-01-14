@@ -27,6 +27,12 @@ time indices.}
 
 \item{\code{x_forced}}{matrix or NULL. Matrix of forced covariates
 (rows = individuals, columns = covariates).}
+
+\item{\code{x_candidates_names}}{character vector or NULL.
+Names of the candidate covariates, should match columns of x_candidates.}
+
+\item{\code{x_forced_names}}{character vector or NULL.
+Names of the forced covariates, should match columns of x_forced.}
 }}
 
 \section{Validity}{
@@ -37,7 +43,7 @@ time indices.}
 vectors of the same length.
 \item If provided, \code{x_candidates} and \code{x_forced} must each have
 as many rows as the length of \code{y_series}.
-\item If provided, , \code{x_candidates} and \code{x_forced} must not have
+\item If provided, \code{x_candidates} and \code{x_forced} must not have
 any columns in common.
 \item All matrices must be numeric.
 }

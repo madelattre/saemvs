@@ -4,21 +4,58 @@
 \alias{m_step_map_to_select}
 \title{Internal M-step: update MAP estimates for parameters subject to selection}
 \usage{
-m_step_map_to_select(config, k, state)
+m_step_map_to_select(config, k, state, backend)
 }
 \arguments{
-\item{config}{List containing model configuration and hyperparameters.}
+\item{config}{List containing model configuration and hyperparameters,
+including:
+\itemize{
+\item \code{covariance_decay}: scaling factor for shrinkage of
+covariance matrices,
+\item \code{residual_variance_prior_shape},
+\code{residual_variance_prior_rate}: prior parameters for residual variance,
+\item \code{total_observations}: total number of observations for
+computing residual variance.
+}
+Other fields required by \code{m_step_to_select} are also expected.}
 
-\item{k}{Current iteration index (integer).}
+\item{k}{Integer, current iteration index (1-based), used to index and update
+\code{state$beta_to_select}, \code{state$gamma_to_select},
+\code{state$alpha}, and \code{state$sigma2}.}
 
-\item{state}{List containing the current state of the algorithm.}
+\item{state}{List containing the current MCMC state, including:
+\itemize{
+\item \code{beta_to_select}, \code{gamma_to_select}: parameters subject
+to selection,
+\item \code{alpha}: inclusion probabilities,
+\item \code{s1}: stochastic approximation statistic used to compute
+residual variance,
+\item \code{sigma2}: residual variance per iteration.
+}}
+
+\item{backend}{A list of compiled model functions passed
+for interface consistency.}
 }
 \value{
-Updated \code{state} list with new beta_to_select, gamma_to_select,
-alpha, and sigma2.
+Updated \code{state} list with:
+\itemize{
+\item \code{beta_to_select[[k + 1]]}, \code{gamma_to_select[[k + 1]]},
+\code{alpha[[k + 1]]}: updated MAP parameters,
+\item \code{sigma2[k + 1]}: updated residual variance,
+\item other components of \code{state} remain unchanged.
+}
 }
 \description{
-Performs MAP update for parameters subject to selection, including beta,
-gamma, alpha, and sigma2.
+Performs the M-step updates for Maximum A Posteriori (MAP) estimation of
+parameters
+subject to variable selection. Updates regression coefficients
+(\code{beta_to_select}),
+covariance matrices (\code{gamma_to_select}), inclusion probabilities
+(\code{alpha}),
+and residual variance (\code{sigma2}).
+}
+\note{
+Intended for internal use in the SAEM-MCMC framework when computing
+MAP estimates.
 }
 \keyword{internal}

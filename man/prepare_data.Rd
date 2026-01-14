@@ -11,7 +11,7 @@ prepare_data(data, model)
 Contains observed time series \code{y_series}, covariates to be selected
 (\code{x_candidates}), and forced covariates (\code{x_forced}).}
 
-\item{model}{A \code{\linkS4class{saemvsModel}} object.
+\item{model}{A \code{\linkS4class{saemvsProcessedModel}} object.
 Provides model dimension (\code{phi_dim}), indices of parameters
 subject to selection (\code{phi_to_select_idx}), and the forced support
 structure (\code{x_forced_support}).}

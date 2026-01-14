@@ -13,7 +13,8 @@ hyperparameters.}
 \item{data}{A \code{saemvsProcessedData} object containing the processed data
 for the algorithm.}
 
-\item{model}{A \code{saemvsModel} object representing the model structure.}
+\item{model}{A \code{saemvsProcessedModel} object representing the model
+structure.}
 }
 \value{
 A \code{saemvsHyperSlab} object with completed and validated

@@ -11,7 +11,7 @@ check_init(init, data, model)
 
 \item{data}{An object of class \code{saemvsData}.}
 
-\item{model}{An object of class \code{saemvsModel}.}
+\item{model}{An object of class \code{saemvsProcessedModel}.}
 }
 \description{
 Internal function to verify that the initial values provided by the user

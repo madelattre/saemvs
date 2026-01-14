@@ -3,26 +3,36 @@
 \docType{class}
 \name{saemvsModel-class}
 \alias{saemvsModel-class}
-\title{saemvsModel class}
+\title{SAEMVS model specification}
 \description{
-Represents a model for SAEMVS, including the model function and
-the indices of fixed or subject to selection parameters in phi.
+User-facing specification of a SAEMVS model.
+
+This class provides an intuitive interface for defining a nonlinear mixed
+effects model, specifying parameters subject to covariate selection,
+specifying fixed parameters (i.e. without random variability), and
+declaring covariates that must be forced into the model.
+
+Internally, a \code{saemvsModel} is validated and converted into a
+\code{saemvsProcessedModel} before being passed to the estimation algorithm.
 }
 \section{Slots}{
 
 \describe{
-\item{\code{model_func}}{A function of form \verb{function(phi, t)} returning predicted
-values.}
+\item{\code{model_func}}{A function defining the structural model. It must be of the
+form \code{function(t, ...)} where the additional arguments correspond to
+model parameters.}
 
-\item{\code{phi_dim}}{Integer: total number of phi parameters.}
+\item{\code{phi_to_select}}{Character vector or \code{NULL}. Names of parameters on
+which covariate selection will be performed.}
 
-\item{\code{phi_to_select_idx}}{Integer vector or NULL: indices of phi parameters
-on which variable selection will be performed.}
+\item{\code{phi_fixed}}{Character vector or \code{NULL}. Names of parameters that are
+fixed (i.e. without random variability).}
 
-\item{\code{phi_fixed_idx}}{Integer vector or NULL: indices of phi parameters
-that are fixed (i.e. without random variability).}
+\item{\code{x_forced_support}}{Named list or \code{NULL}. Each element corresponds to
+a model parameter and contains a character vector of covariate names that
+must be forced for this parameter.}
 
-\item{\code{x_forced_support}}{Numeric matrix or NULL: design matrix for covariates
-that are forced in the model. Must have phi_dim columns.}
+\item{\code{phi_names}}{Character vector or \code{NULL}. Names of the model
+parameters.}
 }}
 

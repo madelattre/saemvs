@@ -11,8 +11,8 @@ prepare_init(init, model, data_processed)
 for intercepts, candidate betas, forced betas, covariance of random
 effects, and residual variance.}
 
-\item{model}{An object of class \code{saemvsModel} defining the model
-structure, including indices of parameters subject to selection
+\item{model}{An object of class \code{saemvsProcessedModel} defining
+the model structure, including indices of parameters subject to selection
 (\code{phi_to_select_idx}) and forced covariate support
 (\code{x_forced_support}).}
 }

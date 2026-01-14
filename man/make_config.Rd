@@ -9,7 +9,7 @@ make_config(data, model, tuning_algo, init, hyperparam)
 \arguments{
 \item{data}{A \code{saemvsProcessedData} object.}
 
-\item{model}{A \code{saemvsModel} object.}
+\item{model}{A \code{saemvsProcessedModel} object.}
 
 \item{tuning_algo}{A \code{saemvsTuning} object.}
 

@@ -43,7 +43,7 @@ each individual using the L-BFGS-B method.
 \details{
 For each individual \eqn{i}, the function minimizes the sum of squared
 errors:
-\deqn{SSE(\varphi_i) = \sum_t (y_{i,t} - g(\varphi_i, t))^2}
+\deqn{SSE(\varphi_i) = \sum_t (y_{i,t} - g(t, \varphi_i))^2}
 using the \code{optim()} function with box constraints. Lower bounds are set
 to zero, and upper bounds are ten times the initial intercept value.
 

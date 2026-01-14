@@ -2,33 +2,35 @@
 % Please edit documentation in R/classes.r
 \name{saemvsModel}
 \alias{saemvsModel}
-\title{Constructor for saemvsModel}
+\title{Construct a SAEMVS model}
 \usage{
-saemvsModel(
-  g,
-  phi_dim,
-  phi_to_select_idx = NULL,
-  phi_fixed_idx = NULL,
-  x_forced_support = matrix(numeric(0), nrow = 0, ncol = 0)
-)
+saemvsModel(g, phi_to_select = NULL, phi_fixed = NULL, x_forced_support = NULL)
 }
 \arguments{
-\item{g}{Function of form \verb{function(phi, t)} returning predicted values.}
+\item{g}{A function defining the structural model. Must return predicted
+values and depend on time and model parameters.}
 
-\item{phi_dim}{Integer: total number of phi parameters.}
+\item{phi_to_select}{Character vector or \code{NULL}. Names of parameters on
+which covariate selection will be performed.}
 
-\item{phi_to_select_idx}{Integer vector (optional): indices of phi
-parameters for variable selection.}
+\item{phi_fixed}{Character vector or \code{NULL}. Names of parameters that
+are fixed (i.e. without random variability).}
 
-\item{phi_fixed_idx}{Integer vector (optional): indices of fixed phi
-parameters (no random variability).}
-
-\item{x_forced_support}{Numeric matrix or NULL: design matrix for forced
-covariates (phi_dim columns).}
+\item{x_forced_support}{Named list or \code{NULL}. Forced covariate
+specification. Each list element corresponds to a parameter name and
+contains the names of covariates that must be forced for that parameter.}
 }
 \value{
 An object of class \code{saemvsModel}.
 }
 \description{
-Constructor for saemvsModel
+Creates a \code{saemvsModel} object from a user-defined model function and
+optional parameter selection and covariate forcing specifications.
+
+The model function is provided with explicit parameter arguments
+(\code{function(t, param1, param2, ...)}). Parameter names are automatically
+inferred from the function signature.
+}
+\seealso{
+\code{\link{saemvsProcessedModel}}
 }

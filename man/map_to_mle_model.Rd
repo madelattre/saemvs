@@ -7,7 +7,7 @@
 map_to_mle_model(model, cand_support)
 }
 \arguments{
-\item{model}{An object of class \code{saemvsModel}.}
+\item{model}{An object of class \code{saemvsProcessedModel}.}
 
 \item{cand_support}{A binary matrix indicating candidate covariate support
 (rows = covariates, columns = parameters).}

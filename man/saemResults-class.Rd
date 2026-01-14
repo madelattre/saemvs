@@ -15,11 +15,12 @@ to be created by the user but are automatically produced by
 \describe{
 \item{\code{beta_to_select}}{A list of matrices containing the estimated regression
 coefficients for covariates that are related with the components of
-\code{phi} that are subject to selection (\code{phi_to_select}) at each iteration.}
+\code{phi} that are subject to selection (\code{phi_to_select_idx}) at each
+iteration.}
 
 \item{\code{beta_not_to_select}}{A list of matrices containing the estimated
 regression coefficients for covariates that are related with the components
-of \code{phi} that are not subject to selection (\code{phi_not_to_select}) at
+of \code{phi} that are not subject to selection (\code{phi_not_to_select_idx}) at
 each iteration.}
 
 \item{\code{gamma_to_select}}{A list of covariance matrices estimated at each
@@ -30,5 +31,20 @@ iteration for the random effects associated with \code{phi_not_to_select}.}
 
 \item{\code{sigma2}}{A numeric vector of estimated residual variances at each
 iteration.}
+
+\item{\code{phi_to_select_idx}}{Numeric vector or NULL. Indices of components of
+\eqn{\phi} that are subject to variable selection.}
+
+\item{\code{phi_not_to_select_idx}}{Numeric vector or NULL. Indices of components of
+\eqn{\phi} that are not subject to variable selection.}
+
+\item{\code{phi_names}}{Character vector or NULL. Names of all \eqn{\phi} components,
+used for labeling and summaries.}
+
+\item{\code{x_candidates_names}}{Character vector or NULL. Names of candidate
+covariates associated with \code{beta_to_select}.}
+
+\item{\code{x_forced_names}}{Character vector or NULL. Names of forced covariates
+associated with \code{beta_not_to_select}.}
 }}
 

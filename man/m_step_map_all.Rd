@@ -4,22 +4,60 @@
 \alias{m_step_map_all}
 \title{Internal M-step: update MAP for all parameters}
 \usage{
-m_step_map_all(config, k, state)
+m_step_map_all(config, k, state, backend)
 }
 \arguments{
-\item{config}{List containing model configuration and hyperparameters.}
+\item{config}{List containing model configuration and hyperparameters,
+including:
+\itemize{
+\item \code{covariance_decay}: scaling factor used for shrinkage of
+covariance matrices,
+\item \code{residual_variance_prior_shape},
+\code{residual_variance_prior_rate}: prior parameters for residual variance,
+\item \code{total_observations}: total number of observations,
+\item other fields required by \code{m_step_to_select} and
+\code{m_step_not_to_select}.
+}}
 
-\item{k}{Current iteration index (integer).}
+\item{k}{Integer, current iteration index (1-based), used to index and update
+all relevant \code{state} components.}
 
-\item{state}{List containing the current state of the algorithm.}
+\item{state}{List containing the current MCMC state, including:
+\itemize{
+\item \code{beta_to_select}, \code{gamma_to_select}, \code{alpha}:
+parameters subject to selection,
+\item \code{beta_not_to_select}, \code{gamma_not_to_select}:
+parameters not subject to selection,
+\item \code{s1}: stochastic approximation statistic used to compute
+residual variance,
+\item \code{sigma2}: residual variance per iteration.
+}}
+
+\item{backend}{A list of compiled model functions passed
+for interface consistency.}
 }
 \value{
-Updated \code{state} list with new beta, gamma, alpha, and sigma2 for
-all parameters.
+Updated \code{state} list with:
+\itemize{
+\item \code{beta_to_select[[k + 1]]}, \code{gamma_to_select[[k + 1]]},
+\code{alpha[[k + 1]]}: updated MAP parameters for to-select,
+\item \code{beta_not_to_select[[k + 1]]},
+\code{gamma_not_to_select[[k + 1]]}: updated MAP parameters for
+not-to-select,
+\item \code{sigma2[k + 1]}: updated residual variance,
+\item other components of \code{state} remain unchanged.
+}
 }
 \description{
-Performs a full MAP update for both parameters subject and not
-subject to selection, combining the updates for beta, gamma, alpha, and
-sigma2.
+Performs a full Maximum A Posteriori (MAP) update for both parameters
+subject to selection (\code{to_select}) and not subject to selection
+(\code{not_to_select}).
+Updates regression coefficients (\code{beta}), covariance matrices (\code{gamma}),
+inclusion probabilities (\code{alpha}), and residual variance (\code{sigma2}) for
+all parameters.
+}
+\note{
+Intended for internal use in the SAEM-MCMC framework when computing MAP
+estimates for all parameters simultaneously.
 }
 \keyword{internal}

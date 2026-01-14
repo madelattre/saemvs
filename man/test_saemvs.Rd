@@ -5,9 +5,9 @@
 \alias{test_saemvs,saemvsData,saemvsModel,saemvsInit,saemvsTuning,saemvsHyperSlab-method}
 \title{Run a Single SAEMVS Test Fit}
 \usage{
-test_saemvs(data, model, init, tuning_algo, hyperparam)
+test_saemvs(data, model, init, tuning_algo, hyperparam, use_cpp = TRUE)
 
-\S4method{test_saemvs}{saemvsData,saemvsModel,saemvsInit,saemvsTuning,saemvsHyperSlab}(data, model, init, tuning_algo, hyperparam)
+\S4method{test_saemvs}{saemvsData,saemvsModel,saemvsInit,saemvsTuning,saemvsHyperSlab}(data, model, init, tuning_algo, hyperparam, use_cpp = TRUE)
 }
 \arguments{
 \item{data}{A \link[=saemvsData-class]{saemvsData} object containing the
@@ -23,7 +23,11 @@ parameter values.}
 specifying algorithm hyperparameters.}
 
 \item{hyperparam}{A \link[=saemvsHyperSlab-class]{saemvsHyperSlab} object
-defining the slab prior.}
+defining the slab prior. Internally combined with a spike value to form
+a \code{saemvsHyperSpikeAndSlab} object.}
+
+\item{use_cpp}{Logical. If TRUE (default), the model function is compiled
+to C++ for faster execution. If FALSE, a pure R backend is used.}
 }
 \value{
 A \link[=saemResults-class]{saemResults} object containing estimated
@@ -41,6 +45,11 @@ parameter estimates. The function performs the following steps:
 \item Run the SAEM algorithm using \code{run_saem}.
 \item Return parameter estimates packaged in a \code{saemResults} object.
 }
+}
+\note{
+This function is intended for testing and debugging purposes only.
+It does not perform variable selection across a grid of spike values
+and should not be used for final model comparison.
 }
 \examples{
 \dontrun{

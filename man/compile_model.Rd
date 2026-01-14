@@ -2,68 +2,44 @@
 % Please edit documentation in R/model-utils.r
 \name{compile_model}
 \alias{compile_model}
-\title{Compile a user-defined model into C++ with RcppArmadillo}
+\title{Compile Model with Optional C++ Backend}
 \usage{
-compile_model(g_fun, build_dir = "compiled_models")
+compile_model(g_fun, use_cpp, debug = FALSE, silent = FALSE)
 }
 \arguments{
-\item{g_fun}{A user-defined R function of the form \code{g(phi, t)}
-representing the model function, where \code{phi} is a parameter vector and
-\code{t} a scalar or vector of inputs. This function body will be translated
-into C++.}
+\item{g_fun}{A function representing the model to be compiled.}
 
-\item{build_dir}{Character string indicating the directory where compiled
-models should be stored. Defaults to \code{"compiled_models"}. Currently,
-the function writes the generated C++ code to a temporary file rather than
-persisting it in \code{build_dir}.}
+\item{use_cpp}{Logical. If TRUE, attempts to compile using C++ backend;
+if FALSE, uses pure R backend directly.}
+
+\item{debug}{Logical. If TRUE, enables debug mode for C++ compilation.
+Default is FALSE.}
+
+\item{silent}{Logical. If TRUE, suppresses informational messages.
+Default is FALSE.}
 }
 \value{
-Invisibly returns \code{TRUE} if compilation succeeds. The compiled functions
-\code{g_scalar_cpp}, \code{g_vector_cpp}, \code{rmvnorm_cpp},
-\code{logdmvnorm_cpp}, and \code{metropolis_vector_cpp} are loaded and
-callable within the R session.
+A compiled backend object. Returns a C++ backend if compilation
+succeeds and use_cpp is TRUE, otherwise returns a pure R backend.
 }
 \description{
-Internal function that compiles a user-specified R function into optimized
-C++ code using \pkg{RcppArmadillo}.
+Compiles a model by attempting to build a C++ backend if requested,
+with automatic fallback to a pure R implementation.
 }
 \details{
-The function extracts the body of an R function \code{g_fun}, adapts the
-indexing from R (1-based) to C++ (0-based), and generates C++ code
-containing:
-\itemize{
-\item A scalar evaluation function \code{g_scalar_cpp}.
-\item A vectorized evaluation function \code{g_vector_cpp}.
-\item Utility functions for multivariate normal simulation and density.
-\item A Metropolis-Hastings sampler for parameter chains.
-}
-The generated code is compiled on the fly and loaded into the current R
-session.
-
-The following steps are performed:
-\enumerate{
-\item Extract the body of \code{g_fun} and collapse it into a single
-string.
-\item Replace R-style 1-based indexing \code{phi[i]} with C++-compatible
-0-based indexing.
-\item Embed the function body in a templated C++ source code.
-\item Write the code to a temporary \code{.cpp} file.
-\item Compile and load the code with \code{Rcpp::sourceCpp()}.
-}
-
-This function is intended for internal use. Error handling is minimal and
-assumes that the input function \code{g_fun} is well-formed and compatible
-with the generated C++ code.
+The function attempts C++ compilation only if use_cpp is TRUE.
+If C++ compilation fails, it automatically falls back to the R backend.
+Messages are displayed during the process unless silent is TRUE.
 }
 \examples{
 \dontrun{
-g_fun <- function(phi, t) {
-  phi[1] + phi[2] * t
+backend <- compile_model(my_model_func, use_cpp = TRUE)
+backend_r <- compile_model(my_model_func, use_cpp = FALSE, silent = TRUE)
 }
-compile_model(g_fun)
 
-# Then call the compiled function
-g_scalar_cpp(c(1, 2), 0.5)
 }
+\seealso{
+\code{\link{build_backend_cpp}} for C++ backend compilation.
+\code{\link{build_backend_r}} for R backend compilation.
 }
 \keyword{internal}

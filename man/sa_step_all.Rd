@@ -4,24 +4,57 @@
 \alias{sa_step_all}
 \title{Stochastic Approximation Step for All Parameters}
 \usage{
-sa_step_all(config, iteration, state)
+sa_step_all(config, iteration, state, backend)
 }
 \arguments{
-\item{config}{List containing model configuration, including step sizes,
-series data, parameter indices, and the model function.}
+\item{config}{List containing the model configuration, including:
+\itemize{
+\item \code{step_size}: vector of SA step sizes per iteration,
+\item \code{y_series}: list of observed data series,
+\item \code{t_series}: list of corresponding time points per series,
+\item \code{parameters_to_select_indices}: indices of parameters
+subject to selection.
+}}
 
 \item{iteration}{Integer, the current iteration index (1-based).}
 
-\item{state}{List representing the current MCMC state, including phi, s1,
-s2_to_select, s3_to_select, s2_not_to_select, and s3_not_to_select.}
+\item{state}{List representing the current MCMC state, including:
+\itemize{
+\item \code{phi}: list of latent parameter matrices per iteration,
+\item \code{s1}: vector of scalar statistics per iteration,
+\item \code{s2_to_select}, \code{s3_to_select}: lists of covariance-like
+and mean-like statistics for parameters subject to selection,
+\item \code{s2_not_to_select}, \code{s3_not_to_select}: lists of
+covariance-like and mean-like statistics for parameters not subject to
+selection.
+}
+All these statistics are updated according to the stochastic approximation
+step.}
+
+\item{backend}{A list containing compiled model functions,
+including \code{g_vector}, which computes predicted observations given
+a latent parameter vector. Used to compute squared errors for SA updates.}
 }
 \value{
-Updated \code{state} list with statistics updated for all parameters.
+Updated \code{state} list with:
+\itemize{
+\item \code{s1[iteration + 1]} updated scalar statistic,
+\item \code{s2_to_select[[iteration + 1]]},
+\code{s3_to_select[[iteration + 1]]} updated statistics for
+parameters to select,
+\item \code{s2_not_to_select[[iteration + 1]]},
+\code{s3_not_to_select[[iteration + 1]]} updated statistics
+for parameters not to select.
+}
 }
 \description{
 Update the stochastic approximation statistics for all parameters
 simultaneously.
 This function updates s1, s2_to_select, s3_to_select, s2_not_to_select, and
 s3_not_to_select in the MCMC state for a given iteration.
+}
+\note{
+This function is intended for internal use within the SAEM-MCMC
+algorithm and should not be called directly in user code.
 }
 \keyword{internal}

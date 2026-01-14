@@ -4,25 +4,51 @@
 \alias{sa_step_to_select}
 \title{Stochastic Approximation Step for parameters subject to selection}
 \usage{
-sa_step_to_select(config, iteration, state)
+sa_step_to_select(config, iteration, state, backend)
 }
 \arguments{
-\item{config}{List containing model configuration, including step sizes,
-series data, parameter indices, and the model function.}
+\item{config}{List containing the model configuration, including:
+\itemize{
+\item \code{step_size}: vector of SA step sizes per iteration,
+\item \code{y_series}: list of observed data series,
+\item \code{t_series}: list of corresponding time points per series,
+\item \code{model_function}: function mapping a latent parameter vector
+\code{phi_i} and time points \code{t_i} to predicted observations.
+}}
 
 \item{iteration}{Integer, the current iteration index (1-based).}
 
-\item{state}{List representing the current MCMC state, including phi, s1,
-s2_to_select, and s3_to_select.}
+\item{state}{List representing the current MCMC state, including:
+\itemize{
+\item \code{phi}: list of latent parameter matrices per iteration,
+\item \code{s1}: vector of scalar statistics per iteration,
+\item \code{s2_to_select}: list of covariance-like matrices for
+parameters subject to selection,
+\item \code{s3_to_select}: list of mean-like vectors for parameters
+subject to selection.
+}
+These statistics are updated in place according to the stochastic
+approximation step.}
+
+\item{backend}{A list containing compiled model functions, passed for
+consistency with the SAEM iteration framework.}
 }
 \value{
-Updated \code{state} list with statistics updated for the parameters
-to select.
+Updated \code{state} list with:
+\itemize{
+\item \code{s1[iteration + 1]} updated scalar statistic,
+\item \code{s2_to_select[[iteration + 1]]} updated covariance statistic,
+\item \code{s3_to_select[[iteration + 1]]} updated mean statistic.
+}
 }
 \description{
 Update the stochastic approximation statistics for parameters that are
 subject to selection.
 This function updates s1, s2_to_select, and s3_to_select in the MCMC state
 for a given iteration.
+}
+\note{
+This function is intended for internal use within the SAEM-MCMC
+algorithm and should not be called directly in user code.
 }
 \keyword{internal}
