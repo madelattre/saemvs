@@ -86,7 +86,8 @@ test_that("saemvsData: x_candidates not a matrix", {
     saemvsData(
       y = list(1:3),
       t = list(1:3),
-      x_forced = c(1, 2, 3)
+      x_candidates = c(1, 2, 3),
+      x_forced = NULL
     ),
     "matrix"
   )
@@ -111,137 +112,136 @@ test_that(
 # Unit tests for saemvsData class creation and validation
 # with saemvsDataFromDFs constructor
 
-
-long_df_valid <- data.frame(
-  id = rep(1:3, each = 3),
-  time = rep(1:3, times = 3),
-  y = rnorm(9)
-)
-
-covar_df_valid <- data.frame(
-  id = 1:3,
-  age = c(30, 40, 50),
-  bmi = c(22, 25, 28),
-  group = c(1, 0, 1)
+full_data_valid <- data.frame(
+  id = rep(1:3, each = 2),
+  time = rep(1:2, times = 3),
+  y = rnorm(6),
+  x1 = c(1, 1, 0, 0, 1, 1),
+  age = c(30, 30, 40, 40, 50, 50),
+  bmi = c(22, 22, 25, 25, 28, 28)
 )
 
 
-test_that("saemvsDataFromDFs: valid construction", {
-  obj <- saemvsDataFromDFs(
-    long_df = long_df_valid,
-    covar_df = covar_df_valid,
-    id_col = "id",
-    y_col = "y",
-    t_col = "time",
-    x_candidates_cols = c("age", "bmi"),
-    x_forced_cols = "group"
-  )
+test_that("saemvsData_from_df: missing repeated column", {
+  data_missing <- full_data_valid
+  data_missing$time <- NULL
 
-  expect_s4_class(obj, "saemvsData")
-  expect_true(validObject(obj))
-  expect_equal(length(obj@y_series), 3)
-  expect_equal(length(obj@t_series), 3)
-})
-
-test_that("saemvsDataFromDFs: missing column in long_df", {
-  long_df_missing <- long_df_valid
-  long_df_missing$time <- NULL
   expect_error(
-    saemvsDataFromDFs(
-      long_df = long_df_missing,
-      covar_df = covar_df_valid,
-      id_col = "id",
-      y_col = "y",
-      t_col = "time"
+    saemvsData_from_df(
+      formula = y ~ . + repeated(time) + group(id),
+      data = data_missing
     ),
-    "Column 'time' is missing in long_df."
+    "Column 'time' is missing in data."
   )
 })
 
-test_that("saemvsDataFromDFs: missing id in covar_df", {
-  covar_df_missing <- covar_df_valid
-  covar_df_missing$id <- NULL
+test_that("saemvsData_from_df: missing group column", {
+  data_missing <- full_data_valid
+  data_missing$id <- NULL
+
   expect_error(
-    saemvsDataFromDFs(
-      long_df = long_df_valid,
-      covar_df = covar_df_missing,
-      id_col = "id",
-      y_col = "y",
-      t_col = "time"
+    saemvsData_from_df(
+      formula = y ~ . + repeated(time) + group(id),
+      data = data_missing
     ),
-    "Column 'id' is missing in covar_df."
+    "Column 'id' is missing in data."
   )
 })
 
-test_that("saemvsDataFromDFs: individual missing in covar_df", {
-  long_df_extra <- rbind(long_df_valid, data.frame(id = 4, time = 1, y = 0.5))
+test_that("saemvsData_from_df: missing forced covariate", {
+  data_missing <- full_data_valid
+  data_missing$x1 <- NULL
+
   expect_error(
-    saemvsDataFromDFs(
-      long_df = long_df_extra,
-      covar_df = covar_df_valid,
-      id_col = "id",
-      y_col = "y",
-      t_col = "time"
+    saemvsData_from_df(
+      formula = y ~ . + repeated(time) + group(id) + x1,
+      data = data_missing
     ),
-    "Some individuals in long_df are not present in covar_df."
+    "Column 'x1' is missing in data."
   )
 })
 
-test_that("saemvsDataFromDFs: x_forced not numeric", {
-  covar_nonnum <- covar_df_valid
-  covar_nonnum$group <- factor(covar_nonnum$group)
+test_that("saemvsData_from_df: multiple forced covariates, one missing", {
+  data_missing <- full_data_valid
+  data_missing$x2 <- NULL
+
   expect_error(
-    saemvsDataFromDFs(
-      long_df = long_df_valid,
-      covar_df = covar_nonnum,
-      id_col = "id",
-      y_col = "y",
-      t_col = "time",
-      x_forced_cols = "group"
+    saemvsData_from_df(
+      formula = y ~ . + repeated(time) + group(id) + x1 + x2,
+      data = data_missing
+    ),
+    "Column 'x2' is missing in data."
+  )
+})
+
+test_that("saemvsData_from_df: data contains NA", {
+  data_na <- full_data_valid
+  data_na$bmi[1] <- NA
+
+  expect_error(
+    saemvsData_from_df(
+      formula = y ~ . + repeated(time) + group(id),
+      data = data_na
+    ),
+    "Data contains missing values"
+  )
+})
+
+test_that("saemvsData_from_df: forced covariate not numeric", {
+  data_nonnum <- full_data_valid
+  data_nonnum$x1 <- factor(data_nonnum$x1)
+
+  expect_error(
+    saemvsData_from_df(
+      formula = y ~ . + repeated(time) + group(id) + x1,
+      data = data_nonnum
     ),
     "x_forced must be numeric."
   )
 })
 
-test_that("saemvsDataFromDFs: x_candidates not numeric", {
-  covar_nonnum <- covar_df_valid
-  covar_nonnum$age <- as.character(covar_nonnum$age)
+test_that("saemvsData_from_df: candidate covariate not numeric", {
+  data_nonnum <- full_data_valid
+  data_nonnum$age <- as.character(data_nonnum$age)
+
   expect_error(
-    saemvsDataFromDFs(
-      long_df = long_df_valid,
-      covar_df = covar_nonnum,
-      id_col = "id",
-      y_col = "y",
-      t_col = "time",
-      x_candidates_cols = "age"
+    saemvsData_from_df(
+      formula = y ~ . + repeated(time) + group(id),
+      data = data_nonnum
     ),
     "x_candidates must be numeric."
   )
 })
 
-test_that("saemvsDataFromDFs: no forced covariates", {
-  obj <- saemvsDataFromDFs(
-    long_df = long_df_valid,
-    covar_df = covar_df_valid,
-    id_col = "id",
-    y_col = "y",
-    t_col = "time",
-    x_candidates_cols = c("age", "bmi"),
-    x_forced_cols = NULL
+test_that("saemvsData_from_df: no forced covariates", {
+  obj <- saemvsData_from_df(
+    formula = y ~ . + repeated(time) + group(id),
+    data = full_data_valid
   )
+
   expect_s4_class(obj, "saemvsData")
   expect_null(obj@x_forced)
 })
 
-test_that("saemvsDataFromDFs: default candidate columns", {
-  obj <- saemvsDataFromDFs(
-    long_df = long_df_valid,
-    covar_df = covar_df_valid,
-    id_col = "id",
-    y_col = "y",
-    t_col = "time"
+test_that("saemvsData_from_df: default candidate covariates", {
+  obj <- saemvsData_from_df(
+    formula = y ~ . + repeated(time) + group(id),
+    data = full_data_valid
   )
-  expect_s4_class(obj, "saemvsData")
+
   expect_true(validObject(obj))
-  expect_false(is.null(obj@x_candidates))
+  expect_equal(
+    colnames(obj@x_candidates),
+    c("x1", "age", "bmi")
+  )
+})
+
+test_that("saemvsData_from_df: forced covariates excluded from candidates", {
+  obj <- saemvsData_from_df(
+    formula = y ~ . + repeated(time) + group(id) + x1,
+    data = full_data_valid
+  )
+
+  expect_equal(colnames(obj@x_forced), "x1")
+  expect_false("x1" %in% colnames(obj@x_candidates))
 })
