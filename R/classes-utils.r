@@ -137,19 +137,6 @@ get_variables_from_formula <- function(f) {
     }
   }
 
-  # If . is used, we need to expand it
-  if (has_dot) {
-    # Note: all.vars will include the special function names (group, repeated)
-    # We need to ignore them and extract only actual variables
-    # The expansion of . will be done by saemvsDataFromDFs which has access
-    # to data
-    # For now, we mark that we have a dot and set forced to indicate
-    # "all except excluded"
-    # This will be handled in saemvsDataFromDFs
-    forced <- character(0)
-    # Reset to be empty - actual variables will be determined from data
-  }
-
   # Remove empty strings and convert to NULL if empty
   forced <- forced[forced != ""]
   if (length(forced) == 0) forced <- NULL

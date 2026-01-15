@@ -190,7 +190,16 @@ saemvsData <- function( # nolint:  object_name_linter.
   x_candidates = NULL,
   x_forced = NULL
 ) {
-  # Noms par défaut pour x_candidates
+
+  if (!is.null(x_candidates) && !is.matrix(x_candidates)) {
+    stop("'x_candidates' must be a matrix or NULL.")
+  }
+
+  if (!is.null(x_forced) && !is.matrix(x_forced)) {
+    stop("'x_forced' must be a matrix or NULL.")
+  }
+
+  # Variable names for x_candidates
   x_candidates_names <- if (!is.null(x_candidates)) {
     cn <- colnames(x_candidates)
     if (is.null(cn)) paste0("X", seq_len(ncol(x_candidates))) else cn
@@ -198,7 +207,7 @@ saemvsData <- function( # nolint:  object_name_linter.
     NULL
   }
 
-  # Noms par défaut pour x_forced
+  # Variable names for x_forced
   x_forced_names <- if (!is.null(x_forced)) {
     cn <- colnames(x_forced)
     if (is.null(cn)) paste0("F", seq_len(ncol(x_forced))) else cn
@@ -281,7 +290,7 @@ saemvsData_from_df <- function(formula, # nolint:  object_name_linter.
   if (anyNA(data)) {
     stop("Data contains missing values. Please remove all NA values from the dataframe before proceeding.") # nolint: line_length_linter.
   }
-  
+
   variable_names <- get_variables_from_formula(formula)
 
   # Check that required columns exist
@@ -315,9 +324,18 @@ saemvsData_from_df <- function(formula, # nolint:  object_name_linter.
   covar_df <- data[, setdiff(names(data), c(y_col, t_col))]
   covar_df <- covar_df[!duplicated(covar_df[[id_col]]), ]
 
-  # Determine forced covariates
   if (!is.null(x_forced_cols)) {
+
+    missing_forced <- setdiff(x_forced_cols, names(covar_df))
+    if (length(missing_forced) > 0) {
+      stop(sprintf(
+        "Column '%s' is missing in data.",
+        missing_forced[1]
+      ))
+    }
+
     x_forced <- as.matrix(covar_df[, x_forced_cols, drop = FALSE])
+
     if (!is.numeric(x_forced)) {
       stop("x_forced must be numeric.")
     }
