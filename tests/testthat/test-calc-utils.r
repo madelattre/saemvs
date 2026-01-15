@@ -81,22 +81,23 @@ data_example <- saemvsData(
 )
 
 model_example <- saemvsModel(
-  phi_dim = 2,
-  g = function(phi, t) phi[1] + phi[2] * t
+  g = function(t, a, b) a + b * t
 )
+
+processed_model_example <- prepare_model(data_example, model_example)
 
 init_example <- saemvsInit(
   intercept = c(1, 1)
 )
 
 test_that("estimate_phi_individuals returns numeric matrix of correct size", {
-  res <- estimate_phi_individuals(data_example, model_example,
+  res <- estimate_phi_individuals(data_example, processed_model_example,
     init_example,
     maxit = 10
   )
   expect_equal(dim(res), c(
     length(data_example@y_series),
-    model_example@phi_dim
+    processed_model_example@phi_dim
   ))
   expect_true(is.numeric(res))
 })
@@ -115,11 +116,12 @@ data_processed <- methods::new("saemvsProcessedData",
 )
 
 model_build <- saemvsModel(
-  phi_dim = 2,
-  g = function(phi, t) phi[1] + phi[2] * t,
-  phi_to_select_idx = c(1, 2),
-  x_forced_support = matrix(0, nrow = 1, ncol = 2)
+  g = function(t, a, b) a + b * t,
+  phi_to_select = c("a", "b"),
+  x_forced_support = NULL
 )
+
+processed_model_build <- prepare_model(data_processed, model_build)
 
 init_build <- saemvsInit(
   intercept = c(1, 1),
@@ -131,11 +133,11 @@ init_build <- saemvsInit(
 test_that("build_init_from_phi_lasso returns correct saemvsInit object", {
   init_obj <- build_init_from_phi_lasso(
     est_indiv, data_processed,
-    model_build, init_build
+    processed_model_build, init_build
   )
   expect_s4_class(init_obj, "saemvsInit")
   expect_equal(
     ncol(init_obj@beta_candidates),
-    model_build@phi_to_select_idx %>% length()
+    processed_model_build@phi_to_select_idx %>% length()
   )
 })
