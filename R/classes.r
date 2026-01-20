@@ -215,6 +215,9 @@ saemvsData <- function( # nolint:  object_name_linter.
     NULL
   }
 
+  colnames(x_candidates) <- x_candidates_names
+  colnames(x_forced)     <- x_forced_names
+
   methods::new(
     "saemvsData",
     y_series = y,
