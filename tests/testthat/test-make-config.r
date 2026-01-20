@@ -10,7 +10,7 @@
 y_series_list <- list(1:3, 4:6)
 t_series_list <- list(1:3, 1:3)
 x_candidates_ok <- matrix(1:4, nrow = 2)
-x_forced_ok <- matrix(c(1, 0), ncol = 1)
+x_forced_ok <- NULL
 
 data_base <- saemvsData(
   y = y_series_list,
@@ -21,11 +21,9 @@ data_base <- saemvsData(
 
 # --- saemvsModel ---
 model_base <- saemvsModel(
-  g = function(phi, t) phi[1] + phi[2] * t,
-  phi_dim = 2,
-  phi_to_select_idx = 1,
-  phi_fixed_idx = 2,
-  x_forced_support = matrix(c(1, 1), ncol = 2)
+  g = function(t, a, b) a + b * t,
+  phi_to_select = c("a"),
+  phi_fixed = c("b")
 )
 
 # --- saemvsInit ---
@@ -47,10 +45,11 @@ hyper_slab_base <- saemvsHyperSlab(
 test_that(
   "make_config returns a correctly structured list with minimal safe example",
   {
-    data_proc <- prepare_data(data_base, model_base)
-    init_proc <- prepare_init(init_base, model_base, data_proc)
+    model_proc <- prepare_model(data_base, model_base)
+    data_proc <- prepare_data(data_base, model_proc)
+    init_proc <- prepare_init(init_base, model_proc, data_proc)
 
-    cov_scale <- diag(model_base@phi_dim)
+    cov_scale <- diag(model_proc@phi_dim)
 
     tuning_algo_base <- saemvsTuning(
       spike_values_grid = c(0.01, 0.1, 1)
@@ -63,17 +62,17 @@ test_that(
 
     cfg <- make_config(
       data = data_proc,
-      model = model_base,
+      model = model_proc,
       tuning_algo = tuning_algo_base,
       init = init_proc,
       hyperparam = hyper_base
     )
 
     expect_type(cfg, "list")
-    expect_equal(cfg$total_parameters, model_base@phi_dim)
+    expect_equal(cfg$total_parameters, model_proc@phi_dim)
     expect_equal(
       length(cfg$parameters_to_select_indices),
-      length(model_base@phi_to_select_idx)
+      length(model_proc@phi_to_select_idx)
     )
     expect_equal(cfg$method_type, "map")
   }
