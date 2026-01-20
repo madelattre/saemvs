@@ -12,8 +12,9 @@ x_candidates_mat_prep <- matrix(1:15, nrow = 3)
 x_forced_mat_prep <- matrix(16:21, nrow = 3, ncol = 2)
 
 
-model_base_prep <- saemvsModel(
-  g = function(phi, t) t %*% phi,
+model_base_prep <- methods::new(
+  "saemvsProcessedModel",
+  model_func = function(t, phi) t %*% phi,
   phi_dim = 5,
   phi_to_select_idx = 1:3,
   phi_fixed_idx = 4:5,
@@ -22,6 +23,7 @@ model_base_prep <- saemvsModel(
     ncol = 5, byrow = TRUE
   )
 )
+
 data_base_prep <- saemvsData(
   y = y_list_prep,
   t = t_list_prep,
@@ -29,8 +31,9 @@ data_base_prep <- saemvsData(
   x_forced = x_forced_mat_prep
 )
 
-model_all_forced_prep <- saemvsModel(
-  g = function(phi, t) t %*% phi,
+model_all_forced_prep <- methods::new(
+  "saemvsProcessedModel",
+  model_func = function(t, phi) t %*% phi,
   phi_dim = 3,
   phi_to_select_idx = integer(0),
   phi_fixed_idx = 1:3,
@@ -44,8 +47,9 @@ data_no_forced_prep <- saemvsData(
   x_forced = NULL
 )
 
-model_minimal_prep <- saemvsModel(
-  g = function(phi, t) t %*% phi,
+model_minimal_prep <- methods::new(
+  "saemvsProcessedModel",
+  model_func = function(t, phi) t %*% phi,
   phi_dim = 1,
   phi_to_select_idx = 1,
   phi_fixed_idx = integer(0),
