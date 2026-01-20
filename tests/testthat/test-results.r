@@ -135,11 +135,39 @@ test_that("predict() fails when k is larger than available iterations", {
 # --- Tests for summary(saemvsResults) ---
 # ---------------------------------------------
 
+mock_saemvsResults <- function() {
+  new(
+    "saemvsResults",
+    criterion = "BIC",
+    criterion_values = 0.5,
+    thresholds = list(c(0.05)),
+    beta_map = list(matrix(0.1, nrow = 2, ncol = 1)),
+    mle_estimates = list(
+      list(
+        beta = matrix(c(0.1, 0.3), nrow = 2),
+        gamma = diag(1)
+      )
+    ),
+    support = list(matrix(TRUE, nrow = 2, ncol = 1)),
+    unique_support = list(matrix(TRUE, nrow = 2, ncol = 1)),
+    support_mapping = 1,
+    spike_values_grid = 0.1,
+    phi_fixed_idx = numeric(0),
+    phi_to_select_idx = 1,
+    forced_variables_idx = list(integer(0)),
+    selected_variables_idx = list(1),
+    phi_names = "phi1"
+  )
+}
+
+
 test_that("summary(saemvsResults) runs without error", {
+  saemvs_res <- mock_saemvsResults()
   expect_output(summary(saemvs_res))
 })
 
 test_that("summary(saemvsResults) displays expected sections", {
+  saemvs_res <- mock_saemvsResults()
   output <- capture.output(summary(saemvs_res))
 
   expect_true(any(grepl("Best model", output)))
@@ -150,15 +178,18 @@ test_that("summary(saemvsResults) displays expected sections", {
 })
 
 test_that("summary() respects digits argument", {
+  saemvs_res <- mock_saemvsResults()
   output <- capture.output(summary(saemvs_res, digits = 1))
   expect_true(any(grepl("0.1", output)))
 })
 
 test_that("summary_support() works for a valid support", {
+  saemvs_res <- mock_saemvsResults()
   expect_output(summary_support(saemvs_res, support_idx = 1))
 })
 
 test_that("summary_support() fails with invalid support index", {
+  saemvs_res <- mock_saemvsResults()
   expect_error(
     summary_support(saemvs_res, support_idx = 2),
     "support_idx must be between 1 and"
@@ -166,6 +197,7 @@ test_that("summary_support() fails with invalid support index", {
 })
 
 test_that("summary_all() runs without error", {
+  saemvs_res <- mock_saemvsResults()
   expect_output(summary_all(saemvs_res))
 })
 
@@ -212,7 +244,7 @@ test_that("coef() returns correct beta estimates", {
   beta <- coef(saemvs_res)
 
   expect_equal(beta["μ", "phi1"], 0.1)
-  expect_equal(beta["x1", "phi1"], 0.3)
+  expect_equal(beta[2, "phi1"], 0.3)
 })
 
 test_that("coef_support() works for a valid support", {
