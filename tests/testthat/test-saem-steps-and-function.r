@@ -24,13 +24,13 @@
 # --- Model with both selected and unselected parameters
 
 initprep_model_simple <- saemvsModel(
-  g = function(phi, t) phi[2] + phi[1] / (1 + exp(-(t - phi[3]))),
-  phi_dim = 3,
-  phi_to_select_idx = 2,
-  phi_fixed_idx = c(1, 3),
-  x_forced_support = matrix(
-    c(1, 1, 1),
-    nrow = 1
+  g = function(t, a, b, c) b + a / (1 + exp(-(t - c))),
+  phi_to_select = c("b"),
+  phi_fixed = c("a", "c"),
+  x_forced_support = list(
+    a = c("F1"),
+    b = c("F1"),
+    c = c("F1")
   )
 )
 
@@ -41,8 +41,13 @@ initprep_data_simple <- saemvsData(
   x_forced = matrix(seq(7, 9), ncol = 1)
 )
 
+initprep_model_processed <- prepare_model(
+  initprep_data_simple,
+  initprep_model_simple
+)
+
 initprep_data_processed <- prepare_data(
-  initprep_data_simple, initprep_model_simple
+  initprep_data_simple, initprep_model_processed
 )
 
 initprep_init_simple_bis <- saemvsInit(
@@ -56,7 +61,7 @@ initprep_init_simple_bis <- saemvsInit(
 
 initprep_init_processed <- prepare_init(
   initprep_init_simple_bis,
-  initprep_model_simple,
+  initprep_model_processed,
   initprep_data_processed
 )
 
@@ -86,7 +91,7 @@ hyper_saem <- saemvsHyperSpikeAndSlab(
 
 test_config <- make_config(
   initprep_data_processed,
-  initprep_model_simple,
+  initprep_model_processed,
   tuning_base,
   initprep_init_processed,
   hyper_saem
@@ -97,14 +102,22 @@ test_state <- init_state(test_config)
 # --- Model with selected parameters only
 
 initprep_model_full_select <- saemvsModel(
-  g = function(phi, t) phi[2] + phi[1] / (1 + exp(-(t - phi[3]))),
-  phi_dim = 3,
-  phi_to_select_idx = 1:3,
-  x_forced_support = matrix(1, nrow = 1, ncol = 3)
+  g = function(t, a, b, c) b + a / (1 + exp(-(t - c))),
+  phi_to_select = c("a", "b", "c"),
+  x_forced_support = list(
+    a = c("F1"),
+    b = c("F1"),
+    c = c("F1")
+  )
 )
 
-initprep_data_processed_full_select <- prepare_data(
-  initprep_data_simple, initprep_model_full_select
+initprep_model_full_select_processed <- prepare_model( # nolint : object_length_linter
+  initprep_data_simple,
+  initprep_model_full_select
+)
+
+initprep_data_processed_full_select <- prepare_data( # nolint : object_length_linter
+  initprep_data_simple, initprep_model_full_select_processed
 )
 
 initprep_init_full_select <- saemvsInit(
@@ -125,7 +138,7 @@ hyper_slab_saem_full_select <- saemvsHyperSlab(
 hyper_slab_saem_full_select <- prepare_hyper(
   hyper_slab_saem_full_select,
   initprep_data_processed_full_select,
-  initprep_model_full_select
+  initprep_model_full_select_processed
 )
 
 hyper_saem_full_select <- saemvsHyperSpikeAndSlab(
@@ -133,16 +146,16 @@ hyper_saem_full_select <- saemvsHyperSpikeAndSlab(
   hyper_slab = hyper_slab_saem_full_select
 )
 
-initprep_init_full_select_processed <- prepare_init(
+initprep_init_full_select_processed <- prepare_init( # nolint : object_length_linter
   initprep_init_full_select,
-  initprep_model_full_select,
+  initprep_model_full_select_processed,
   initprep_data_processed_full_select
 )
 
 
 test_config_full_select <- make_config(
   initprep_data_processed_full_select,
-  initprep_model_full_select,
+  initprep_model_full_select_processed,
   tuning_base,
   initprep_init_full_select_processed,
   hyper_saem_full_select
@@ -154,11 +167,19 @@ test_state_full_select <- init_state(test_config_full_select)
 # --- Model with unselected parameters only
 
 initprep_model_no_select <- saemvsModel(
-  g = function(phi, t) phi[2] + phi[1] / (1 + exp(-(t - phi[3]))),
-  phi_dim = 3,
-  phi_to_select_idx = integer(0),
-  phi_fixed_idx = 1:3,
-  x_forced_support = matrix(1, nrow = 1, ncol = 3)
+  g = function(t, a, b, c) b + a / (1 + exp(-(t - c))),
+  phi_to_select = c(),
+  phi_fixed = c("a", "b", "c"),
+  x_forced_support = list(
+    a = c("F1"),
+    b = c("F1"),
+    c = c("F1")
+  )
+)
+
+initprep_model_no_select_processed <- prepare_model( # nolint : object_length_linter
+  initprep_data_simple,
+  initprep_model_no_select
 )
 
 initprep_init_no_select <- saemvsInit(
@@ -171,19 +192,19 @@ initprep_init_no_select <- saemvsInit(
 )
 
 
-initprep_data_processed_no_select <- prepare_data(
-  initprep_data_simple, initprep_model_no_select
+initprep_data_processed_no_select <- prepare_data( # nolint : object_length_linter
+  initprep_data_simple, initprep_model_no_select_processed
 )
 
-initprep_init_no_select_processed <- prepare_init(
+initprep_init_no_select_processed <- prepare_init( # nolint : object_length_linter  
   initprep_init_no_select,
-  initprep_model_no_select,
+  initprep_model_no_select_processed,
   initprep_data_processed_no_select
 )
 
 test_config_no_select <- make_config(
   initprep_data_processed_no_select,
-  initprep_model_no_select,
+  initprep_model_no_select_processed,
   tuning_base,
   initprep_init_no_select_processed,
   hyper_saem
@@ -196,20 +217,25 @@ test_state_no_select <- init_state(test_config_no_select)
 # --- Unit tests --- #
 # ------------------ #
 
+fake_backend <- list(
+  metropolis_vector = function(...) {
+    list(c(1, 2, 3), c(4, 5, 6), c(7, 8, 9))
+  },
+  g_vector = function(t, phi) {
+    phi[2] + phi[1] / (1 + exp(-(t - phi[3])))
+  }
+)
+
 # no distinction between selectable and non-selectable parameters
 # at the metropolis-hastings stage
 test_that("metropolis_s_step updates phi correctly", {
-  mockery::stub(
-    metropolis_s_step, "metropolis_vector_cpp",
-    function(...) list(c(1, 2, 3), c(4, 5, 6), c(7, 8, 9))
-  )
-
-  state_new <- metropolis_s_step(test_config, 1, test_state)
+  state_new <- metropolis_s_step(test_config, 1, test_state, fake_backend)
   expect_true(is.matrix(state_new$phi[[2]]))
   expect_equal(dim(state_new$phi[[2]]), dim(test_state$phi[[1]]))
   expect_true(all(state_new$phi[[2]] == matrix(
     c(1, 2, 3, 4, 5, 6, 7, 8, 9),
-    3, 3,
+    3, 3
+    ,
     byrow = TRUE
   )))
 })
@@ -290,17 +316,8 @@ test_that("sa_step_not_to_select updates sufficient statistics correctly", {
 
 
 test_that("sa_step_all updates sufficient statistics correctly", {
-  fake_g_vector_cpp <- function(phi, t) {
-    return(phi[2] + phi[1] / (1 + exp(-(t - phi[3]))))
-  }
 
-  mockery::stub(
-    where = sa_step_all,
-    what = "g_vector_cpp",
-    how = fake_g_vector_cpp
-  )
-
-  state_new <- sa_step_all(test_config, 1, test_state)
+  state_new <- sa_step_all(test_config, 1, test_state, fake_backend)
 
   expect_type(state_new$s1, "double")
   expect_true(is.matrix(state_new$s2_to_select[[2]]))
@@ -411,35 +428,12 @@ test_that("m_step_to_select updates beta, gamma, and alpha correctly", {
 # ---------------------------------------------
 
 test_that("perform_saem_iteration runs one iteration end-to-end", {
-  fake_metropolis_vector_cpp <- function(...) {
-    list(c(1, 2, 3), c(4, 5, 6), c(7, 8, 9))
-  }
-
-
-  ns <- asNamespace("saemvs")
-
-  # save the original function
-  original_fun <- get("metropolis_vector_cpp", envir = ns)
-
-  unlockBinding("metropolis_vector_cpp", ns)
-  assign("metropolis_vector_cpp", fake_metropolis_vector_cpp, envir = ns)
-  lockBinding("metropolis_vector_cpp", ns)
-
-  # restore initial function
-  on.exit(
-    {
-      unlockBinding("metropolis_vector_cpp", ns)
-      assign("metropolis_vector_cpp", original_fun, envir = ns)
-      lockBinding("metropolis_vector_cpp", ns)
-    },
-    add = TRUE
-  )
-
   result <- perform_saem_iteration(
     1, test_config_no_select, test_state_no_select,
     sa_func = sa_step_not_to_select,
     m_func = m_step_not_to_select,
-    mh_update_func = update_proposal_mh_not_to_select
+    mh_update_func = update_proposal_mh_not_to_select,
+    backend = fake_backend
   )
 
   expect_true(is.list(result))
@@ -459,32 +453,13 @@ test_that("perform_saem_iteration runs one iteration end-to-end", {
 # ---------------------------------------------
 
 test_that("run_saem_full executes multiple iterations without error", {
-  fake_metropolis_vector_cpp <- function(...) {
-    list(c(1, 2, 3), c(4, 5, 6), c(7, 8, 9))
-  }
-
-  ns <- asNamespace("saemvs")
-
-  original_fun <- get("metropolis_vector_cpp", envir = ns)
-
-  unlockBinding("metropolis_vector_cpp", ns)
-  assign("metropolis_vector_cpp", fake_metropolis_vector_cpp, envir = ns)
-  lockBinding("metropolis_vector_cpp", ns)
-
-  on.exit(
-    {
-      unlockBinding("metropolis_vector_cpp", ns)
-      assign("metropolis_vector_cpp", original_fun, envir = ns)
-      lockBinding("metropolis_vector_cpp", ns)
-    },
-    add = TRUE
-  )
 
   result <- run_saem_full(
     test_config_no_select, test_state_no_select,
     sa_func = sa_step_not_to_select,
     m_func = m_step_not_to_select,
-    mh_update_func = update_proposal_mh_not_to_select
+    mh_update_func = update_proposal_mh_not_to_select,
+    backend = fake_backend
   )
 
   expect_true(is.list(result))
