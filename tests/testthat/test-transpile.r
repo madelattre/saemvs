@@ -1,9 +1,5 @@
-# tests/testthat/test_make_phi_functions.R
-
-library(testthat)
-
 # -----------------------------
-# 1️⃣ Helper and test functions
+# Helper and test functions
 # -----------------------------
 g_helper <- function(x) x^2  # external helper, not a model
 
@@ -33,13 +29,14 @@ run_make_phi_tests <- function(f_name, f) {
   # Skip helpers
   if (grepl("helper", f_name)) return(NULL)
 
-  # 1️⃣ apply make_phi_fn
+  # apply make_phi_fn
   f_phi <- make_phi_fn(f)
+  environment(f_phi)$g_helper <- g_helper
 
-  # 2️⃣ apply transpile_to_cpp
+  # apply transpile_to_cpp
   cpp_code <- transpile_to_cpp(f_phi, function_name = paste0(f_name, "_cpp"))
 
-  # 3️⃣ R evaluation with arbitrary values
+  # R evaluation with arbitrary values
   param_names <- names(formals(f_phi))[-1] # skip 't'
   phi_test <- seq_along(param_names)
   t_test <- 1
@@ -51,7 +48,7 @@ run_make_phi_tests <- function(f_name, f) {
 }
 
 # -----------------------------
-# 3️⃣ Create testthat tests
+# Create testthat tests
 # -----------------------------
 test_that("make_phi_fn and transpile_to_cpp produce valid output", {
   for (name in names(test_functions)) {
