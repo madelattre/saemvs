@@ -11,13 +11,13 @@
 # ------------------------------ #
 
 initprep_model_simple <- saemvsModel(
-  g = function(phi, t) phi[2] + phi[1] / (1 + exp(-(t - phi[3]))),
-  phi_dim = 3,
-  phi_to_select_idx = 2,
-  phi_fixed_idx = c(1, 3),
-  x_forced_support = matrix(
-    c(1, 1, 1),
-    nrow = 1
+  g = function(t, a, b, c) b + a / (1 + exp(-(t - c))),
+  phi_to_select = c("b"),
+  phi_fixed = c("a", "c"),
+  x_forced_support = list(
+    a = c("F1"),
+    b = c("F1"),
+    c = c("F1")
   )
 )
 
@@ -28,8 +28,13 @@ initprep_data_simple <- saemvsData(
   x_forced = matrix(seq(7, 9), ncol = 1)
 )
 
+initprep_model_processed <- prepare_model(
+  initprep_data_simple,
+  initprep_model_simple
+)
+
 initprep_data_processed <- prepare_data(
-  initprep_data_simple, initprep_model_simple
+  initprep_data_simple, initprep_model_processed
 )
 
 initprep_init_simple <- saemvsInit(
@@ -43,11 +48,19 @@ initprep_init_simple <- saemvsInit(
 
 # --- No parameter to select ---
 initprep_model_no_select <- saemvsModel(
-  g = function(phi, t) phi[2] + phi[1] / (1 + exp(-(t - phi[3]))),
-  phi_dim = 3,
-  phi_to_select_idx = integer(0),
-  phi_fixed_idx = 1:3,
-  x_forced_support = matrix(1, nrow = 1, ncol = 3)
+  g = function(t, a, b, c) b + a / (1 + exp(-(t - c))),
+  phi_to_select = c(),
+  phi_fixed = c("a", "b", "c"),
+  x_forced_support = list(
+    a = c("F1"),
+    b = c("F1"),
+    c = c("F1")
+  )
+)
+
+initprep_model_no_select_processed <- prepare_model( # nolint : object_length_linter
+  initprep_data_simple,
+  initprep_model_no_select
 )
 
 initprep_init_no_select <- saemvsInit(
@@ -60,24 +73,29 @@ initprep_init_no_select <- saemvsInit(
 )
 
 initprep_init_base <- saemvsInit(
-  intercept = rep(0.1, initprep_model_simple@phi_dim),
-  beta_candidates = matrix(0.2, nrow = 2, ncol = initprep_model_simple@phi_dim),
+  intercept = rep(0.1, initprep_model_processed@phi_dim),
+  beta_candidates = matrix(0.2,
+                           nrow = 2, ncol = initprep_model_processed@phi_dim),
   beta_forced = matrix(0.3,
-    nrow = nrow(initprep_model_simple@x_forced_support),
-    ncol = initprep_model_simple@phi_dim
+    nrow = nrow(initprep_model_processed@x_forced_support),
+    ncol = initprep_model_processed@phi_dim
   ),
-  cov_re = diag(0.5, initprep_model_simple@phi_dim),
+  cov_re = diag(0.5, initprep_model_processed@phi_dim),
   sigma2 = 1,
   default = FALSE
 )
 
 
 initprep_model_no_forced <- saemvsModel(
-  g = function(phi, t) phi[2] + phi[1] / (1 + exp(-(t - phi[3]))),
-  phi_dim = 3,
-  phi_to_select_idx = 1:3,
-  phi_fixed_idx = integer(0),
-  x_forced_support = matrix(0, nrow = 1, ncol = 3)
+  g = function(t, a, b, c) b + a / (1 + exp(-(t - c))),
+  phi_to_select = c("a", "b", "c"),
+  phi_fixed = c(),
+  x_forced_support = NULL
+)
+
+initprep_model_no_forced_processed <- prepare_model( # nolint : object_length_linter
+  initprep_data_simple,
+  initprep_model_no_forced
 )
 
 initprep_init_no_forced <- saemvsInit(
@@ -96,7 +114,7 @@ initprep_init_no_forced <- saemvsInit(
 test_that("prepare_init nominal case works (minimal)", {
   result <- prepare_init(
     initprep_init_simple,
-    initprep_model_simple,
+    initprep_model_processed,
     initprep_data_processed
   )
 
@@ -106,14 +124,14 @@ test_that("prepare_init nominal case works (minimal)", {
   expect_true(is.numeric(result@inclusion_prob))
   expect_equal(
     length(result@inclusion_prob),
-    length(initprep_model_simple@phi_to_select_idx)
+    length(initprep_model_processed@phi_to_select_idx)
   )
 })
 
 test_that("prepare_init output structure is consistent (minimal)", {
   result <- prepare_init(
     initprep_init_simple,
-    initprep_model_simple,
+    initprep_model_processed,
     initprep_data_processed
   )
 
@@ -128,7 +146,7 @@ test_that("prepare_init output structure is consistent (minimal)", {
 })
 
 test_that("prepare_init applies fixed-effect variance correction (minimal)", {
-  model_fixed <- initprep_model_simple
+  model_fixed <- initprep_model_processed
   model_fixed@phi_fixed_idx <- 3
   init_small <- initprep_init_simple
   init_small@intercept[3] <- 0.01
@@ -143,7 +161,7 @@ test_that("prepare_init applies fixed-effect variance correction (minimal)", {
 test_that("prepare_init nominal case works", {
   result <- prepare_init(
     initprep_init_simple,
-    initprep_model_simple,
+    initprep_model_processed,
     initprep_data_processed
   )
 
@@ -153,15 +171,17 @@ test_that("prepare_init nominal case works", {
   expect_true(is.numeric(result@inclusion_prob))
   expect_equal(
     length(result@inclusion_prob),
-    length(initprep_model_simple@phi_to_select_idx)
+    length(initprep_model_processed@phi_to_select_idx)
   )
 })
 
 test_that("prepare_init handles no parameter to select", {
-  data_proc <- prepare_data(initprep_data_simple, initprep_model_no_select)
+  data_proc <- prepare_data(
+    initprep_data_simple, initprep_model_no_select_processed
+  )
   result <- prepare_init(
     initprep_init_no_select,
-    initprep_model_no_select,
+    initprep_model_no_select_processed,
     data_proc
   )
 
@@ -172,10 +192,12 @@ test_that("prepare_init handles no parameter to select", {
 })
 
 test_that("prepare_init handles no forced covariates", {
-  data_proc <- prepare_data(initprep_data_simple, initprep_model_no_forced)
+  data_proc <- prepare_data(
+    initprep_data_simple, initprep_model_no_forced_processed
+  )
   result <- prepare_init(
     initprep_init_no_forced,
-    initprep_model_no_forced,
+    initprep_model_no_forced_processed,
     data_proc
   )
 
@@ -184,10 +206,12 @@ test_that("prepare_init handles no forced covariates", {
 })
 
 test_that("prepare_init handles all parameters forced", {
-  data_proc <- prepare_data(initprep_data_simple, initprep_model_no_select)
+  data_proc <- prepare_data(
+    initprep_data_simple, initprep_model_no_select_processed
+  )
   result <- prepare_init(
     initprep_init_no_select,
-    initprep_model_no_select,
+    initprep_model_no_select_processed,
     data_proc
   )
 
@@ -196,7 +220,7 @@ test_that("prepare_init handles all parameters forced", {
 })
 
 test_that("prepare_init applies fixed-effect variance correction", {
-  model_fixed <- initprep_model_simple
+  model_fixed <- initprep_model_processed
   model_fixed@phi_fixed_idx <- 2:3
   init_small <- initprep_init_base
   init_small@intercept[2:3] <- 0.01
@@ -211,7 +235,7 @@ test_that("prepare_init applies fixed-effect variance correction", {
 test_that("prepare_init output structure is consistent", {
   result <- prepare_init(
     initprep_init_base,
-    initprep_model_simple,
+    initprep_model_processed,
     initprep_data_processed
   )
 
