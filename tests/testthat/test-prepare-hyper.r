@@ -16,8 +16,9 @@ phi_dim <- 3
 cov_scale <- diag(phi_dim)
 
 test_that("prepare_hyper: MLE case returns NULL priors", {
-  model_mle <- saemvsModel(
-    g = function(phi, t) t %*% phi,
+  model_mle <- methods::new(
+    "saemvsProcessedModel",
+    model_func = function(t, phi) t %*% phi,
     phi_dim = phi_dim,
     phi_to_select_idx = integer(0)
   )
@@ -37,8 +38,9 @@ test_that("prepare_hyper: MLE case returns NULL priors", {
 })
 
 test_that("prepare_hyper: MAP case fills missing priors", {
-  model_map <- saemvsModel(
-    g = function(phi, t) t %*% phi,
+  model_map <- methods::new(
+    "saemvsProcessedModel",
+    model_func = function(t, phi) t %*% phi,
     phi_dim = phi_dim,
     phi_to_select_idx = 1:2
   )
@@ -63,8 +65,9 @@ test_that("prepare_hyper: MAP case fills missing priors", {
 })
 
 test_that("prepare_hyper: MAP case keeps existing priors", {
-  model_map <- saemvsModel(
-    g = function(phi, t) t %*% phi,
+  model_map <- methods::new(
+    "saemvsProcessedModel",
+    model_func = function(t, phi) t %*% phi,
     phi_dim = phi_dim,
     phi_to_select_idx = 1:2
   )
@@ -85,8 +88,9 @@ test_that("prepare_hyper: MAP case keeps existing priors", {
 })
 
 test_that("prepare_hyper: MAP case errors if priors wrong length", {
-  model_map <- saemvsModel(
-    g = function(phi, t) t %*% phi,
+  model_map <- methods::new(
+    "saemvsProcessedModel",
+    model_func = function(t, phi) t %*% phi,
     phi_dim = phi_dim,
     phi_to_select_idx = 1:2
   )
