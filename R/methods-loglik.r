@@ -35,9 +35,9 @@
 #'   \item Preprocess the data using \code{prepare_data()}.
 #'   \item For each subject/series, generate Monte Carlo samples of the latent
 #'         parameters (\code{phi}) from a multivariate normal distribution
-#'         with mean \eqn{\(\beta \times X\)} and covariance \eqn{\(\gamma\)}.
+#'         with mean \eqn{\beta \times X} and covariance \eqn{\gamma}.
 #'   \item Compute the likelihood contribution for each series using
-#'         the model function in \code{backend$g_vector}.
+#'         the model function in \code{backend}.
 #'   \item Sum over all series to obtain the total log-likelihood.
 #'   \item Apply the specified penalty ("BIC" or "e-BIC") using the number of
 #'         selected covariates and forced covariates.
