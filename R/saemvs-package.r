@@ -1,9 +1,8 @@
-## usethis namespace: start
-#' @importFrom Rcpp sourceCpp
-## usethis namespace: end
-NULL
-
-## usethis namespace: start
+#' saemvs: SAEM Variable Selection
+#'
+#' Package for SAEM variable selection with S4 classes and Rcpp backend.
+#'
+#' @name saemvs
 #' @useDynLib saemvs, .registration = TRUE
-## usethis namespace: end
+#' @importFrom Rcpp sourceCpp
 NULL
