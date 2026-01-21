@@ -112,16 +112,16 @@ get_variables_from_formula <- function(f) {
       rhs_without_dot <- trimws(rhs_without_dot)
 
       if (nchar(rhs_without_dot) > 0) {
-        temp_formula <- as.formula(paste("dummy ~", rhs_without_dot))
-        trm <- terms(temp_formula)
+        temp_formula <- stats::as.formula(paste("dummy ~", rhs_without_dot))
+        trm <- stats::terms(temp_formula)
         term_labels <- attr(trm, "term.labels")
       } else {
         term_labels <- character(0)
       }
     } else {
       # No dot, we can safely use terms()
-      temp_formula <- as.formula(paste("dummy ~", rhs_cleaned))
-      trm <- terms(temp_formula)
+      temp_formula <- stats::as.formula(paste("dummy ~", rhs_cleaned))
+      trm <- stats::terms(temp_formula)
       term_labels <- attr(trm, "term.labels")
     }
 

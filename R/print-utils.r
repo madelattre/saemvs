@@ -46,7 +46,7 @@
   if (!rownames) rownames(mat_disp) <- NULL
   if (!colnames) colnames(mat_disp) <- NULL
 
-  txt <- capture.output(print(mat_disp, quote = FALSE, right = TRUE))
+  txt <- utils::capture.output(print(mat_disp, quote = FALSE, right = TRUE))
 
   if (nr > max_rows) txt <- c(txt, "...")
 
