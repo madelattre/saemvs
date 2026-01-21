@@ -141,20 +141,27 @@ For detailed parameter estimates and selected variables, use
 }
 \examples{
 # Assume 'data' is a saemvsData object
+\dontrun{
 print(data)
+}
 
 # Assuming 'mod' is a saemvsModel object
+\dontrun{
 print(mod)
-
+}
 # Assuming 'hyper_slab' is a saemvsHyperSlab object
+\dontrun{
 print(hyper_slab)
-
+} 
 # Assuming 'init' is a saemvsInit object
+\dontrun{
 print(init)
+}
 
 # Assuming 'tuning' is a saemvsTuning object
+\dontrun{
 print(tuning)
-
+}
 \dontrun{
 res <- saemvs(...)
 print(res)

@@ -168,7 +168,9 @@ format_list_of_vectors <- function(lst,
 #'
 #' @examples
 #' # Assume 'data' is a saemvsData object
+#' \dontrun{
 #' print(data)
+#' }
 #'
 #' @rdname print
 #' @aliases print,saemvsData-method
@@ -217,8 +219,9 @@ setMethod(
 #'
 #' @examples
 #' # Assuming 'mod' is a saemvsModel object
+#' \dontrun{
 #' print(mod)
-#'
+#' }
 #' @rdname print
 #' @aliases print,saemvsModel-method
 #' @export
@@ -296,8 +299,9 @@ setMethod(
 #'
 #' @examples
 #' # Assuming 'hyper_slab' is a saemvsHyperSlab object
+#' \dontrun{
 #' print(hyper_slab)
-#'
+#' } 
 #' @rdname print
 #' @aliases print,saemvsHyperSlab-method
 #' @export
@@ -376,8 +380,10 @@ setMethod(
 #'
 #' @examples
 #' # Assuming 'init' is a saemvsInit object
+#' \dontrun{
 #' print(init)
-#'
+#' }
+#' 
 #' @rdname print
 #' @aliases print,saemvsInit-method
 #' @export
@@ -437,8 +443,9 @@ setMethod(
 #'
 #' @examples
 #' # Assuming 'tuning' is a saemvsTuning object
+#' \dontrun{
 #' print(tuning)
-#'
+#' }
 #' @rdname print
 #' @aliases print,saemvsTuning-method
 #' @export
@@ -529,7 +536,6 @@ setMethod(
     best_idx <- which.min(object@criterion_values)
 
     n_spike <- length(object@spike_values_grid)
-    n_support <- length(object@support)
     n_unique <- length(object@unique_support)
 
     n_selected <- length(object@selected_variables_idx[[best_idx]])
