@@ -788,8 +788,6 @@ setClass(
 #'
 #' @return An object of class \code{saemvsModel}.
 #'
-#' @seealso \code{\link{saemvsProcessedModel}}
-#'
 #' @export
 saemvsModel <- function( # nolint:  object_name_linter.
     g,

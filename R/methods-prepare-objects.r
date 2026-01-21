@@ -29,7 +29,7 @@
 #'
 #' @keywords internal
 #'
-#' @seealso \code{\link{saemvsModel}}, \code{\link{saemvsProcessedModel}}
+#' @seealso \code{\link{saemvsModel}}
 
 setGeneric(
   "prepare_model",
