@@ -3,17 +3,15 @@
 \docType{data}
 \name{df_long}
 \alias{df_long}
-\title{Example dataset: df_long}
+\title{Longitudinal measurements dataset}
 \format{
-A data frame with columns \code{id}, \code{time}, and \code{y}.
+A data frame with columns:
+\describe{
+\item{id}{Individual identifier}
+\item{time}{Measurement time}
+\item{y}{Observed response}
 }
-\usage{
-data(df_long)
 }
 \description{
-Long-format simulated longitudinal data for \code{saemvs}.
-}
-\details{
-Each row corresponds to one observation for one individual at a given
-time point.
+Longitudinal measurements in long format for 200 individuals.
 }

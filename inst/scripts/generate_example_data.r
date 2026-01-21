@@ -79,5 +79,7 @@ example_data_list <- list(
 )
 
 # ----- Save results -----
-save(example_data_list, file = "data/example_data_list.rda")
+
 save(df_long, df_cov, file = "data/example_data_df.rda")
+save(df_long, file = "data/df_long.rda")
+save(df_cov, file = "data/df_cov.rda")
