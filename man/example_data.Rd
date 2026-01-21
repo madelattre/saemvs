@@ -5,45 +5,37 @@
 \alias{example_data}
 \title{Example datasets for saemvs}
 \format{
-\strong{\code{example_data_list}}
-A list with the following elements:
+\strong{\code{df_long}}
+A data frame with columns:
 \describe{
-\item{y_list}{List of numeric vectors — observed responses for
-each individual.}
-\item{t_list}{List of numeric vectors — observation time points for
-each individual.}
-\item{x}{Numeric matrix (200 × 200) — candidate covariates,
-rows = individuals, columns = covariates.}
+\item{id}{Individual identifier}
+\item{time}{Measurement time}
+\item{y}{Observed response}
 }
 
-\strong{\code{example_data_df}}
-A list of two data frames:
+\strong{\code{df_cov}}
+A data frame in wide format with:
 \describe{
-\item{df_long}{Data frame with columns:
-\code{id} (individual ID), \code{time} (measurement time),
-and \code{y} (observed response).}
-\item{covar_df}{Data frame in wide format, one row per individual,
-containing 200 candidate covariates.}
+\item{id}{Individual identifier}
+\item{X1, ..., X200}{Numeric covariates used for variable selection}
 }
 }
 \usage{
-data(example_data_list)
-data(example_data_df)
+data(df_long)
+data(df_cov)
 }
 \description{
 Simulated datasets used to demonstrate the usage of the \code{saemvs} package
 for variable selection in nonlinear mixed-effects models.
 }
 \details{
-These datasets represent the same simulated data in two different formats:
-\itemize{
-\item \code{example_data_list}: data stored as lists of individual responses and
-time points.
-\item \code{example_data_df}: data stored as data frames, one for the
-longitudinal measurements and one for the covariates.
-}
-
 The simulated data correspond to 200 individuals, each measured over
 time, with 200 candidate covariates for variable selection.
 Only a subset of these covariates truly influences the model parameters.
+
+The data are provided in data-frame format:
+\itemize{
+\item \code{df_long}: longitudinal measurements in long format
+\item \code{df_cov}: covariates in wide format (one row per individual)
+}
 }

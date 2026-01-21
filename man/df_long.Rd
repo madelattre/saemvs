@@ -4,6 +4,16 @@
 \name{df_long}
 \alias{df_long}
 \title{Example dataset: df_long}
+\format{
+A data frame with columns \code{id}, \code{time}, and \code{y}.
+}
+\usage{
+data(df_long)
+}
 \description{
-Long-format simulated data for saemvs.
+Long-format simulated longitudinal data for \code{saemvs}.
+}
+\details{
+Each row corresponds to one observation for one individual at a given
+time point.
 }

@@ -4,6 +4,16 @@
 \name{df_cov}
 \alias{df_cov}
 \title{Example dataset: df_cov}
+\format{
+A data frame with one row per individual and 200 covariate columns.
+}
+\usage{
+data(df_cov)
+}
 \description{
-Covariate matrix for saemvs.
+Simulated covariate dataset for \code{saemvs}.
+}
+\details{
+Contains 200 candidate covariates in wide format, with one row per
+individual.
 }
