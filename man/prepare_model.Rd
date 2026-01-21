@@ -37,6 +37,6 @@ forced for the corresponding parameter.
 This function is not intended to be called directly by users.
 }
 \seealso{
-\code{\link{saemvsModel}}, \code{\link{saemvsProcessedModel}}
+\code{\link{saemvsModel}}
 }
 \keyword{internal}

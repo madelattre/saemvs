@@ -31,6 +31,3 @@ The model function is provided with explicit parameter arguments
 (\code{function(t, param1, param2, ...)}). Parameter names are automatically
 inferred from the function signature.
 }
-\seealso{
-\code{\link{saemvsProcessedModel}}
-}
