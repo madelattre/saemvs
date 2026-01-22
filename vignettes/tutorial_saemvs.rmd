@@ -37,6 +37,10 @@ The **`saemvs`** package is designed for users of nonlinear mixed-effects models
 
 The package leverages `C++` code via `Rcpp` to ensure efficient computation even for high-dimensional data.
 
+The results shown in this vignette rely on pre-computed objects
+stored as `.rds` files. Recomputing these results would take several
+minutes and is therefore not run during package checks.
+
 # Installation
 
 To use the `saemvs` package, first ensure it is installed. Once installed, load the package with:
@@ -47,73 +51,67 @@ library(saemvs)
 
 # Getting started
 
-The package includes example datasets used throughout this vignette to illustrate the main functionalities of `saemvs`.
-Two datasets are available:
+The package includes one example dataset used throughout this vignette to illustrate the main functionalities of `saemvs`.
 
 ```{r}
 library(saemvs)
-data("example_data_list")
-data("example_data_df")
+data("df_long")
+data("df_cov")
 ```
 
-These two objects contain the same simulated data presented in different formats:
+- `df_long`: stores the longitudinal observations with columns `id`, `time`, and `y`.
+- `df_cov`: contains the simulated covariates for each individual (one row per individual, one column per covariate).
 
-- `example_data_list` provides the data as lists of individual longitudinal observations and a corresponding matrix of candidate covariates. This format is suitable for direct use with `saemvsData()` (see below).
-- `example_data_df` stores the same information in data frame form, convenient for use with `saemvsDataFromDFs()` (see below).
+To use data with `saemvs`, you first need to merge observations and covariates into a single data frame:
+
+```{r}
+full_data <- merge(df_long, df_cov, by = "id")
+```
+
+This combined data frame can then be used to create a `saemvsData` object, which is the format expected by most functions in the package.
 
 The simulated dataset represents a simple growth model, where the response trajectories mimic individual growth curves over time.
-Each individual is associated with 200 simulated candidate covariates, among which only a few have an actual effect on the model parameters.
+Each individual is associated with 50 simulated candidate covariates, among which only a few have an actual effect on the model parameters.
 These datasets are designed to provide realistic test cases for illustrating variable selection with `saemvs`. Users interested in the generation procedure can find the script in `inst/scripts`.
 
 ## Preparation
 
 First, it is necessary to specify the data structure, the model, and various settings that are useful for running the SAEMVS procedure.
 
-The `saemvsData` object contains the observed responses (`y`), the measurement time points (`t`) and the candidate covariates for variable selection (`x_candidates`). This object serves as the main input for the SAEMVS algorithm and can be created in two different ways, depending on how the data are stored.
-
-When the data are available as lists of longitudinal measurements (one element per individual) and a corresponding matrix of covariates, the `saemvsData()` function can be used directly:
-
-```{r, eval = FALSE}
-# Create saemvsData object
-saemvs_input <- saemvsData(
-  y = example_data_list$y_list,
-  t = example_data_list$t_list,
-  x_candidates = example_data_list$x
-)
-```
-
-In this format, each element of `y_list` and `t_list` corresponds to one individual, containing their observed responses and time points respectively.
-
-Alternatively, when the data are stored in data frames — one containing the longitudinal measurements and another containing the covariates — they can be converted automatically using the helper function `saemvsDataFromDFs()`:
+The `saemvsData` object contains the observed responses (`y`), the measurement time points (`t`) and the candidate covariates for variable selection. This object serves as the main input for the SAEMVS algorithm and is created using the function `saemvsData_from_df`
 
 ```{r}
 # Create saemvsData object from dataframes
-saemvs_input <- saemvsDataFromDFs(
-  long_df = df_long, 
-  covar_df = df_cov, 
-  id_col = "id", 
-  y_col = "y", 
-  t_col = "time"
+saemvs_input <- saemvsData_from_df(
+  formula = as.formula("y ~ . + repeated(time) + group(id)"),
+  data = full_data
 )
 ```
+
+Here:
+
+- `y ~ .` specifies that `y` is the response and all other columns in `full_data` (except `id` and `time`) are candidate covariates.
+
+- `repeated(time)` tells the function that measurements are repeated over time.
+
+- `group(id)` identifies the individual subjects.
 
 The `saemvsModel` object specifies the structural model. For this example, we consider a 3-parameter logistic-type model.
 
 ```{r}
 # Define the model function
-g <- function(phi, t) {
-  phi[2] + phi[1] / (1 + exp(-(t - phi[3])))
+g <- function(t, a, b, c) {
+  b + a / (1 + exp(-(t - c)))
 }
 
-# Create saemvsModel object
+# Create saemvsModel object  
 model <- saemvsModel(
   g = g,
-  phi_dim = 3,
-  phi_to_select_idx = c(1, 3)
+  phi_to_select = c("a", "c")
 )
 ```
 
-`g`, the user-defined model function, `phi_dim`, the dimension of the vector of individual parameters and `phi_to_select_idx`, the indices of parameters subject to selection are necessary information assembled in the `saemvsModel` object. Here, we consider that only `phi[1]` and `phi[3]` are subject to selection.
+`g` is the user-defined model function. The first argument must always represent time (or more generally the repeated measurement factor), while the subsequent arguments correspond to the model parameters, on which variable selection can optionally be performed. `phi_to_select` lists the names of the parameters on which variable selection will be performed (here `a` and `c`). 
 
 The minimum hyperparameters to be declared in the object are those of the inverse Wishart distribution on the covariance matrix of random effects (*i.e* its scale matrix `cov_re_prior_scale` and degrees of freedom `cov_re_prior_df`.).
 
@@ -125,7 +123,11 @@ hyper_slab <- saemvsHyperSlab(
 )
 ```
 
-The `saemvsTuning` object specifies algorithm tuning parameters, here `niter`: total number of iterations, `nburnin`: number of burn-in iterations and `spike_values_grid`: grid of spike values for variable selection.
+The `saemvsTuning` object specifies algorithm tuning parameters, here 
+
+- `niter`: total number of iterations,
+- `nburnin`: number of burn-in iterations,
+- `spike_values_grid`: grid of spike values for variable selection.
 
 ```{r}
 # Define tuning parameters
@@ -144,9 +146,9 @@ init_values <- saemvsInit(
   intercept = c(1300, 350, 250),
   beta_candidates = matrix(
     c(
-      80, 20, 20, rep(0, 197),
-      rep(0, 200),
-      15, rep(0, 199)
+      80, 20, 20, rep(0, 47),
+      rep(0, 50),
+      15, rep(0, 49)
     ),
     ncol = 3
   ),
@@ -159,7 +161,6 @@ init_values <- saemvsInit(
 
 Once all objects are prepared (`saemvsData`, `saemvsModel`, `saemvsHyperSlab`, `saemvsTuning`, `saemvsInit`), you can run the main `saemvs` function to perform variable selection.
 
-
 ```{r run_saemvs, eval = FALSE}
 # Run the SAEMVS algorithm
 result <- saemvs(
@@ -167,33 +168,40 @@ result <- saemvs(
   model = model,
   init = init_values,
   tuning_algo = tuning,
-  hyperparam = hyper_slab,
-  pen = "e-BIC"
+  hyperparam = hyper_slab
 )
 ```
 
 ## Inspect the results
 
-You can get a summary of the selected variables and parameter estimates in the best model:
+After running the SAEMVS procedure, you can inspect the selected variables and the estimated parameters.
 
 ```{r load_result, include = FALSE}
 result <- readRDS(system.file("extdata", "result_basic_example.rds", package = "saemvs"))
 ```
 
+You can get a summary of the selected variables and parameter estimates using the `summary()` function, which gives an overview of the parameters selected by the procedure and their estimated values in the best model.
+
 ```{r saemvs_summary}
-summary_saemvs(result)
+summary(result)
 ```
+
+The SAEMVS procedure explores multiple supports (combinations of selected variables). You can inspect each visited support using `summary_support(result, support_index)`, where `support_index` is the number of the support you want to examine.
+
+```{r}
+# Inspect the third support
+summary_support(result, 3)
+```
+
+This allows to explore how variable selection varies across different supports visited by the algorithm and to better understand the model selection process.
 
 ## Diagnostic plots
 
 Visual diagnostics can help evaluate the algorithm's variable selection process.
 
 ```{r saemvs_plot}
-plots <- prepare_grid_plot(result)
-plots$reg_plot[[1]]
-plots$reg_plot[[2]]
-
-plots$ebic_plot
+plot(result, type = "criterion")
+plot(result, type = "coefficients")[[1]]
 ```
 
 # Advanced statistical options
@@ -201,47 +209,44 @@ plots$ebic_plot
 ## Considering models with fixed-effects
 
 In some situations, one or more parameters are not assumed to vary between individuals, but are instead modeled as fixed effects.
-In `saemvs`, this can be specified using the argument `phi_fixed_idx` in the `saemvsModel` constructor.
+In `saemvs`, this can be specified using the argument `phi_fixed` in the `saemvsModel` constructor.
 
-In the example below, parameter 2 is treated as a fixed effect:
+In the example below, parameter `b` is treated as a fixed effect:
 
-- Fixed effects cannot be subject to variable selection (`phi_fixed_idx` must be disjoint from `phi_to_select_idx`).
+- Fixed effects cannot be subject to variable selection (`phi_fixed` must be disjoint from `phi_to_select`).
 - When defining the initial values in `saemvsInit`, the corresponding variance in the random-effects covariance matrix (`cov_re`) must be set to 0. This indicates that this parameter does not vary between individuals.
 - The intercept is still initialized in `intercept`.
 
 ```{r}
 model_with_fixed_effects <- saemvsModel(
   g = g,
-  phi_dim = 3,
-  phi_to_select_idx = c(1, 3),
-  phi_fixed_idx = 2
+  phi_to_select = c("a", "c"),
+  phi_fixed = c("b")
 )
 
 init_values_with_fixed_effects <- saemvsInit(
   intercept = c(1300, 350, 250),
   beta_candidates = matrix(
     c(
-      80, 20, 20, rep(0, 197),
-      rep(0, 200),
-      15, rep(0, 199)
+      80, 20, 20, rep(0, 47),
+      rep(0, 50),
+      15, 0, 5, rep(0, 47)
     ),
     ncol = 3
   ),
   cov_re = diag(c(400, 0, 200)),
   sigma2 = 100
 )
-
 ```
 
 ```{r run_saemvs_fixed_effects, eval = FALSE}
-# Run the SAEMVS algorithm
+# Run the SAEMVS algorithm 
 result_with_fixed_effects <- saemvs(
   data = saemvs_input,
   model = model_with_fixed_effects,
   init = init_values_with_fixed_effects,
   tuning_algo = tuning,
-  hyperparam = hyper_slab,
-  pen = "e-BIC"
+  hyperparam = hyper_slab
 )
 ```
 
@@ -250,53 +255,47 @@ result_with_fixed_effects <- readRDS(system.file("extdata", "result_with_fixed_e
 ```
 
 ```{r results_saemvs_fixed_effects}
-summary_saemvs(result_with_fixed_effects)
+summary(result_with_fixed_effects)
 ```
 
 ## Forcing inclusion of variables
 
 In some applications, it is necessary to force the inclusion of certain covariates in the model, regardless of their statistical support in the selection procedure. For example, one may want to always adjust for a baseline covariate such as treatment group or sex, while allowing other covariates to be selected or discarded.
 
-In `saemvs`, this is done by:
-
-- Passing the covariates to be always included in the argument `x_forced` of `saemvsData`.
-- Specifying how these covariates enter each individual parameter through the `x_forced_support` matrix in `saemvsModel`. Each row corresponds to a forced covariate, each column corresponds to a parameter. A value of 1 indicates that the covariate affects the corresponding parameter, 0 otherwise.
-- Providing initial values for their coefficients in `beta_forced` within `saemvsInit`.
-
-In the example below, we force the inclusion of the first covariate (column 1 of `x`), and specify that it affects parameters 1 and 3 of the model:
+With the `saemvsData_from_df()` interface, forced covariates are specified directly in the formula using a `+` sign:
 
 ```{r}
-# saemvs_input_with_forced_covariates <- saemvsData(
-#   y = example_data$y_list,
-#   t = example_data$t_list,
-#   x_candidates = example_data$x[, -1],
-#   x_forced = example_data$x[, 1, drop = FALSE]
-# )
-
-saemvs_input_with_forced_covariates <- saemvsDataFromDFs(
-  long_df = df_long, 
-  covar_df = df_cov, 
-  id_col = "id", 
-  y_col = "y", 
-  t_col = "time",
-  x_candidates_cols = seq(2, 200),
-  x_forced_cols = c(1)
+saemvs_input_with_forced_covariates <- saemvsData_from_df(
+  formula = as.formula("y ~ + x1  + repeated(time) + group(id)"),
+  data = full_data
 )
+```
 
+Here:
+
+- `+ x1` indicates that the covariate named `x1` is forced to be included in the model.
+- `repeated(time)` and `group(id)` work as before to indicate repeated measurements and individual identifiers.
+- The other covariates in the dataset are subject to the variable selection procedure.
+
+You still need to specify which model parameters are affected by the forced covariates and provide initial values:
+
+```{r}
 model_with_forced_covariates <- saemvsModel(
   g = g,
-  phi_dim = 3,
-  phi_to_select_idx = c(1, 3),
-  x_forced_support = matrix(c(1, 0, 1), ncol = 3, nrow = 1)
+  phi_to_select = c("a", "c"),
+  x_forced_support = list(
+    a = c("x1"),
+    c = c("x1")
+  )
 )
 
 init_values_with_forced_covariates <- saemvsInit(
   intercept = c(1300, 350, 250),
   beta_candidates = matrix(
     c(
-      20, 20, rep(0, 197),
-      rep(0, 199),
-      rep(0, 199)
+      20, 20, rep(0, 47),
+      rep(0, 49),
+      0, 5, rep(0, 47)
     ),
     ncol = 3
   ),
@@ -309,6 +308,9 @@ init_values_with_forced_covariates <- saemvsInit(
 )
 ```
 
+- `x_forced_support` indicates which parameters the forced covariate affects.
+
+- `beta_forced` provides initial values for the coefficients of the forced covariates.
 
 ```{r run_saemvs_forced_covariates, eval= FALSE}
 result_with_forced_covariates <- saemvs(
@@ -316,8 +318,7 @@ result_with_forced_covariates <- saemvs(
   model = model_with_forced_covariates,
   init = init_values_with_forced_covariates,
   tuning_algo = tuning,
-  hyperparam = hyper_slab,
-  pen = "e-BIC"
+  hyperparam = hyper_slab
 )
 ```
 
@@ -326,113 +327,9 @@ result_with_forced_covariates <- readRDS(system.file("extdata", "result_with_for
 ```
 
 ```{r result_with_forced_covariates}
-summary_saemvs(result_with_forced_covariates, digits = 3)
+summary(result_with_forced_covariates, digits = 3)
 ```
-
-## Initializing coefficients automatically
-
-In some situations, the initialization of the model parameters can be cumbersome, especially when the number of candidate covariates is large or when the user does not have prior knowledge about reasonable starting values.
-
-To simplify this step, `saemvs` provides an automatic initialization procedure through the argument `default = TRUE` in the function `saemvsInit()`.
-
-When `default = TRUE`, the algorithm automatically derives reasonable starting values for the coefficients using a preliminary lasso regression applied to the individual-level latent parameters estimated from separate curve-by-curve fits.
-This approach identifies covariates that are likely to be associated with each parameter, and uses the resulting coefficients as initial guesses for the subsequent SAEMVS estimation.
-
-```{r default_init, eval = FALSE}
-init_values_default <- saemvsInit(
-  intercept = c(1300, 350, 250),
-  cov_re = diag(c(400, 0, 200)),
-  sigma2 = 100,
-  default = TRUE
-)
-```
-
-When `default = TRUE`, the initialization of the regression coefficients (`beta_candidates` or `beta_forced`) is handled automatically — users should not provide these arguments explicitly.
-In practice, the automatic initialization replaces either `beta_candidates` or `beta_forced` (depending on the model specification), but it does not override the other initial components of the model.
-The user must still supply initial values for:
-
-- the intercepts (`intercept`),
-- the random-effects covariance matrix (`cov_re`),
-- and the residual variance (`sigma2`).
-
-This ensures that all model components are properly initialized while allowing the automatic procedure to focus on estimating plausible starting values for the regression coefficients.
-
-## Using BIC instead of e-BIC
-
-By default, `saemvs` uses the extended BIC (e-BIC) as the selection criterion. The e-BIC is particularly suitable for high-dimensional settings, where the number of candidate covariates is large compared to the sample size.
-
-In situations where the covariate set is moderate in size (not high-dimensional), users may prefer to use the classical BIC. This can be done simply by setting `pen = "BIC"` in the `saemvs` function.
-
-It is important to note that:
-
-- The selected model may differ depending on the criterion used (BIC vs e-BIC).
-- BIC tends to favor slightly larger models because its penalty for complexity is smaller than that of e-BIC.
-- e-BIC includes an additional term to penalize high-dimensional covariate spaces, which helps avoid overfitting when p is large.
-
-In the example below, we run the SAEMVS algorithm using the BIC criterion instead of e-BIC.
-
-```{r run_saemvs_bic, eval = FALSE}
-# Run the SAEMVS algorithm
-result_with_bic <- saemvs(
-  data = saemvs_input,
-  model = model,
-  init = init_values,
-  tuning_algo = tuning,
-  hyperparam = hyper_slab,
-  pen = "BIC"
-)
-```
-
 
 # Technical options for computation
 
-## Calibrating tuning parameters
-
-The performance of the SAEMVS algorithm can depend on the choice of tuning parameters, in particular the grid of spike values controlling the sparsity level in the variable selection step.
-To assist users in exploring and calibrating these parameters, `saemvs` provides a convenient workflow that allows running the algorithm for a single value of the spike grid and inspecting the convergence behavior of the SAEM algorithm.
-
-This can be achieved by using the `test_saemvs` function which performs maximum a posteriori parameter estimation for one single spike value in the tuning grid.
-The resulting object can then be visualized using the function `convergence_plot()`, which helps assess whether the estimation algorithm has stabilized.
-
-```{r test, eval = FALSE}
-res_test <- test_saemvs(
-  data = saemvs_input, 
-  model = model, 
-  init = init_values, 
-  tuning_algo = tuning,
-  hyperparam = hyper_slab
-  )
-```
-
-```{r load_res_test, include = FALSE}
-res_test <- readRDS(system.file("extdata", "res_test.rds", package = "saemvs"))
-```
-
-```{r conv_plt}
-# Visualizing convergence for the most variable coefficients
-convergence_plot(res_test, "coef_phi_sel", "top:16", phi = 1)
-```
-
-In this example, the plot displays the trajectories of the 16 candidate covariate coefficients (`"coef_phi_sel"`) on first model parameter (`phi = 1`) - including the intercept - that exhibit the largest fluctuations over the iterations.
-Such diagnostic plots are useful to check that the algorithm has reached convergence and identify potential instabilities or poor initializations.
-
-Once satisfactory convergence is observed for a given value of the spike, the user can proceed to run the full grid to perform model selection using the chosen penalization criterion (e.g. e-BIC or BIC) with the `saemvs` function.
-
-## Managing computational resources
-
-In addition to statistical settings, `saemvs` provides technical options to optimize computation time and efficiency. The main way to speed up computation is to run the algorithm in parallel across multiple cores. This is particularly useful when the number of candidate covariates is large and the grid of spike values is wide. By default, `saemvs` uses 4 workers (`nb_workers = 4`). Users can increase this number to take advantage of additional CPU cores. The number of cores used is controlled by the `nb_workers` argument in the `saemvsTuning` object.
-
-In the example below, we use 8 workers to parallelize the algorithm:
-
-```{r}
-tuning_workers <- saemvsTuning(
-  niter = 1000,
-  nburnin = 800,
-  spike_values_grid = exp(-3 + seq(1, 8)),
-  nb_workers = 8
-)
-```
-
-Running SAEMVS with this tuning object will distribute computation across the specified number of workers, significantly reducing runtime in high-dimensional or computationally intensive settings.
-
-<!-- Note: Parallelisation gains are most noticeable when the number of covariates or spike values is large. For small datasets, using multiple workers may not provide a speed-up and can even add overhead. -->
+For high-dimensional applications or fine control over convergence, the package provides technical options such as parallel computing. Some computations are implemented in C++ via Rcpp for efficiency, but it is also possible to switch to a full R implementation if desired or if the system configuration does not allow C++ compilation. Please refer to the package documentation for full details on these options.
