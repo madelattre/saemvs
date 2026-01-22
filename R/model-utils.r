@@ -1,3 +1,7 @@
+#' @useDynLib saemvs, .registration = TRUE
+#' @importFrom Rcpp sourceCpp
+NULL
+
 # R to C++ transpiler using AST
 # Converts an R function to C++ code compilable with RcppArmadillo
 
@@ -256,7 +260,7 @@ transpile_to_cpp <- function(
           !var_name %in% context$param_names) {
       context$variables <- c(context$variables, var_name)
 
-      # Déterminer type et déclaration selon init_value
+      # Determiner type et declaration selon init_value
       if (!is.null(init_value)) {
         if (is.numeric(init_value) && length(init_value) == 1) {
           type <- "double"
@@ -886,19 +890,34 @@ build_backend_r <- function(g_fun) {
     vapply(t, function(ti) g_fun(ti, phi), numeric(1))
   }
 
+  # rmvnorm <- function(mean, sigma) {
+  #   if (!requireNamespace("MASS", quietly = TRUE)) {
+  #     stop("Package MASS is required for R fallback.")
+  #   }
+  #   as.numeric(MASS::mvrnorm(1, mu = mean, Sigma = sigma))
+  # }
+
+  # rmvnorm_mat <- function(mean, sigma, n) {
+  #   if (!requireNamespace("MASS", quietly = TRUE)) {
+  #     stop("Package MASS is required for R fallback.")
+  #   }
+  #   MASS::mvrnorm(n = n, mu = mean, Sigma = sigma)
+  # }
+
   rmvnorm <- function(mean, sigma) {
-    if (!requireNamespace("MASS", quietly = TRUE)) {
-      stop("Package MASS is required for R fallback.")
+    if (!requireNamespace("mvnfast", quietly = TRUE)) {
+      stop("Package mvnfast is required.")
     }
-    as.numeric(MASS::mvrnorm(1, mu = mean, Sigma = sigma))
+    as.numeric(mvnfast::rmvn(n = 1, mu = mean, sigma = sigma))
   }
 
   rmvnorm_mat <- function(mean, sigma, n) {
-    if (!requireNamespace("MASS", quietly = TRUE)) {
-      stop("Package MASS is required for R fallback.")
+    if (!requireNamespace("mvnfast", quietly = TRUE)) {
+      stop("Package mvnfast is required.")
     }
-    MASS::mvrnorm(n = n, mu = mean, Sigma = sigma)
+    mvnfast::rmvn(n = n, mu = mean, sigma = sigma)
   }
+
 
   logdmvnorm <- function(x, mean, sigma) {
     k <- length(x)
@@ -924,7 +943,7 @@ build_backend_r <- function(g_fun) {
         contribution <- contribution + exp(-sumsq / (2 * sigma2))
       }
       loglike <- loglike +
-        log((2 * pi * sigma2)^(-ni/2) * contribution / n_samples)
+        log((2 * pi * sigma2)^(-ni / 2) * contribution / n_samples)
     }
     loglike
   }
@@ -958,13 +977,20 @@ build_backend_r <- function(g_fun) {
 
         logratio <- 0
 
-        for (j in seq_len(ni)) {
-          mean_new <- g_scalar(t_i[j], phi_prop)
-          mean_old <- g_scalar(t_i[j], phi_old)
-          logratio <- logratio +
-            dnorm(y_i[j], mean_new, sd, log = TRUE) -
-            dnorm(y_i[j], mean_old, sd, log = TRUE)
-        }
+        # for (j in seq_len(ni)) {
+        #   mean_new <- g_scalar(t_i[j], phi_prop)
+        #   mean_old <- g_scalar(t_i[j], phi_old)
+        #   logratio <- logratio +
+        #     dnorm(y_i[j], mean_new, sd, log = TRUE) -
+        #     dnorm(y_i[j], mean_old, sd, log = TRUE)
+        # }
+
+        mean_new <- g_scalar(t_i, phi_prop)
+        mean_old <- g_scalar(t_i, phi_old)
+        sigma <- diag(sd^2, length(t_i))
+        logratio <- logratio +
+          mvnfast::dmvn(y_i, mu = mean_new, sigma = sigma, log = TRUE) -
+          mvnfast::dmvn(y_i, mu = mean_old, sigma = sigma, log = TRUE)
 
         if (kernel == "random_walk") {
           logratio <- logratio +
@@ -972,7 +998,7 @@ build_backend_r <- function(g_fun) {
             logdmvnorm(phi_old, mean_i, var_prop_mat)
         }
 
-        if (log(runif(1)) <= logratio) {
+        if (log(stats::runif(1)) <= logratio) {
           chain[, r + 1] <- phi_prop
         } else {
           chain[, r + 1] <- phi_old
@@ -1084,18 +1110,47 @@ arma::vec g_vector_cpp(const arma::vec& t, const arma::vec& phi) {
 
 // [[Rcpp::export]]
 arma::vec rmvnorm_cpp(const arma::vec& mean, const arma::mat& sigma) {
-  return mean + arma::chol(sigma) * arma::randn(mean.n_elem);
+  // Verifier que sigma est finie
+  if (!sigma.is_finite()) {
+    Rcpp::stop("Error: covariance matrix contains NA, NaN, or Inf.");
+  }
+
+  // Tentative de Cholesky
+  arma::mat L;
+  bool chol_ok = arma::chol(L, sigma, "lower");  // version safe, renvoie bool
+
+  if (!chol_ok) {
+    Rcpp::stop("Error: covariance matrix is not positive definite (Cholesky failed).");
+  }
+
+  // Generer la variable normale
+  arma::vec z = arma::randn(mean.n_elem);
+  return mean + L * z;
 }
 
 // [[Rcpp::export]]
 arma::mat rmvnorm_mat_cpp(const arma::vec& mean, const arma::mat& sigma, int n) {
+  // Verifier que sigma est finie
+  if (!sigma.is_finite()) {
+    Rcpp::stop("Error: covariance matrix contains NA, NaN, or Inf.");
+  }
+
+  // Cholesky securisee
+  arma::mat L;
+  bool chol_ok = arma::chol(L, sigma, "lower");
+  if (!chol_ok) {
+    Rcpp::stop("Error: covariance matrix is not positive definite (Cholesky failed).");
+  }
+
   int d = mean.n_elem;
   arma::mat out(n, d);
-  arma::mat L = arma::chol(sigma); 
+
   for (int i = 0; i < n; i++) {
-    out.row(i) = (mean + L * arma::randn(d)).t();
+    arma::vec z = arma::randn(d);
+    out.row(i) = (mean + L * z).t();
   }
-return out;
+
+  return out;
 }
 
 // [[Rcpp::export]]

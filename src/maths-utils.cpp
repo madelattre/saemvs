@@ -16,7 +16,11 @@ arma::mat mat_inv(const arma::mat& A) {
 
     // Try to invert the matrix.
     // arma::inv() throws a std::runtime_error if the matrix is singular or not invertible.
-    arma::mat invA = arma::inv(A);
+    arma::mat invA;
+    bool ok = arma::inv(invA, A);  // retourne false si A non inversible
+    if (!ok) {
+      Rcpp::stop("Covariance matrix is singular or ill-conditioned.");
+    }
     return invA;
 
   } catch (std::runtime_error &e) {
@@ -31,7 +35,14 @@ arma::mat mat_inv(const arma::mat& A) {
 
 // [[Rcpp::export]]
 arma::mat solve_linear_syst(const arma::mat& A, const arma::mat& B) {
-  return arma::solve(A, B, solve_opts::fast);  // résout A * X = B, solve_opts::fast pour une résolution rapide si A symétrique définie positive
+  arma::mat X;  // matrice resultat
+  bool ok = arma::solve(X, A, B);  // version securisee
+
+  if (!ok) {
+    Rcpp::stop("Error: linear system cannot be solved (matrix singular or ill-conditioned).");
+  }
+
+  return X;
 }
 
 // [[Rcpp::export]]
@@ -59,25 +70,3 @@ arma::mat kronecker_gamma_diag_mult(const arma::mat& gamma, const arma::vec& d_d
 
   return res;
 }
-
-
-// arma::vec rmvnorm_cpp(const arma::vec& mean, const arma::mat& cov) {
-//   int d = mean.n_elem;
-//   arma::vec z = arma::randn(d);
-//   return mean + arma::chol(cov, "lower") * z;
-// }
-
-
-// double logdmvnorm_cpp(
-//     const arma::vec& x,
-//     const arma::vec& mean,
-//     const arma::mat& sigma
-// ) {
-//   int d = x.n_elem;
-//   arma::vec diff = x - mean;
-//   double quadform = arma::as_scalar(diff.t() * arma::inv(sigma) * diff);
-//   double logdet_sigma;
-//   double sign;
-//   arma::log_det(logdet_sigma, sign, sigma);
-//   return -0.5 * (d * std::log(2 * M_PI) + logdet_sigma + quadform);
-// }
