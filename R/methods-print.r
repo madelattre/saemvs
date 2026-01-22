@@ -22,11 +22,7 @@
 #' be accessed directly via the object's slots.
 #'
 #' @param x An object of class \code{saemvsData}.
-#' @param ... Additional arguments (currently unused) for compatibility.
 #'
-#' @return The function prints a summary to the console invisibly. It returns
-#'  the input
-#' object invisibly (typical behavior for \code{print()} methods).
 #'
 #' @examples
 #' # Assume 'data' is a saemvsData object
@@ -34,13 +30,12 @@
 #' print(data)
 #' }
 #'
-#' @rdname print
 #' @aliases print,saemvsData-method
 #' @export
 setMethod(
   "print",
   signature(x = "saemvsData"),
-  function(x, ...) {
+  function(x) {
     object <- x
     cat("Object of class 'saemvsData'\n\n")
     cat("- Number of individuals (y_series):", length(object@y_series), "\n\n")
@@ -68,29 +63,21 @@ setMethod(
 #'  covariates.
 #' Vectors are printed on a single line, truncated when necessary for
 #' readability.
-#' The print method is intended for interactive display and provides a quick
-#'  overview of the model structure and associated parameters. It does not
-#'  modify the object.
 #'
 #' @param x An object of class \code{saemvsModel}.
-#' @param ... Additional arguments (currently ignored), for compatibility with
-#'  the S4 generic \code{print}.
 #'
-#' @return Invisibly returns the input \code{x} object. The main purpose is
-#'  side-effect printing.
 #'
 #' @examples
 #' # Assuming 'mod' is a saemvsModel object
 #' \dontrun{
 #' print(mod)
 #' }
-#' @rdname print
 #' @aliases print,saemvsModel-method
 #' @export
 setMethod(
   "print",
   signature(x = "saemvsModel"),
-  function(x, ...) {
+  function(x) {
     object <- x
     cat("Object of class 'saemvsModel'\n\n")
 
@@ -153,24 +140,19 @@ setMethod(
 #' Matrices and vectors are formatted for readability.
 #'
 #' @param x An object of class \code{saemvsHyperSlab}.
-#' @param ... Additional arguments (currently ignored), for compatibility with
-#'  the S4 generic \code{print}.
 #'
-#' @return Invisibly returns the input object. The main purpose is side-effect
-#'  printing.
 #'
 #' @examples
 #' # Assuming 'hyper_slab' is a saemvsHyperSlab object
 #' \dontrun{
 #' print(hyper_slab)
-#' } 
-#' @rdname print
+#' }
 #' @aliases print,saemvsHyperSlab-method
 #' @export
 setMethod(
   "print",
   signature(x = "saemvsHyperSlab"),
-  function(x, ...) {
+  function(x) {
     object <- x
     res_shape <- object@residual_variance_prior_shape
     res_rate <- object@residual_variance_prior_rate
@@ -216,7 +198,7 @@ setMethod(
 # --- saemvsInit print method ---
 #' Print method for objects of class \code{saemvsInit}
 #'
-#' Displays the initial values used by the SAEM-VS algorithm. The output
+#' Displays the initial values used by the SAEMVS algorithm. The output
 #' provides a structured overview of the starting values for model parameters,
 #'  including:
 #' \itemize{
@@ -234,19 +216,13 @@ setMethod(
 #' when displayed.
 #'
 #' @param x An object of class \code{saemvsInit}.
-#' @param ... Additional arguments (currently ignored), included for
-#' compatibility with the S4 generic \code{print}.
-#'
-#' @return Invisibly returns the input object. The function is called for
-#' its side effect of printing to the console.
 #'
 #' @examples
 #' # Assuming 'init' is a saemvsInit object
 #' \dontrun{
 #' print(init)
 #' }
-#' 
-#' @rdname print
+#'
 #' @aliases print,saemvsInit-method
 #' @export
 setMethod(
@@ -254,7 +230,7 @@ setMethod(
   signature(
     x = "saemvsInit"
   ),
-  function(x, ...) {
+  function(x) {
     object <- x
     cat("Object of class 'saemvsInit'\n\n")
     cat("- Intercept:", .format_vector(object@intercept), "\n\n")
@@ -282,7 +258,7 @@ setMethod(
 # --- saemvsTuning print method ---
 #' Print method for objects of class \code{saemvsTuning}
 #'
-#' Displays the tuning parameters used by the SAEM-VS algorithm. The output
+#' Displays the tuning parameters used by the SAEMVS algorithm. The output
 #' provides a structured overview of algorithmic settings, including:
 #' \itemize{
 #'   \item SAEM iteration and burn-in parameters
@@ -293,28 +269,19 @@ setMethod(
 #'   \item Reproducibility and parallelisation options
 #' }
 #'
-#' The spike values grid is fully displayed, while other parameters are shown
-#' as scalar values for clarity.
 #'
 #' @param x An object of class \code{saemvsTuning}.
-#' @param ... Additional arguments (currently ignored), included for
-#' compatibility with the S4 generic \code{print}.
-#'
-#' @return Invisibly returns the input object. This method is called for
-#' its side effect of printing to the console.
-#'
 #' @examples
 #' # Assuming 'tuning' is a saemvsTuning object
 #' \dontrun{
 #' print(tuning)
 #' }
-#' @rdname print
 #' @aliases print,saemvsTuning-method
 #' @export
 setMethod(
   "print",
   signature(x = "saemvsTuning"),
-  function(x, ...) {
+  function(x) {
     object <- x
 
     cat("Object of class 'saemvsTuning'\n\n")
@@ -371,14 +338,7 @@ setMethod(
 #'
 #' @param x An object of class \code{saemvsResults} containing the output of
 #'   a SAEM variable selection run.
-#' @param ... Additional arguments (currently ignored).
 #'
-#' @return
-#' The object \code{x}, invisibly. This method is called for its side effect
-#' of printing a summary to the console.
-#'
-#' @seealso
-#' \code{\link{summary}}, \code{\link{saemvsResults-class}}
 #'
 #' @examples
 #' \dontrun{
@@ -387,12 +347,11 @@ setMethod(
 #' }
 #'
 #' @aliases print,saemvsResults-method
-#' @rdname print
 #' @export
 setMethod(
   "print",
   signature(x = "saemvsResults"),
-  function(x, ...) {
+  function(x) {
     object <- x
 
     best_idx <- which.min(object@criterion_values)

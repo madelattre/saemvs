@@ -61,6 +61,7 @@
 #'   }
 
 #' @keywords internal
+#' @noRd
 #' @note These functions are intended for internal use within the SAEM-MCMC
 #' algorithm and should not be called directly in user code.
 metropolis_s_step <- function(config, iteration, state, backend) {
@@ -87,6 +88,7 @@ metropolis_s_step <- function(config, iteration, state, backend) {
 }
 
 #' @rdname metropolis_s_step
+#' @noRd
 update_proposal_mh_all <- function(config, iteration, state) {
   state$mprop_mh[[iteration + 1]][, config$parameters_to_select_indices] <-
     config$x_phi_to_select %*% state$beta_to_select[[iteration + 1]]
@@ -110,6 +112,7 @@ update_proposal_mh_all <- function(config, iteration, state) {
 }
 
 #' @rdname metropolis_s_step
+#' @noRd
 update_proposal_mh_to_select <- function(config, iteration, state) {
   state$mprop_mh[[iteration + 1]][, config$parameters_to_select_indices] <-
     config$x_phi_to_select %*% state$beta_to_select[[iteration + 1]]
@@ -124,6 +127,7 @@ update_proposal_mh_to_select <- function(config, iteration, state) {
 }
 
 #' @rdname metropolis_s_step
+#' @noRd
 update_proposal_mh_not_to_select <- function(config, iteration, state) { # nolint: object_length_linter
   state$mprop_mh[[iteration + 1]][, config$parameters_not_to_select_indices] <-
     config$x_phi_not_to_select %*% state$beta_not_to_select[[iteration + 1]]

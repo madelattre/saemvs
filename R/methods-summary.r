@@ -1,5 +1,7 @@
-# Internal helper for summary() to print one support
-# @keywords internal
+#' Internal helper for summary() to print one support
+#' @keywords internal
+#' @noRd
+
 .summary_one_support <- function(
   object,
   support_idx,
@@ -100,11 +102,12 @@
 
 #' Summary of SAEM Variable Selection Results
 #'
-#' Provides a human-readable summary of the results from a SAEM variable
+#' Provides a human-readable summary of the best model (chosen by BIC/e-BIC)
+#'  obtained from a SAEM variable
 #' selection run.
-#' For the best model (chosen by BIC/e-BIC), it displays:
+#' It displays:
 #' \itemize{
-#'   \item Selected covariates for each \eqn{\phi} parameter.
+#'   \item Selected covariates for each \eqn{\varphi} parameter.
 #'   \item Estimated regression coefficients (\eqn{\beta}) with labeled rows
 #'         for intercept, forced covariates, and selected covariates.
 #'   \item Estimated covariance matrix (\eqn{\Gamma}), where fixed-effect
@@ -119,12 +122,6 @@
 #'     \item{digits}{Numeric scalar (default = 3). Number of decimal places
 #'       used when printing coefficients and the covariance matrix.}
 #'   }
-#'
-#' @details
-#' The best model is identified as the one minimizing the selection criterion.
-#' The function separates forced covariates (always included), selected
-#' covariates (chosen by the algorithm), and the intercept. Coefficients are
-#' displayed in a labeled table, followed by the estimated covariance matrix.
 #'
 #' @examples
 #' \dontrun{
@@ -154,9 +151,12 @@ setMethod(
 
 #' Summary of a specific support
 #'
+#' Provides a summary of the model corresponding to a given support
+#'  obtained from a SAEM variable
+#' selection run.
 #' Displays:
 #' \itemize{
-#'   \item Selected covariates for each \eqn{\phi} parameter
+#'   \item Selected covariates for each \eqn{\varphi} parameter
 #'   \item Estimated regression coefficients (\eqn{\beta})
 #'   \item Estimated covariance matrix (\eqn{\Gamma})
 #' }
@@ -164,10 +164,10 @@ setMethod(
 #' @param object A \code{saemvsResults} object
 #' @param support_idx Integer. Index of the support to display in
 #'  \code{unique_support}.
-#' @param digits Number of digits for printing numeric values (default = 3)
+#' @param digits Integer (default = 3). Number of decimal places
+#' used when printing coefficients and the covariance matrix.
 #'
 #' @export
-#' @rdname summary
 summary_support <- function(object, support_idx, digits = 3) {
   stopifnot(inherits(object, "saemvsResults"))
 
@@ -192,7 +192,6 @@ summary_support <- function(object, support_idx, digits = 3) {
 #' @param digits Number of digits for printing numeric values (default = 3)
 #'
 #' @export
-#' @rdname summary
 summary_all <- function(object, digits = 3) {
   stopifnot(inherits(object, "saemvsResults"))
 

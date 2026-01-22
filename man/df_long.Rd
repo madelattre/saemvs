@@ -7,11 +7,21 @@
 \format{
 A data frame with columns:
 \describe{
-\item{id}{Individual identifier}
+\item{id}{Individual identifier (matches the ids in \code{df_cov})}
 \item{time}{Measurement time}
-\item{y}{Observed response}
+\item{y}{Observed response simulated according to a logistic growth model}
 }
 }
 \description{
-Longitudinal measurements in long format for 200 individuals.
+Simulated longitudinal measurements for 100 individuals in long format.
+Each individual has repeated observations over time generated
+according to a logistic growth curve. This dataset is intended
+for illustrative purposes in examples and vignettes.
+}
+\examples{
+data(df_long)
+head(df_long)
+}
+\seealso{
+\code{\link{df_cov}}
 }

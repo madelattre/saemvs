@@ -31,3 +31,24 @@ The model function is provided with explicit parameter arguments
 (\code{function(t, param1, param2, ...)}). Parameter names are automatically
 inferred from the function signature.
 }
+\examples{
+# Define the model function
+g <- function(t, a, b, c) {
+b + a / (1 + exp(-(t - c)))
+}
+
+# Create saemvsModel object
+model <- saemvsModel(
+g = g,
+phi_to_select = c("a", "c")
+)
+
+# Model with forced covariate x1
+model2 <- saemvsModel(
+  g = g,
+  phi_to_select = c("a", "c"),
+  x_forced_support = list(
+   a = c("x1")
+ )
+)
+}

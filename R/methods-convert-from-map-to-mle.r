@@ -34,6 +34,7 @@
 #' }
 #'
 #' @keywords internal
+#' @noRd
 #'
 #' @examples
 #' \dontrun{
@@ -112,6 +113,7 @@ setMethod(
 #' @return A \code{saemvsModel} object with updated support matrix.
 #'
 #' @keywords internal
+#' @noRd
 setGeneric(
   "map_to_mle_model",
   function(model, cand_support) {
@@ -185,6 +187,7 @@ setMethod(
 #' @return A \code{saemvsInit} object with restricted initialization.
 #'
 #' @keywords internal
+#' @noRd
 setGeneric(
   "map_to_mle_init",
   function(init, model, cand_support) {

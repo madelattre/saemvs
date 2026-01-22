@@ -358,19 +358,48 @@
 
 #' Plot SAEM convergence diagnostics
 #'
-#' Produces diagnostic plots for a SAEM fit. Uses the internal helper
-#' `.convergence_plot_backend()`.
+#' Produces convergence plots for a SAEM fit.
 #'
-#' @param x A \code{saemResults} object.
-#' @param type Character string specifying the component to plot. See
-#'   \code{convergence_plot} for valid values.
-#' @param ... Further arguments passed to the internal plotting function.
+#' This function is intended for objects returned by \code{test_saemvs}.
+#' It visualizes the evolution of selected components (residual variance,
+#' regression coefficients, or covariance matrices) across iterations of
+#' the SAEM algorithm. It is useful for diagnosing convergence issues
+#' in the SAEM algorithm.
 #'
-#' @export
+#' @param x A \code{saemResults} object, typically obtained from
+#'   \code{\link{test_saemvs}}.
+#' @param type Character string specifying which element to plot. One of:
+#'   \itemize{
+#'     \item `"sigma2"`: residual variance
+#'     \item `"coef_phi_sel"`: regression coefficients for parameters subject
+#'           to selection
+#'     \item `"coef_phi_non_sel"`: regression coefficients for parameters not
+#'           subject to selection
+#'     \item `"variance_phi_sel"`: covariance matrix of parameters subject
+#'           to selection
+#'     \item `"variance_phi_non_sel"`: covariance matrix of parameters not
+#'           subject to selection
+#'   }
+#' @param ... Further arguments passed to the internal plotting function:
+#'   \itemize{
+#'     \item `sel_components` Optional character vector specifying which
+#'           components to display. Can be `"random"` or `"top:n"` to select
+#'           up to 16 components. Defaults to the first 16.
+#'     \item `phi` Optional character or integer specifying a parameter to
+#'           focus on.
+#'   }
+#'
+#' @return A \pkg{ggplot2} object showing the evolution of the selected
+#'   component across iterations.
+#'
+#' @name plot-saemResults
+#' @rdname plot-saemResults
+#' @aliases plot,saemResults,missing-method
+#' @exportMethod plot
 setMethod(
   "plot",
   signature(x = "saemResults", y = "missing"),
-  function(x, type = "sigma2", ...) {
+  function(x, type = "coef_phi_sel", ...) {
     .convergence_plot_backend(
       res_saem = x,
       component = type,
@@ -381,19 +410,48 @@ setMethod(
 
 #' Plot SAEMVS selection path
 #'
-#' Generates plots showing the selection criterion and regression coefficients
-#' across the spike variance grid.
+#' Generates diagnostic plots for a SAEMVS fit, showing either the selection
+#' criterion or the evolution of regression coefficients across the spike
+#'  variance grid.
 #'
-#' @param x A \code{saemvsResults} object.
-#' @param type Character string, either \code{"criterion"} or
-#'  \code{"coefficients"}.
-#' @param ... Not used.
+#' @param x A \code{saemvsResults} object, typically returned by
+#'  \code{\link{saemvs}}.
+#' @param type Character string specifying which plot to generate.
+#' Must be one of:
+#'   \itemize{
+#'     \item \code{"criterion"}: plots the selection criterion (BIC or e-BIC)
+#'           along the spike variance grid. The plot highlights the grid value
+#'           corresponding to the best model (minimum criterion value).
+#'     \item \code{"coefficients"}: plots the regression coefficients for each
+#'           parameter along the spike variance grid, allowing visualization
+#'           of how coefficients change with the spike parameter.
+#'   }
 #'
-#' @export
+#' @return Either a \pkg{ggplot2} object (\code{"criterion"}) or a list of
+#'   \pkg{ggplot2} objects (\code{"coefficients"}), depending on the
+#'  \code{type}.
+#'
+#' @examples
+#' \dontrun{
+#' # Fit a SAEMVS model
+#' res <- saemvs(...)
+#' # Plot the selection criterion along the spike variance grid
+#' plot(res, type = "criterion")
+#' # Plot regression coefficients along the grid for first model parameter
+#' plot(res, type = "coefficients")[[1]]
+#' # Plot regression coefficients along the grid for second model parameter
+#' plot(res, type = "coefficients")[[2]]
+#' ...
+#' }
+#'
+#' @name plot-saemvsResults
+#' @rdname plot-saemvsResults
+#' @aliases plot,saemvsResults,missing-method
+#' @exportMethod plot
 setMethod(
   "plot",
   signature(x = "saemvsResults", y = "missing"),
-  function(x, type = c("criterion", "coefficients"), ...) {
+  function(x, type = c("criterion", "coefficients")) {
     type <- match.arg(type)
     plots <- .prepare_grid_plot_backend(x)
 

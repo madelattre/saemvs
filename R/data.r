@@ -1,26 +1,35 @@
 #' Longitudinal measurements dataset
 #'
-#' Longitudinal measurements in long format for 200 individuals.
+#' Simulated longitudinal measurements for 100 individuals in long format.
+#' Each individual has repeated observations over time generated
+#' according to a logistic growth curve. This dataset is intended
+#' for illustrative purposes in examples and vignettes.
 #'
 #' @docType data
 #' @name df_long
 #' @format A data frame with columns:
 #' \describe{
-#'   \item{id}{Individual identifier}
+#'   \item{id}{Individual identifier (matches the ids in \code{df_cov})}
 #'   \item{time}{Measurement time}
-#'   \item{y}{Observed response}
+#'   \item{y}{Observed response simulated according to a logistic growth model}
 #' }
+#' @seealso \code{\link{df_cov}}
+#' @examples
+#' data(df_long)
+#' head(df_long)
 NULL
 
 #' Covariates dataset
 #'
-#' Covariates in wide format, one row per individual.
+#' Simulated covariates for the same 100 individuals as in \code{df_long},
+#' in wide format (one row per individual). This dataset is intended
+#' for illustrative purposes in examples and vignettes.
 #'
 #' @docType data
 #' @name df_cov
-#' @format A data frame with 201 columns:
+#' @format A data frame with 51 columns:
 #' \describe{
-#'   \item{id}{Individual identifier}
+#'   \item{id}{Individual identifier (matches the ids in \code{df_long}}
 #'   \item{x1}{Numeric covariate 1}
 #'   \item{x2}{Numeric covariate 2}
 #'   \item{x3}{Numeric covariate 3}
@@ -72,4 +81,8 @@ NULL
 #'   \item{x49}{Numeric covariate 49}
 #'   \item{x50}{Numeric covariate 50}
 #' }
+#' @seealso \code{\link{df_long}}
+#' @examples
+#' data(df_cov)
+#' head(df_cov)
 NULL

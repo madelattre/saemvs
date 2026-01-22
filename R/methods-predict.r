@@ -23,6 +23,7 @@
 #' where \eqn{T} is the total number of iterations for the selected support.
 #'
 #' @keywords internal
+#' @noRd
 .predict_one_support <- function(object, support_idx, k = 20) {
   phi_sup <- object@phi[[support_idx]]
 
@@ -47,47 +48,28 @@
 #' Prediction of individual parameters from a SAEMVS fit
 #'
 #' Computes individual-level predictions of the random effects
-#' \eqn{\phi} by averaging the last \eqn{k} SAEM iterations.
+#' \eqn{\varphi} for a user-specified support by averaging the last \eqn{k} SAEM
+#'  iterations.
 #'
-#' \describe{
-#'   \item{\code{predict()}}{Returns predictions for the best support,
-#'   defined as the one minimizing the selection criterion.}
-#'   \item{\code{predict_support()}}{Returns predictions for a user-specified
-#'   support.}
-#' }
 #'
 #' @param object A \code{saemvsResults} object.
-#' @param support_idx Integer. Index of the support to use (only for
-#'   \code{predict_support()}).
+#' @param support_idx Integer. Index of the support to use.
 #' @param k Integer (default = 20). Number of last SAEM iterations to average.
-#' @param ... Not used. Included for method consistency.
 #'
 #' @return
 #' A numeric matrix with one row per individual and one column per
-#' \eqn{\phi} parameter.
+#' \eqn{\varphi} parameter.
 #'
-#' @details
-#' Predictions are obtained by averaging the individual parameters
-#' \eqn{\phi} over the last \eqn{k} SAEM iterations of the selected support.
-#' This provides a Monte Carlo approximation of the posterior mean of
-#' \eqn{\phi}.
-#'
-#' @seealso
-#' \code{\link{summary}}, \code{\link{summary_support}}
 #'
 #' @examples
 #' \dontrun{
-#' # Best support
-#' phi_hat <- predict(res)
-#'
-#' # More smoothing
-#' phi_hat <- predict(res, k = 50)
+#' # Fit a SAEMVS model
+#' res <- saemvs(...)
 #'
 #' # Specific support
-#' phi_sup2 <- predict_support(res, support_idx = 2, k = 30)
+#' phi_hat <- predict_support(res, support_idx = 2, k = 30)
 #' }
 #'
-#' @rdname predict
 #' @export
 predict_support <- function(object, support_idx, k = 20) {
   stopifnot(inherits(object, "saemvsResults"))
@@ -101,12 +83,33 @@ predict_support <- function(object, support_idx, k = 20) {
 }
 
 
-#' @rdname predict
+#' Prediction of individual parameters from a SAEMVS fit
+#'
+#' Computes individual-level predictions of the random effects
+#' \eqn{\varphi} for the best support by averaging the last \eqn{k} SAEM
+#'  iterations.
+#'
+#' @param object A \code{saemvsResults} object.
+#' @param k Integer (default = 20). Number of last SAEM iterations to average.
+#'
+#' @return
+#' A numeric matrix with one row per individual and one column per
+#' \eqn{\varphi} parameter.
+#'
+#'
+#' @examples
+#' \dontrun{
+#' # Fit a SAEMVS model
+#' res <- saemvs(...)
+#'
+#' # Best support
+#' phi_hat <- predict(res, k = 30)
+#' }
 #' @export
 setMethod(
   "predict",
   signature(object = "saemvsResults"),
-  function(object, ..., k = 20) {
+  function(object, k = 20) {
     best_idx <- which.min(object@criterion_values)
     .predict_one_support(object, best_idx, k)
   }

@@ -9,15 +9,17 @@ saemvsData_from_df(formula, data)
 \arguments{
 \item{formula}{A two-sided formula specifying the structure of the data.
 The formula should have the form:
+
 \code{y ~ . + repeated(time) + group(id) [+ forced_vars] [- excluded_vars]}
 
-Where:
+where:
 \itemize{
 \item \code{y} is the response variable.
 \item \code{.} expands to all variables in \code{data} except \code{y},
 \code{id}, \code{time}, and excluded variables. These become candidates
 for variable selection.
-\item \code{repeated(time)} specifies the time variable.
+\item \code{repeated(time)} specifies the time (or repetition factor)
+variable.
 \item \code{group(id)} specifies the individual identifier variable.
 \item Variables prefixed with \code{+} are forced into the model
 (always included in the final model).

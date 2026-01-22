@@ -7,6 +7,7 @@
 #' @param alpha Numeric. Prior inclusion probability of the variable.
 #' @return Numeric. Threshold value used in spike-and-slab selection.
 #' @keywords internal
+#' @noRd
 threshold <- function(nu1, nu0, alpha) {
   value <- 2 * nu0 * nu1 * log(
     sqrt(nu1 / nu0) * (1 - alpha) / alpha
@@ -27,6 +28,7 @@ threshold <- function(nu1, nu0, alpha) {
 #' @return Numeric matrix of the same dimension as \code{beta}. Each entry
 #' is the posterior probability p*.
 #' @keywords internal
+#' @noRd
 p_star <- function(beta, alpha, nu0, nu1) {
   norm1 <- stats::dnorm(beta, mean = 0, sd = sqrt(nu1))
   norm0 <- stats::dnorm(beta, mean = 0, sd = sqrt(nu0))
@@ -60,6 +62,7 @@ p_star <- function(beta, alpha, nu0, nu1) {
 #'     \item "mle_fixed": MLE with some fixed parameters.
 #'   }
 #' @keywords internal
+#' @noRd
 get_case <- function(config) {
   if (config$method_type == "map") {
     if (config$num_parameters_not_to_select == 0) {
@@ -120,6 +123,7 @@ get_case <- function(config) {
 #'   \code{"phi1"}, \code{"phi2"}, etc.
 #'
 #' @keywords internal
+#' @noRd
 #'
 #' @examples
 #' \dontrun{
@@ -129,6 +133,8 @@ get_case <- function(config) {
 #' )
 #' }
 #'
+
+
 estimate_phi_individuals <- function(data, model, init, maxit = 1000) {
   g <- model@model_func
   n_phi <- model@phi_dim
@@ -216,6 +222,7 @@ estimate_phi_individuals <- function(data, model, init, maxit = 1000) {
 #'   for the SAEM-VS algorithm.
 #'
 #' @keywords internal
+#' @noRd
 #'
 #' @examples
 #' \dontrun{

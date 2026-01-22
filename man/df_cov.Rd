@@ -5,9 +5,9 @@
 \alias{df_cov}
 \title{Covariates dataset}
 \format{
-A data frame with 201 columns:
+A data frame with 51 columns:
 \describe{
-\item{id}{Individual identifier}
+\item{id}{Individual identifier (matches the ids in \code{df_long}}
 \item{x1}{Numeric covariate 1}
 \item{x2}{Numeric covariate 2}
 \item{x3}{Numeric covariate 3}
@@ -61,5 +61,14 @@ A data frame with 201 columns:
 }
 }
 \description{
-Covariates in wide format, one row per individual.
+Simulated covariates for the same 100 individuals as in \code{df_long},
+in wide format (one row per individual). This dataset is intended
+for illustrative purposes in examples and vignettes.
+}
+\examples{
+data(df_cov)
+head(df_cov)
+}
+\seealso{
+\code{\link{df_long}}
 }

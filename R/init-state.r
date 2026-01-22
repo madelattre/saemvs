@@ -63,6 +63,7 @@
 #' that initial values are properly assigned.
 #'
 #' @keywords internal
+#' @noRd
 init_state <- function(config) {
   n_iter <- config$num_iterations + 1
   n_series <- config$num_series

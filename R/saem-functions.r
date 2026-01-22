@@ -24,6 +24,7 @@
 #'   Metropolis, SA, and M-steps.
 #' @return Updated \code{state} list after one SAEM iteration.
 #' @keywords internal
+#' @noRd
 perform_saem_iteration <- function(k, config, state, sa_func, m_func,
                                    mh_update_func, backend) {
   state <- metropolis_s_step(config, k, state, backend)
@@ -54,6 +55,7 @@ perform_saem_iteration <- function(k, config, state, sa_func, m_func,
 #'   computations.
 #' @return Final \code{state} list after completing all SAEM iterations.
 #' @keywords internal
+#' @noRd
 run_saem_full <- function(config, state, sa_func, m_func,
                           mh_update_func, backend) {
   for (k in 1:config$num_iterations) {
@@ -103,6 +105,7 @@ run_saem_full <- function(config, state, sa_func, m_func,
 #' iteration via \code{shrink_covariance_matrix}.
 
 #' @keywords internal
+#' @noRd
 run_saem_with_fixed_effects <- function(
     config, state, sa_func, m_func, mh_update_func, backend) {
   for (k in 1:config$num_burnin) {

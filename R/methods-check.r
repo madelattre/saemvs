@@ -18,6 +18,7 @@
 #' }
 #'
 #' @keywords internal
+#' @noRd
 setGeneric(
   "check_data_and_model",
   function(data, model) {
@@ -134,6 +135,7 @@ setMethod(
 #' }
 #'
 #' @keywords internal
+#' @noRd
 setGeneric(
   "check_init",
   function(init, data, model) {
@@ -280,6 +282,7 @@ setMethod(
 #' }
 #'
 #' @keywords internal
+#' @noRd
 setGeneric(
   "check_hyper",
   function(hyper, model, tuning) {

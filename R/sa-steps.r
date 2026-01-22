@@ -35,6 +35,7 @@
 #'   }
 
 #' @keywords internal
+#' @noRd
 #' @note This function is intended for internal use within the SAEM-MCMC
 #' algorithm and should not be called directly in user code.
 sa_step_to_select <- function(config, iteration, state, backend) {
@@ -97,6 +98,7 @@ sa_step_to_select <- function(config, iteration, state, backend) {
 #'     \item \code{s3_not_to_select[[iteration + 1]]} updated mean statistic.
 #'   }
 #' @keywords internal
+#' @noRd
 #' @note This function is intended for internal use within the SAEM-MCMC
 #' algorithm and should not be called directly in user code.
 sa_step_not_to_select <- function(config, iteration, state, backend) {
@@ -167,6 +169,7 @@ sa_step_not_to_select <- function(config, iteration, state, backend) {
 #'           for parameters not to select.
 #'   }
 #' @keywords internal
+#' @noRd
 #' @note This function is intended for internal use within the SAEM-MCMC
 #' algorithm and should not be called directly in user code.
 sa_step_all <- function(config, iteration, state, backend) {

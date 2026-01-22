@@ -28,6 +28,7 @@
 #'   internal SAEMVS algorithms.
 #'
 #' @keywords internal
+#' @noRd
 #'
 #' @seealso \code{\link{saemvsModel}}
 
@@ -177,6 +178,7 @@ setMethod(
 #' \code{\linkS4class{saemvsProcessedData}}
 #'
 #' @keywords internal
+#' @noRd
 #'
 #' @examples
 #' \dontrun{
@@ -342,6 +344,7 @@ setMethod(
 #' \code{drop = FALSE}.
 #'
 #' @keywords internal
+#' @noRd
 setGeneric(
   "prepare_init",
   function(init, model, data_processed) {
@@ -513,6 +516,7 @@ setMethod(
 #' }
 #'
 #' @keywords internal
+#' @noRd
 setGeneric(
   "prepare_hyper",
   function(hyper, data, model) {
@@ -586,6 +590,7 @@ setMethod(
 #' @return A named list containing all information necessary to run the SAEMVS
 #' algorithm.
 #' @keywords internal
+#' @noRd
 setGeneric(
   "make_config",
   function(data, model, tuning_algo, init, hyperparam) {

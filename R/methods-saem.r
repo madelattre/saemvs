@@ -70,6 +70,7 @@
 #'  for running the algorithm.
 #'
 #' @keywords internal
+#' @noRd
 setGeneric(
   "run_saem",
   function(data, model, init, tuning_algo, hyperparam, backend) {

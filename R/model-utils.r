@@ -54,6 +54,7 @@ NULL
 #' }
 #'
 #' @keywords internal
+#' @noRd
 transpile_to_cpp <- function(
     g_fun, function_name = "g_scalar_cpp",
     is_main = TRUE,
@@ -879,6 +880,7 @@ transpile_to_cpp <- function(
 #' }
 #'
 #' @keywords internal
+#' @noRd
 build_backend_r <- function(g_fun) {
   g_scalar <- function(t, phi) {
     if (is.matrix(phi) && nrow(phi) > 1) phi <- as.vector(phi)
@@ -1089,6 +1091,7 @@ build_backend_r <- function(g_fun) {
 #' }
 #'
 #' @keywords internal
+#' @noRd
 build_backend_cpp <- function(g_fun, debug = FALSE) {
   cpp_g_function <- transpile_to_cpp(g_fun, "g_scalar_cpp")
 
@@ -1310,6 +1313,7 @@ List metropolis_vector_cpp(
 #' \code{\link{build_backend_r}} for R backend compilation.
 #'
 #' @keywords internal
+#' @noRd
 compile_model <- function(g_fun, use_cpp, debug = FALSE, silent = FALSE) {
   if (use_cpp) {
     backend <- tryCatch(

@@ -44,6 +44,7 @@
 #' }
 #'
 #' @keywords internal
+#' @noRd
 setGeneric(
   "loglik",
   function(data,

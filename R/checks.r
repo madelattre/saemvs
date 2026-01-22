@@ -5,6 +5,7 @@
 #' @return NULL if valid; a character string with an error description
 #' otherwise.
 #' @keywords internal
+#' @noRd
 check_covariance <- function(mat, name_mat) {
   if (!is.numeric(mat)) {
     return(sprintf("%s must be a numeric matrix.", name_mat))
@@ -40,6 +41,7 @@ check_positive_slot <- function(slot, name_slot) {
 #' @param slot Numeric value or NULL.
 #' @param name_slot Name of the slot.
 #' @keywords internal
+#' @noRd
 check_positive_or_null_slot <- function(slot, name_slot) {
   if (!is.null(slot) && slot <= 0) {
     return(sprintf("%s must be NULL or strictly positive.", name_slot))
@@ -52,6 +54,7 @@ check_positive_or_null_slot <- function(slot, name_slot) {
 #' @param slot Numeric value.
 #' @param name_slot Name of the slot.
 #' @keywords internal
+#' @noRd
 check_positive_integer_slot <- function(slot, name_slot) {
   if ((slot <= 0) || !is.integer(slot)) {
     return(sprintf("%s must be a strictly positive integer.", name_slot))

@@ -10,10 +10,8 @@ User-facing specification of a SAEMVS model.
 This class provides an intuitive interface for defining a nonlinear mixed
 effects model, specifying parameters subject to covariate selection,
 specifying fixed parameters (i.e. without random variability), and
-declaring covariates that must be forced into the model.
-
-Internally, a \code{saemvsModel} is validated and converted into a
-\code{saemvsProcessedModel} before being passed to the estimation algorithm.
+declaring the support of covariates that must be forced
+into the model.
 }
 \section{Slots}{
 

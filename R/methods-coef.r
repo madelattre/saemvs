@@ -20,6 +20,7 @@
 #' labeled rows and columns.
 #'
 #' @keywords internal
+#' @noRd
 .coef_one_support <- function(object, support_idx) {
 
   beta_est <- object@mle_estimates[[support_idx]]$beta
@@ -69,48 +70,34 @@
 
 #' Extract regression coefficients from a SAEMVS fit
 #'
-#' \describe{
-#'   \item{\code{coef()}}{Returns the fixed-effects regression coefficients
-#'   associated with the best support, defined as the one minimizing the
-#'   selection criterion.}
-#'   \item{\code{coef_support()}}{Returns the fixed-effects regression
-#'   coefficients associated with a user-specified support.}
+#' \describe{This function returns the regression coefficients
+#' associated with a user-specified support.
 #' }
 #'
 #' @param object A \code{saemvsResults} object.
-#' @param support_idx Integer. Index of the support to use (only for
-#'   \code{coef_support()}).
-#' @param ... Not used. Included for method consistency.
+#' @param support_idx Integer. Index of the support to use.
 #'
 #' @return
 #' A numeric matrix of fixed-effects coefficients \eqn{\beta}, where:
 #' \itemize{
 #'   \item rows correspond to the intercept, forced covariates, and
 #'         selected covariates
-#'   \item columns correspond to the individual parameters \eqn{\phi}
+#'   \item columns correspond to the individual parameters \eqn{\varphi}
 #' }
 #'
 #' @details
 #' The ordering and labeling of the rows matches the coefficient tables
-#' displayed by \code{\link{summary}} and \code{\link{summary_support}},
-#' ensuring consistency between printed summaries and programmatic
-#' access to the estimates.
-#'
-#' @seealso
-#' \code{\link{summary}}, \code{\link{predict}}, \code{\link{summary_support}}
+#' displayed by \code{\link{summary}} and \code{\link{summary_support}}.
 #'
 #' @examples
 #' \dontrun{
-#' # Coefficients for the best support
-#' coef(res)
-#'
-#' # Coefficients for a specific support
+#' # Fit a SAEMVS model
+#' res <- saemvs(...)
+#' # Extract coefficients for support 2
 #' coef_support(res, support_idx = 2)
 #' }
-#' @name coef
-#' @rdname coef
 #' @export
-coef_support <- function(object, support_idx, ...) {
+coef_support <- function(object, support_idx) {
   stopifnot(inherits(object, "saemvsResults"))
 
   n_sup <- length(object@mle_estimates)
@@ -121,12 +108,37 @@ coef_support <- function(object, support_idx, ...) {
   .coef_one_support(object, support_idx)
 }
 
-#' @rdname coef
+#' Extract regression coefficients from a SAEMVS fit
+#'
+#' This function extracts the regression coefficients
+#' for the best selected support (minimizing the
+#' selection criterion).
+#'
+#' @param object A \code{saemvsResults} object obtained from
+#'   fitting a model using \code{\link{saemvs}}.
+#'
+#' @return A numeric matrix of fixed-effects coefficients \eqn{\beta}, where:
+#' \itemize{
+#'   \item rows correspond to the intercept, forced covariates, and
+#'  selected covariates
+#'   \item columns correspond to the individual parameters \eqn{\varphi}
+#' }
+#' The ordering and labeling of the rows matches the coefficient tables
+#' displayed by \code{\link{summary}} and \code{\link{summary_support}}.
+#'
+#' @examples
+#' \dontrun{
+#' # Fit a SAEMVS model
+#' res <- saemvs(...)
+#' # Extract coefficients for the best selected support
+#' coef(res)
+#' }
+#'
 #' @export
 setMethod(
   "coef",
   signature(object = "saemvsResults"),
-  function(object, ...) {
+  function(object) {
     best_idx <- which.min(object@criterion_values)
     .coef_one_support(object, best_idx)
   }

@@ -9,19 +9,19 @@
 #' and then evaluates unique supports with the chosen information
 #' criterion to select the best model.
 #'
-#' @param data An object of class \link[=saemvsData-class]{saemvsData}
+#' @param data An object of class \code{saemvsData}
 #'   containing the dataset (observations and design matrices).
-#' @param model An object of class \link[=saemvsModel-class]{saemvsModel}
-#'   specifying the model structure and the indices of parameters
-#'   that are candidates for selection (`phi_to_select_idx`).
-#' @param init An object of class \link[=saemvsInit-class]{saemvsInit}
+#' @param model An object of class \code{saemvsModel}
+#'   specifying the model structure and the parameters
+#'   that are candidates for selection (`phi_to_select`).
+#' @param init An object of class \code{saemvsInit}
 #'   providing the initialization for the SAEM algorithm.
 #' @param tuning_algo An object of class
-#' \link[=saemvsTuning-class]{saemvsTuning} containing algorithmic tuning
+#' \code{saemvsTuning} containing algorithmic tuning
 #' parameters such as the spike grid (`spike_values_grid`), number of workers,
 #' and random seed.
 #' @param hyperparam An object of class
-#' \link[=saemvsHyperSlab-class]{saemvsHyperSlab} containing the
+#' \code{saemvsHyperSlab} containing the
 #' hyperparameters for the slab prior.
 #' @param pen Character string indicating the model selection criterion. Must be
 #' either `"BIC"` or `"e-BIC"`.
@@ -41,7 +41,7 @@
 #'   appropriate model.
 #' }
 #' A support corresponds to a specific subset of parameters (among
-#' `phi_to_select_idx`) that are included in the model, typically represented
+#' `phi_to_selectx`) that are included in the model, typically represented
 #' as a binary inclusion pattern obtained after thresholding the MAP estimates.
 #' For a given support, covariates are partitioned into:
 #' \itemize{
@@ -54,12 +54,8 @@
 
 #'
 #' Parallel execution is handled using the `future` and `furrr` packages.
-#' When `use_cpp = TRUE`, the model C++ code is compiled multiple times:
-#' once before the first step, and again within each parallel worker during
-#' both the MAP estimation step and the information-criterion evaluation step.
-#' This ensures that each worker has access to a valid compiled backend.
-
-#' @return An object of class \code{\linkS4class{saemvsResults}} containing:
+#'
+#' @return An object of class \code{saemvsResults} containing:
 #' \itemize{
 #'   \item `criterion`: The selection criterion used (`"BIC"` or `"e-BIC"`).
 #'   \item `criterion_values`: Values of the selected information criterion
@@ -96,7 +92,6 @@
 #' )
 #' }
 #'
-#' @seealso \code{\linkS4class{saemvsResults}}, \code{\link{run_saem}}
 #' @export
 setGeneric(
   "saemvs",
@@ -360,6 +355,7 @@ safe_future_map <- function(.x, .f, ..., workers = 1, seed = NULL) {
 #' }
 #'
 #' @keywords internal
+#' @noRd
 #' @seealso \code{\link{saemvs}}, \code{\link{run_saem}}
 setGeneric(
   "saemvs_one_map_run",
@@ -483,6 +479,7 @@ setMethod(
 #' }
 #'
 #' @keywords internal
+#' @noRd
 #' @seealso \code{\link{saemvs}}, \code{\link{saemvs_one_map_run}},
 #' \code{\link{loglik}}
 setGeneric(
@@ -578,40 +575,34 @@ setMethod(
 
 #' Run a Single SAEMVS Test Fit
 #'
-#' Executes a simplified SAEMVS procedure for testing purposes.
+#' Executes a simplified SAEMVS procedure for testing and debugging purposes.
+#' Only a single spike value from the grid is used, and estimation by
+#' maximum a posteriori is performed on that point.
 #'
-#' @param data A \link[=saemvsData-class]{saemvsData} object containing the
-#' observed response series.
-#' @param model A \link[=saemvsModel-class]{saemvsModel} object defining the
-#' model structure.
-#' @param init A \link[=saemvsInit-class]{saemvsInit} object providing initial
-#' parameter values.
-#' @param tuning_algo A \link[=saemvsTuning-class]{saemvsTuning} object
-#' specifying algorithm hyperparameters.
-#' @param hyperparam A \link[=saemvsHyperSlab-class]{saemvsHyperSlab} object
-#' defining the slab prior. Internally combined with a spike value to form
-#' a \code{saemvsHyperSpikeAndSlab} object.
+#' @param data A \code{saemvsData} object containing the
+#'   observed response series.
+#' @param model A \code{saemvsModel} object defining the
+#'   model structure.
+#' @param init A \code{saemvsInit} object providing initial
+#'   parameter values.
+#' @param tuning_algo A \code{saemvsTuning} object
+#'   specifying algorithm hyperparameters.
+#' @param hyperparam A \code{saemvsHyperSlab} object
+#'   defining the slab prior.
 #' @param use_cpp Logical. If TRUE (default), the model function is compiled
 #'   to C++ for faster execution. If FALSE, a pure R backend is used.
-
 #'
-#' @return A \link[=saemResults-class]{saemResults} object containing estimated
-#' parameters.
+#' @return A \code{saemResults} object containing estimated
+#'   parameters for the single spike value tested.
 #'
 #' @details
-#' This function allows a quick fit of SAEMVS to inspect the evolution of
-#' parameter estimates. The function performs the following steps:
-#' \enumerate{
-#'   \item Compile the R model function to C++ using `compile_model`.
-#'   \item Construct a spike-and-slab hyperparameter object.
-#'   \item Run the SAEM algorithm using `run_saem`.
-#'   \item Return parameter estimates packaged in a `saemResults` object.
-#' }
+#' This function provides a quick fit of SAEMVS for inspecting the evolution of
+#' parameter estimates at a single spike value. It does not perform variable
+#' selection across the full grid of spike values.
 #'
 #' @note
-#' This function is intended for testing and debugging purposes only.
-#' It does not perform variable selection across a grid of spike values
-#' and should not be used for final model comparison.
+#' Intended for testing and debugging only. Because it only evaluates one spike
+#' value, it should not be used for final model selection or comparison.
 #'
 #' @examples
 #' \dontrun{

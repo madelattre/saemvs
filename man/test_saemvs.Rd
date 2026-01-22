@@ -10,46 +10,41 @@ test_saemvs(data, model, init, tuning_algo, hyperparam, use_cpp = TRUE)
 \S4method{test_saemvs}{saemvsData,saemvsModel,saemvsInit,saemvsTuning,saemvsHyperSlab}(data, model, init, tuning_algo, hyperparam, use_cpp = TRUE)
 }
 \arguments{
-\item{data}{A \link[=saemvsData-class]{saemvsData} object containing the
+\item{data}{A \code{saemvsData} object containing the
 observed response series.}
 
-\item{model}{A \link[=saemvsModel-class]{saemvsModel} object defining the
+\item{model}{A \code{saemvsModel} object defining the
 model structure.}
 
-\item{init}{A \link[=saemvsInit-class]{saemvsInit} object providing initial
+\item{init}{A \code{saemvsInit} object providing initial
 parameter values.}
 
-\item{tuning_algo}{A \link[=saemvsTuning-class]{saemvsTuning} object
+\item{tuning_algo}{A \code{saemvsTuning} object
 specifying algorithm hyperparameters.}
 
-\item{hyperparam}{A \link[=saemvsHyperSlab-class]{saemvsHyperSlab} object
-defining the slab prior. Internally combined with a spike value to form
-a \code{saemvsHyperSpikeAndSlab} object.}
+\item{hyperparam}{A \code{saemvsHyperSlab} object
+defining the slab prior.}
 
 \item{use_cpp}{Logical. If TRUE (default), the model function is compiled
 to C++ for faster execution. If FALSE, a pure R backend is used.}
 }
 \value{
-A \link[=saemResults-class]{saemResults} object containing estimated
-parameters.
+A \code{saemResults} object containing estimated
+parameters for the single spike value tested.
 }
 \description{
-Executes a simplified SAEMVS procedure for testing purposes.
+Executes a simplified SAEMVS procedure for testing and debugging purposes.
+Only a single spike value from the grid is used, and estimation by
+maximum a posteriori is performed on that point.
 }
 \details{
-This function allows a quick fit of SAEMVS to inspect the evolution of
-parameter estimates. The function performs the following steps:
-\enumerate{
-\item Compile the R model function to C++ using \code{compile_model}.
-\item Construct a spike-and-slab hyperparameter object.
-\item Run the SAEM algorithm using \code{run_saem}.
-\item Return parameter estimates packaged in a \code{saemResults} object.
-}
+This function provides a quick fit of SAEMVS for inspecting the evolution of
+parameter estimates at a single spike value. It does not perform variable
+selection across the full grid of spike values.
 }
 \note{
-This function is intended for testing and debugging purposes only.
-It does not perform variable selection across a grid of spike values
-and should not be used for final model comparison.
+Intended for testing and debugging only. Because it only evaluates one spike
+value, it should not be used for final model selection or comparison.
 }
 \examples{
 \dontrun{

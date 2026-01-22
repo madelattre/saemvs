@@ -2,24 +2,28 @@
 #' @description Internal union class used in slots that may contain
 #' a numeric matrix or be \code{NULL}.
 #' @keywords internal
+#' @noRd
 setClassUnion("matrixORNULL", c("matrix", "NULL"))
 
 #' @title Class Union: numeric or NULL
 #' @description Internal union class used in slots that may contain
 #' a numeric vector or be \code{NULL}.
 #' @keywords internal
+#' @noRd
 setClassUnion("numericORNULL", c("numeric", "NULL"))
 
 #' @title Class Union: list or NULL
 #' @description Internal union class used in slots that may contain
 #' a list or be \code{NULL}.
 #' @keywords internal
+#' @noRd
 setClassUnion("listORNULL", c("list", "NULL"))
 
 #' @title Class Union: character or NULL
 #' @description Internal union class used in slots that may contain
 #' a character vector or be \code{NULL}.
 #' @keywords internal
+#' @noRd
 setClassUnion("characterORNULL", c("character", "NULL"))
 
 #' @title saemvsData class
@@ -184,6 +188,7 @@ setClass(
 #'
 #' @return An object of class \code{saemvsData}.
 #' @keywords internal
+#' @noRd
 saemvsData <- function( # nolint:  object_name_linter.
   y,
   t,
@@ -237,15 +242,17 @@ saemvsData <- function( # nolint:  object_name_linter.
 #'
 #' @param formula A two-sided formula specifying the structure of the data.
 #' The formula should have the form:
+#'
 #' \code{y ~ . + repeated(time) + group(id) [+ forced_vars] [- excluded_vars]}
 #'
-#' Where:
+#' where:
 #' \itemize{
 #'   \item \code{y} is the response variable.
 #'   \item \code{.} expands to all variables in \code{data} except \code{y},
 #'   \code{id}, \code{time}, and excluded variables. These become candidates
 #'   for variable selection.
-#'   \item \code{repeated(time)} specifies the time variable.
+#'   \item \code{repeated(time)} specifies the time (or repetition factor)
+#'  variable.
 #'   \item \code{group(id)} specifies the individual identifier variable.
 #'   \item Variables prefixed with \code{+} are forced into the model
 #'   (always included in the final model).
@@ -408,6 +415,7 @@ saemvsData_from_df <- function(formula, # nolint:  object_name_linter.
 #'   }
 #'
 #' @keywords internal
+#' @noRd
 setClass(
   "saemvsProcessedData",
   slots = list(
@@ -472,6 +480,7 @@ setClass(
 
 #' Internal constructor for saemvsProcessedData
 #' @keywords internal
+#' @noRd
 saemvsProcessedData <- function( # nolint:  object_name_linter.
     x_phi_to_select = NULL,
     x_phi_not_to_select = NULL,
@@ -513,6 +522,7 @@ saemvsProcessedData <- function( # nolint:  object_name_linter.
 #'   indicates that the covariate is forced for the corresponding parameter.
 #'
 #' @keywords internal
+#' @noRd
 
 setClass(
   "saemvsProcessedModel",
@@ -607,10 +617,8 @@ setClass(
 #' This class provides an intuitive interface for defining a nonlinear mixed
 #' effects model, specifying parameters subject to covariate selection,
 #' specifying fixed parameters (i.e. without random variability), and
-#' declaring covariates that must be forced into the model.
-#'
-#' Internally, a \code{saemvsModel} is validated and converted into a
-#' \code{saemvsProcessedModel} before being passed to the estimation algorithm.
+#' declaring the support of covariates that must be forced
+#'  into the model.
 #'
 #' @slot model_func A function defining the structural model. It must be of the
 #'   form \code{function(t, ...)} where the additional arguments correspond to
@@ -788,6 +796,26 @@ setClass(
 #'
 #' @return An object of class \code{saemvsModel}.
 #'
+#' @examples
+#' # Define the model function
+#' g <- function(t, a, b, c) {
+#' b + a / (1 + exp(-(t - c)))
+#' }
+#' 
+#' # Create saemvsModel object
+#' model <- saemvsModel(
+#' g = g,
+#' phi_to_select = c("a", "c")
+#' )
+#' 
+#' # Model with forced covariate x1
+#' model2 <- saemvsModel(
+#'   g = g,
+#'   phi_to_select = c("a", "c"),
+#'   x_forced_support = list(
+#'    a = c("x1")
+#'  )
+#' )
 #' @export
 saemvsModel <- function( # nolint:  object_name_linter.
     g,
@@ -856,10 +884,6 @@ saemvsModel <- function( # nolint:  object_name_linter.
 #' @description Represents the hyperparameters for the slab component in a
 #'  spike-and-slab prior.
 #'
-#' Only the slab parameter, random effects covariance prior, and degrees of
-#'  freedom need to be specified by the user. Other hyperparameters are fixed
-#'  internally.
-#'
 #' @slot slab_parameter Numeric: positive slab parameter (controls the slab
 #'  prior).
 #' @slot cov_re_prior_scale Numeric matrix: scale matrix of the Inverse-Wishart
@@ -877,6 +901,7 @@ saemvsModel <- function( # nolint:  object_name_linter.
 #' @slot inclusion_prob_prior_b Numeric or NULL: beta parameter of the Beta
 #'  prior on covariate inclusion probabilities.
 #'
+#' @rdname saemvsHyperSlab-class
 #' @exportClass saemvsHyperSlab
 setClass(
   "saemvsHyperSlab",
@@ -944,7 +969,6 @@ setClass(
   }
 )
 
-#' @rdname saemvsHyperSlab
 #' @title Constructor for saemvsHyperSlab
 #'
 #' @description Create a \code{saemvsHyperSlab} object specifying
@@ -1007,6 +1031,7 @@ saemvsHyperSlab <- function( # nolint:  object_name_linter.
 #' @seealso \code{\linkS4class{saemvsHyperSlab}}
 #'
 #' @keywords internal
+#' @noRd
 setClass(
   "saemvsHyperSpikeAndSlab",
   slots = list(
@@ -1033,6 +1058,7 @@ setClass(
 #' @param spike_parameter numeric, strictly positive
 #' @param hyper_slab an object of class \code{saemvsHyperSlab}
 #' @keywords internal
+#' @noRd
 #' @return An object of class \code{saemvsHyperSpikeAndSlab}
 #' @name saemvsHyperSpikeAndSlab
 saemvsHyperSpikeAndSlab <- function( # nolint:  object_name_linter.
@@ -1052,30 +1078,21 @@ saemvsHyperSpikeAndSlab <- function( # nolint:  object_name_linter.
 }
 
 #' @title saemvsInit class
-#' @description Initialization of user-provided parameters
-#'
+#' @description 
 #' Stores the initial values of parameters provided by the user for the SAEMVS
 #'  algorithm.
 #'
-#' @slot intercept Numeric vector of intercepts for each component of phi.
-#'   Must have length equal to \code{phi_dim} in the model.
+#' @slot intercept Numeric vector of intercepts for each component of
+#'  \eqn{\varphi}.
 #' @slot beta_forced Optional matrix of regression coefficients for forced
 #'  covariates (from \code{x_forced}). Each column corresponds to a component
-#'  of phi.
+#'  of \eqn{\varphi}.
 #' @slot beta_candidates Optional matrix of regression coefficients for
 #'  candidate covariates (from \code{x_candidates}). Same structure as
 #' \code{beta_forced}.
 #' @slot cov_re Initial covariance matrix of the random effects.
 #' @slot sigma2 Numeric. Initial residual variance (must be strictly positive).
 #' @slot default Logical. If TRUE, all slots except intercept must be "empty".
-#' @details
-#' Validity checks ensure:
-#' \itemize{
-#'   \item The number of columns in \code{beta_forced} and
-#' \code{beta_candidates} matches the length of \code{intercept}.
-#'   \item \code{cov_re} is a valid covariance matrix.
-#'   \item \code{sigma2} is strictly positive.
-#' }
 #'
 #' @exportClass saemvsInit
 setClass(
@@ -1242,6 +1259,7 @@ saemvsInit <- function( # nolint:  object_name_linter.
 #'  create or modify objects of this class directly.
 #'
 #' @keywords internal
+#' @noRd
 setClass(
   "saemvsProcessedInit",
   slots = list(
@@ -1265,7 +1283,6 @@ setClass(
 )
 
 #' Internal constructor for saemvsProcessedInit
-#' @keywords internal
 #' @param beta_to_select Numeric matrix or NULL. Coefficients for phi
 #'  components subject to selection.
 #' @param beta_not_to_select Numeric matrix or NULL. Coefficients for phi
@@ -1278,6 +1295,9 @@ setClass(
 #' @param inclusion_prob Numeric vector or NULL. Inclusion probabilities for
 #'  phi components.
 #' @return An object of class \code{saemvsProcessedInit}.
+#' @keywords internal
+#' @noRd 
+
 saemvsProcessedInit <- function( # nolint:  object_name_linter.
     beta_to_select = NULL,
     beta_not_to_select = NULL,
@@ -1566,6 +1586,7 @@ saemvsTuning <- function( # nolint:  object_name_linter.
 #' \code{\link{summary}} make use of these slots for reporting.
 #'
 #' @keywords internal
+#' @noRd
 setClass(
   "saemvsResults",
   slots = list(
@@ -1667,7 +1688,9 @@ setClass(
 #'   covariates associated with \code{beta_to_select}.
 #' @slot x_forced_names Character vector or NULL. Names of forced covariates
 #'   associated with \code{beta_not_to_select}.
-
+#'
+#' @keywords internal
+#' @noRd
 #'
 setClass(
   "saemResults",

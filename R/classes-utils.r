@@ -37,6 +37,7 @@
 #' }
 #'
 #' @keywords internal
+#' @noRd
 get_variables_from_formula <- function(f) {
   # Parse formula of form: y ~ . + repeated(time) + group(id)
   # [+ forced_vars] [- excluded_vars]
@@ -177,6 +178,7 @@ get_variables_from_formula <- function(f) {
 #'   original model.
 #'
 #' @keywords internal
+#' @noRd
 
 make_phi_fn <- function(g_user) {
   fmls <- names(formals(g_user))
@@ -279,6 +281,7 @@ make_phi_fn <- function(g_user) {
 #'  list).
 #'
 #' @keywords internal
+#' @noRd
 validate_x_forced_support <- function(x, phi_names) {
 
   if (is.null(x)) {

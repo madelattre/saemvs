@@ -30,6 +30,7 @@
 #' expand_to_list(x, supp, q = 2)
 #' }
 #' @keywords internal
+#' @noRd
 expand_to_list <- function(x_mat, support, q) {
   fun_name <- "expand_to_list"
 
@@ -108,6 +109,7 @@ expand_to_list <- function(x_mat, support, q) {
 #' shrink_covariance_matrix(sigma_old, sigma_temp, shrink_indices, alphas)
 #' }
 #' @keywords internal
+#' @noRd
 shrink_covariance_matrix <- function(
     sigma_old, sigma_temp, shrink_indices, alphas) {
   fun_name <- "shrink_covariance_matrix"
@@ -185,6 +187,7 @@ shrink_covariance_matrix <- function(
 #' zero_out_shrinked(mat, indices)
 #' }
 #' @keywords internal
+#' @noRd
 zero_out_shrinked <- function(mat, indices) {
   if (is.null(mat) || !is.matrix(mat)) {
     stop("zero_out_shrinked: 'mat' must be a non-NULL matrix.")
@@ -250,6 +253,7 @@ zero_out_shrinked <- function(mat, indices) {
 #' }
 #'
 #' @keywords internal
+#' @noRd
 merge_support <- function(
     fixed_support, selected_support, nb_phi_s, nb_phi_ns, perm) {
   if (!is.null(fixed_support) && !is.matrix(fixed_support)) {
@@ -316,6 +320,7 @@ merge_support <- function(
 #' is_empty_support(matrix(c(0, 1), nrow = 1)) # FALSE
 #' }
 #' @keywords internal
+#' @noRd
 is_empty_support <- function(support) {
   if (is.null(support)) {
     return(TRUE)
@@ -365,6 +370,7 @@ is_empty_support <- function(support) {
 #' is_empty_matrix(matrix(0, 2, 2)) # FALSE
 #' }
 #' @keywords internal
+#' @noRd
 is_empty_matrix <- function(mat) {
   if (is.null(mat)) {
     return(TRUE)
@@ -412,6 +418,7 @@ is_empty_matrix <- function(mat) {
 #' }
 #' @seealso \code{\link{is_empty_matrix}}
 #' @keywords internal
+#' @noRd
 extract_rows_with_ones <- function(mat) {
   if (is_empty_matrix(mat)) {
     return(integer(0))
@@ -457,6 +464,7 @@ extract_rows_with_ones <- function(mat) {
 #' }
 #' @seealso \code{\link{is_empty_support}}
 #' @keywords internal
+#' @noRd
 extract_sub_support <- function(support, idx) {
   if (is_empty_support(support)) {
     return(NULL)

@@ -2,18 +2,13 @@
 % Please edit documentation in R/methods-summary.r
 \name{summary,saemvsResults-method}
 \alias{summary,saemvsResults-method}
-\alias{summary_support}
-\alias{summary_all}
 \title{Summary of SAEM Variable Selection Results}
 \usage{
 \S4method{summary}{saemvsResults}(object, ...)
-
-summary_support(object, support_idx, digits = 3)
-
-summary_all(object, digits = 3)
 }
 \arguments{
-\item{object}{A \code{saemvsResults} object}
+\item{object}{An object of class \code{saemvsResults} containing
+the output of a SAEMVS run.}
 
 \item{...}{Additional arguments passed to methods or generic functions.
 Currently supported arguments:
@@ -21,39 +16,19 @@ Currently supported arguments:
 \item{digits}{Numeric scalar (default = 3). Number of decimal places
 used when printing coefficients and the covariance matrix.}
 }}
-
-\item{support_idx}{Integer. Index of the support to display in
-\code{unique_support}.}
-
-\item{digits}{Number of digits for printing numeric values (default = 3)}
 }
 \description{
-Provides a human-readable summary of the results from a SAEM variable
+Provides a human-readable summary of the best model (chosen by BIC/e-BIC)
+obtained from a SAEM variable
 selection run.
-For the best model (chosen by BIC/e-BIC), it displays:
+It displays:
 \itemize{
-\item Selected covariates for each \eqn{\phi} parameter.
+\item Selected covariates for each \eqn{\varphi} parameter.
 \item Estimated regression coefficients (\eqn{\beta}) with labeled rows
 for intercept, forced covariates, and selected covariates.
 \item Estimated covariance matrix (\eqn{\Gamma}), where fixed-effect
 parameters are zeroed out for clarity.
 }
-
-Displays:
-\itemize{
-\item Selected covariates for each \eqn{\phi} parameter
-\item Estimated regression coefficients (\eqn{\beta})
-\item Estimated covariance matrix (\eqn{\Gamma})
-}
-
-Iterates through all unique supports in a SAEMVS run and prints a
-summary for each.
-}
-\details{
-The best model is identified as the one minimizing the selection criterion.
-The function separates forced covariates (always included), selected
-covariates (chosen by the algorithm), and the intercept. Coefficients are
-displayed in a labeled table, followed by the estimated covariance matrix.
 }
 \examples{
 \dontrun{

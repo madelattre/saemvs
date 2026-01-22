@@ -47,6 +47,7 @@
 #'   }
 #'
 #' @keywords internal
+#' @noRd
 #' @note This function performs the M-step for parameters not subject to
 #' selection, enforcing symmetry of covariance matrices and applying shrinkage
 #' if necessary.
@@ -162,6 +163,7 @@ m_step_not_to_select <- function(config, k, state, backend) {
 #'   }
 #'
 #' @keywords internal
+#' @noRd
 #' @note This function performs the M-step for parameters subject to variable
 #'  selection,
 #' enforcing symmetry of covariance matrices and applying shrinkage if
@@ -275,6 +277,7 @@ m_step_to_select <- function(config, k, state, backend) {
 #'   }
 #'
 #' @keywords internal
+#' @noRd
 #' @note Intended for internal use in the SAEM-MCMC framework when computing
 #'  MLE estimates.
 m_step_mle <- function(config, k, state, backend) {
@@ -333,6 +336,7 @@ m_step_mle <- function(config, k, state, backend) {
 #'   }
 #'
 #' @keywords internal
+#' @noRd
 #' @note Intended for internal use in the SAEM-MCMC framework when computing
 #'  MAP estimates.
 
@@ -399,6 +403,7 @@ m_step_map_to_select <- function(config, k, state, backend) {
 #'   }
 #'
 #' @keywords internal
+#' @noRd
 #' @note Intended for internal use in the SAEM-MCMC framework when computing MAP
 #'  estimates for all parameters simultaneously.
 m_step_map_all <- function(config, k, state, backend) {
