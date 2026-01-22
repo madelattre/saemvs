@@ -6,3 +6,8 @@
 .quarto
 /doc/
 /Meta/
+*.Rcheck/
+*.tar.gz
+.Rproj.user
+vignettes/*.html
+src/*.rds
