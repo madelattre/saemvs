@@ -12,3 +12,9 @@
 ^README\.Rmd$
 ^doc$
 ^Meta$
+^\.git$
+^\.vscode$
+^\.Rhistory$
+^\.Rd2pdf.*
+^.*\.o$
+^.*\.so$
