@@ -1,5 +1,3 @@
-# R/utils-global.R
-
 # Declare global variable names to suppress R CMD check notes
 if (getRversion() >= "2.15.1") {
   utils::globalVariables(
@@ -21,3 +19,12 @@ if (getRversion() >= "2.15.1") {
 # Global variables
 utils::globalVariables(c("j", "facet_label", "var"))
 
+utils::globalVariables(c(
+  "g_scalar_cpp",
+  "g_vector_cpp",
+  "rmvnorm_cpp",
+  "logdmvnorm_cpp",
+  "metropolis_vector_cpp",
+  "loglik_cpp",
+  "rmvnorm_mat_cpp"
+))
