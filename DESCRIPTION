@@ -1,6 +1,6 @@
 Package: saemvs
 Title: Variable Selection in Nonlinear Mixed-Effects Models with SAEM and Spike-and-Slab Priors
-Version: 1.0.0
+Version: 1.0.0.900
 Maintainer: Maud Delattre <maud.delattre@inrae.fr>
 Authors@R: person(
     given = "Maud",
