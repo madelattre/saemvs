@@ -1,9 +1,13 @@
 Package: saemvs
-Title: Variable selection in nonlinear mixed-effects models with SAEM and spike-and-slab priors
-Version: 0.0.0.9000
-Authors@R: 
-    person("Maud", "Delattre", , "maud.delattre@inrae.fr", role = c("aut", "cre"))
-Description: Implements variable selection for nonlinear mixed-effects models using the Stochastic Approximation Expectation-Maximization (SAEM) algorithm. The package supports forced covariates, fixed-effects, and provides S4 classes for model specification, data handling, and results visualization. It also includes plotting and diagnostic tools for convergence and selection criteria. For macOS, compilation of the C++ code requires gfortran >= 14.x (https://mac.r-project.org/tools/).
+Title: Variable Selection in Nonlinear Mixed-Effects Models with SAEM and Spike-and-Slab Priors
+Version: 1.0.0
+Maintainer: Maud Delattre <maud.delattre@inrae.fr>
+Authors@R: person(
+    given = "Maud",
+    family = "Delattre",
+    role = c("aut", "cre"),
+    email = "maud.delattre@inrae.fr")
+Description: Implements variable selection for nonlinear mixed-effects models using the Stochastic Approximation Expectation-Maximization (SAEM) algorithm. The package supports forced covariates, fixed-effects, and provides S4 classes for model specification, data handling, and results visualization. It also includes plotting and diagnostic tools for convergence and selection criteria. For macOS, compilation of the C++ code requires gfortran >= 14.x (<https://mac.r-project.org/tools/>).
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: R (>= 4.5)
