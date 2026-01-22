@@ -11,3 +11,5 @@
 .Rproj.user
 vignettes/*.html
 src/*.rds
+src/*.o
+src/*.so
