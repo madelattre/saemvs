@@ -7,7 +7,7 @@ library(mvtnorm)
 set.seed(1123)
 
 # ------------------------------------------------------------
-# Fonction du modèle
+# Model function
 # ------------------------------------------------------------
 g <- function(phi, t) {
   # Fonction logistique décalée
@@ -15,7 +15,7 @@ g <- function(phi, t) {
 }
 
 # ------------------------------------------------------------
-# Paramètres généraux
+# Parameters
 # ------------------------------------------------------------
 n     <- 100
 jmin  <- 25
@@ -26,12 +26,12 @@ tmax  <- 3000
 sigma2 <- 30
 
 # ------------------------------------------------------------
-# Effets aléatoires
+# Random effects
 # ------------------------------------------------------------
-gamma2 <- diag(c(200, 10, 50))  # Covariance des effets aléatoires de phi
+gamma2 <- diag(c(200, 10, 50))  # Covariance matrix
 
 # ------------------------------------------------------------
-# Effets fixes et covariables
+# Parameters and covariates
 # ------------------------------------------------------------
 mu <- matrix(c(1200, 200, 500), ncol = 1)
 
@@ -44,9 +44,6 @@ beta <- rbind(
 beta_tilde <- cbind(mu, beta)
 p <- ncol(beta)
 
-# ------------------------------------------------------------
-# Génération des covariables
-# ------------------------------------------------------------
 covariates <- cbind(
   1,
   scale(matrix(rnorm(n * p), nrow = n, ncol = p))
@@ -55,9 +52,9 @@ covariates <- cbind(
 x <- covariates[, -1]
 
 # ------------------------------------------------------------
-# Génération des effets aléatoires phi
+# Random effects
 # ------------------------------------------------------------
-phi_mean <- beta_tilde %*% t(covariates)  # 2 x n
+phi_mean <- beta_tilde %*% t(covariates)
 
 phi <- t(
   phi_mean +
@@ -65,7 +62,7 @@ phi <- t(
 )
 
 # ------------------------------------------------------------
-# Génération des données longitudinales
+# Longitudinal data
 # ------------------------------------------------------------
 j_vec <- sample(jmin:jmax, n, replace = TRUE)
 
@@ -85,7 +82,7 @@ for (i in seq_len(n)) {
 }
 
 # ------------------------------------------------------------
-# Mise en forme long format
+# Dataframes
 # ------------------------------------------------------------
 df_long <- data.frame(
   id   = unlist(id_all),
@@ -93,16 +90,12 @@ df_long <- data.frame(
   y    = unlist(y_all)
 )
 
-# ------------------------------------------------------------
-# Covariables
-# ------------------------------------------------------------
 df_cov <- as.data.frame(x)
 colnames(df_cov) <- paste0("x", seq_len(p))
 df_cov$id <- seq_len(n)
 
 # ------------------------------------------------------------
-# Sauvegarde
+# Save
 # ------------------------------------------------------------
 save(df_long, file = "data/df_long.rda")
 save(df_cov,  file = "data/df_cov.rda", compress = "xz")
-

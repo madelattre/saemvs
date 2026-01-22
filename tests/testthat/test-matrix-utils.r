@@ -284,10 +284,9 @@ test_that(
       extract_rows_with_ones(matrix(0, nrow = 1, ncol = 1)),
       integer(0)
     )
-    expect_identical(extract_rows_with_ones(matrix(c(0, 1, 0),
-      nrow = 3,
-      ncol = 1
-    )), as.integer(2))
+    expect_identical(
+      extract_rows_with_ones(matrix(c(0, 1, 0), nrow = 3, ncol = 1)), # nolint : indentation_linter
+      as.integer(2))
   }
 )
 

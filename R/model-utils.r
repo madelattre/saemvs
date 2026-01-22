@@ -142,120 +142,6 @@ transpile_to_cpp <- function(
     return(paste0("temp_", context$temp_counter)) # nolint: return_linter
   }
 
-  # Infer type and generate initialization code for environment variables
-  # infer_and_init_env_var <- function(var_name) {
-  #   # Check if variable exists in function environment
-  #   if (!is.null(context$func_env)) {
-  #     if (exists(var_name, envir = context$func_env, inherits = TRUE)) { # modif TRUE/FALSE
-  #       var_value <- get(var_name, envir = context$func_env, inherits = TRUE) # modif TRUE/FALSE
-
-  #       # Infer type based on value
-  #       if (is.numeric(var_value)) {
-  #         if (length(var_value) == 1) {
-  #           # Scalar
-  #           return(list(
-  #             type = "double",
-  #             declaration = paste0(
-  #               "double ",
-  #               var_name,
-  #               " = ",
-  #               as.character(var_value),
-  #               ";"
-  #             )
-  #           ))
-  #         } else {
-  #           # Vector
-  #           values_str <- paste(var_value, collapse = ", ")
-  #           return(list(
-  #             type = "arma::vec",
-  #             declaration = paste0(
-  #               "arma::vec ",
-  #               var_name,
-  #               " = arma::vec({",
-  #               values_str, "});"
-  #             )
-  #           ))
-  #         }
-  #       } else if (is.logical(var_value)) {
-  #         if (length(var_value) == 1) {
-  #           return(list(
-  #             type = "bool",
-  #             declaration = paste0(
-  #               "bool ",
-  #               var_name,
-  #               " = ",
-  #               ifelse(var_value, "true", "false"),
-  #               ";"
-  #             )
-  #           ))
-  #         } else {
-  #           # Logical vector - convert to numeric
-  #           values_str <- paste(as.numeric(var_value), collapse = ", ")
-  #           return(list(
-  #             type = "arma::vec",
-  #             declaration = paste0(
-  #               "arma::vec ",
-  #               var_name,
-  #               " = arma::vec({",
-  #               values_str, "});"
-  #             )
-  #           ))
-  #         }
-  #       } else if (is.character(var_value)) {
-  #         # Character - not fully supported, but we'll try
-  #         if (length(var_value) == 1) {
-  #           return(list(
-  #             type = "std::string",
-  #             declaration = paste0(
-  #               "std::string ",
-  #               var_name,
-  #               " = \"",
-  #               var_value,
-  #               "\";"
-  #             )
-  #           ))
-  #         } else {
-  #           # Character vector - not supported,
-  #           # use first element
-  #           add_warning(paste(
-  #             "Character vector",
-  #             var_name,
-  #             "truncated to first element"
-  #           ))
-  #           return(list(
-  #             type = "std::string",
-  #             declaration = paste0(
-  #               "std::string ",
-  #               var_name,
-  #               " = \"",
-  #               var_value[1],
-  #               "\";"
-  #             )
-  #           ))
-  #         }
-  #       } else {
-  #         # Unknown type - default to double
-  #         add_warning(paste(
-  #           "Unknown type for variable",
-  #           var_name,
-  #           "- defaulting to double"
-  #         ))
-  #         return(list(
-  #           type = "double",
-  #           declaration = paste0("double ", var_name, " = 0.0;")
-  #         ))
-  #       }
-  #     }
-  #   }
-  #   # Variable not found in environment - default to double
-  #   return(list( # nolint: return_linter
-  #     type = "double",
-  #     declaration = paste0("double ", var_name, ";")
-  #   ))
-  # }
-
-
-
   declare_variable <- function(var_name, init_value = NULL) {
     if (!var_name %in% context$variables &&
           !var_name %in% context$param_names) {
@@ -277,7 +163,7 @@ transpile_to_cpp <- function(
         } else {
           type <- "double"
           decl <- paste0("double ", var_name, ";")
-          add_warning(paste("Unknown type for variable", 
+          add_warning(paste("Unknown type for variable",
                             var_name, "- defaulting to double"))
         }
       } else {
@@ -892,20 +778,6 @@ build_backend_r <- function(g_fun) {
     vapply(t, function(ti) g_fun(ti, phi), numeric(1))
   }
 
-  # rmvnorm <- function(mean, sigma) {
-  #   if (!requireNamespace("MASS", quietly = TRUE)) {
-  #     stop("Package MASS is required for R fallback.")
-  #   }
-  #   as.numeric(MASS::mvrnorm(1, mu = mean, Sigma = sigma))
-  # }
-
-  # rmvnorm_mat <- function(mean, sigma, n) {
-  #   if (!requireNamespace("MASS", quietly = TRUE)) {
-  #     stop("Package MASS is required for R fallback.")
-  #   }
-  #   MASS::mvrnorm(n = n, mu = mean, Sigma = sigma)
-  # }
-
   rmvnorm <- function(mean, sigma) {
     if (!requireNamespace("mvnfast", quietly = TRUE)) {
       stop("Package mvnfast is required.")
@@ -959,7 +831,6 @@ build_backend_r <- function(g_fun) {
     for (i in seq_len(n)) {
       y_i <- y[[i]]
       t_i <- t[[i]]
-      ni <- length(y_i)
 
       phi0 <- phi_current[[i]]
       mean_i <- mean_prop[[i]]
@@ -978,14 +849,6 @@ build_backend_r <- function(g_fun) {
         }
 
         logratio <- 0
-
-        # for (j in seq_len(ni)) {
-        #   mean_new <- g_scalar(t_i[j], phi_prop)
-        #   mean_old <- g_scalar(t_i[j], phi_old)
-        #   logratio <- logratio +
-        #     dnorm(y_i[j], mean_new, sd, log = TRUE) -
-        #     dnorm(y_i[j], mean_old, sd, log = TRUE)
-        # }
 
         mean_new <- g_scalar(t_i, phi_prop)
         mean_old <- g_scalar(t_i, phi_old)
@@ -1123,7 +986,9 @@ arma::vec rmvnorm_cpp(const arma::vec& mean, const arma::mat& sigma) {
   bool chol_ok = arma::chol(L, sigma, "lower");  // version safe, renvoie bool
 
   if (!chol_ok) {
-    Rcpp::stop("Error: covariance matrix is not positive definite (Cholesky failed).");
+    Rcpp::stop(
+    "Error: covariance matrix is not positive definite (Cholesky failed)."
+    );
   }
 
   // Generer la variable normale
@@ -1132,7 +997,9 @@ arma::vec rmvnorm_cpp(const arma::vec& mean, const arma::mat& sigma) {
 }
 
 // [[Rcpp::export]]
-arma::mat rmvnorm_mat_cpp(const arma::vec& mean, const arma::mat& sigma, int n) {
+arma::mat rmvnorm_mat_cpp(const arma::vec& mean, 
+                          const arma::mat& sigma, 
+                          int n) {
   // Verifier que sigma est finie
   if (!sigma.is_finite()) {
     Rcpp::stop("Error: covariance matrix contains NA, NaN, or Inf.");
@@ -1142,7 +1009,9 @@ arma::mat rmvnorm_mat_cpp(const arma::vec& mean, const arma::mat& sigma, int n) 
   arma::mat L;
   bool chol_ok = arma::chol(L, sigma, "lower");
   if (!chol_ok) {
-    Rcpp::stop("Error: covariance matrix is not positive definite (Cholesky failed).");
+    Rcpp::stop(
+    "Error: covariance matrix is not positive definite (Cholesky failed)."
+    );
   }
 
   int d = mean.n_elem;
@@ -1157,7 +1026,10 @@ arma::mat rmvnorm_mat_cpp(const arma::vec& mean, const arma::mat& sigma, int n) 
 }
 
 // [[Rcpp::export]]
-double loglik_cpp(List yi_list, List ti_list, List phi_samples_list, double sigma2) {
+double loglik_cpp(List yi_list, 
+                  List ti_list, 
+                  List phi_samples_list, 
+                  double sigma2) {
   int n = yi_list.size();
   double loglike = 0.0;
   for(int i = 0; i < n; i++) {
@@ -1176,7 +1048,9 @@ double loglik_cpp(List yi_list, List ti_list, List phi_samples_list, double sigm
         } 
       contribution += exp(-sumsq / (2.0 * sigma2));
     }
-    loglike += log(pow(2.0 * M_PI * sigma2, -ni/2.0) * contribution / n_samples);
+    loglike += log(
+    pow(2.0 * M_PI * sigma2, -ni/2.0) * contribution / n_samples
+    );
   }
   return loglike;
 }

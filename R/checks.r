@@ -20,7 +20,7 @@ check_covariance <- function(mat, name_mat) {
   if (min(eigenvalues) < 1e-8) {
     return(sprintf("%s must be positive definite.", name_mat))
   }
-  return(NULL)
+  return(NULL) # nolint: return-linter
 }
 
 #' Check that a numeric slot is strictly positive
@@ -32,7 +32,7 @@ check_positive_slot <- function(slot, name_slot) {
   if (slot <= 0) {
     return(sprintf("%s must be strictly positive.", name_slot))
   }
-  return(NULL)
+  return(NULL) # nolint: return-linter
 }
 
 
@@ -46,7 +46,7 @@ check_positive_or_null_slot <- function(slot, name_slot) {
   if (!is.null(slot) && slot <= 0) {
     return(sprintf("%s must be NULL or strictly positive.", name_slot))
   }
-  return(NULL)
+  return(NULL) # nolint: return-linter
 }
 
 #' Check that a numeric slot is a strictly positive integer
@@ -59,5 +59,5 @@ check_positive_integer_slot <- function(slot, name_slot) {
   if ((slot <= 0) || !is.integer(slot)) {
     return(sprintf("%s must be a strictly positive integer.", name_slot))
   }
-  return(NULL)
+  return(NULL) # nolint: return-linter
 }

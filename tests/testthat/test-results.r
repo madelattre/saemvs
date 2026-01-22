@@ -61,7 +61,7 @@ phi_iter <- list(
          dimnames = list(c("id1", "id2"), c("phi1", "phi2"))),
   matrix(c(2, 3, 4, 5), nrow = 2,
          dimnames = list(c("id1", "id2"), c("phi1", "phi2"))),
-  matrix(c(3, 4, 5, 6), nrow = 2, 
+  matrix(c(3, 4, 5, 6), nrow = 2,
          dimnames = list(c("id1", "id2"), c("phi1", "phi2")))
 )
 
@@ -135,7 +135,7 @@ test_that("predict() fails when k is larger than available iterations", {
 # --- Tests for summary(saemvsResults) ---
 # ---------------------------------------------
 
-mock_saemvsResults <- function() {
+mock_saemvsResults <- function() { # nolint: object_name_linter
   new(
     "saemvsResults",
     criterion = "BIC",

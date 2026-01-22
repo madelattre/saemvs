@@ -5,7 +5,8 @@ if (getRversion() >= "2.15.1") {
   )
 }
 
-# Create stubs for C++ functions dynamically generated at runtime, only for NOT_CRAN
+# Create stubs for C++ functions dynamically generated
+# at runtime, only for NOT_CRAN
 if (getRversion() >= "2.15.1") {
   if (identical(Sys.getenv("NOT_CRAN"), "true")) {
     g_vector_cpp <- function(...) stop("stub")
@@ -28,3 +29,8 @@ utils::globalVariables(c(
   "loglik_cpp",
   "rmvnorm_mat_cpp"
 ))
+
+# Rcpp / native code
+#' @useDynLib saemvs, .registration = TRUE
+#' @importFrom Rcpp sourceCpp
+NULL

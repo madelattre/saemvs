@@ -197,7 +197,7 @@ m_step_to_select <- function(config, k, state, backend) {
 
   state$alpha[[k + 1]] <- (sum_pstar_k + config$inclusion_prob_prior_a - 1) /
     (config$num_covariates_to_select + config$inclusion_prob_prior_b +
-      config$inclusion_prob_prior_a - 2)
+       config$inclusion_prob_prior_a - 2)
 
   s_xgx <- config$kron_tx_x_phi_to_select +
     kronecker_gamma_diag_mult(

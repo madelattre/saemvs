@@ -19,7 +19,7 @@ test_that("compile_model adjusts R indices for C++ correctly", {
 test_that("compile_model generates code containing expected functions", {
   body_txt <- deparse(body(g_fun_min)) |> paste(collapse = "")
   code_cpp <- sprintf(
-    "// [[Rcpp::export]]\ninline double g_scalar_cpp(const arma::vec& phi, double t) { return %s; }",
+    "// [[Rcpp::export]]\ninline double g_scalar_cpp(const arma::vec& phi, double t) { return %s; }", # nolint : line_length_linter
     body_txt
   )
 
@@ -32,7 +32,7 @@ test_that("compile_model creates temporary file for C++", {
   tmp_file <- tempfile(fileext = ".cpp")
   body_txt <- deparse(body(g_fun_min)) |> paste(collapse = "")
   code_cpp <- sprintf(
-    "// [[Rcpp::export]]\ninline double g_scalar_cpp(const arma::vec& phi, double t) { return %s; }",
+    "// [[Rcpp::export]]\ninline double g_scalar_cpp(const arma::vec& phi, double t) { return %s; }", # nolint : line_length_linter
     body_txt
   )
   writeLines(code_cpp, tmp_file)
@@ -46,7 +46,7 @@ test_that("compile_model does not execute compilation (CRAN safe)", {
   expect_silent({
     body_txt <- deparse(body(g_fun_min)) |> paste(collapse = "")
     code_cpp <- sprintf(
-      "// [[Rcpp::export]]\ninline double g_scalar_cpp(const arma::vec& phi, double t) { return %s; }",
+      "// [[Rcpp::export]]\ninline double g_scalar_cpp(const arma::vec& phi, double t) { return %s; }", # nolint : line_length_linter
       body_txt
     )
   })

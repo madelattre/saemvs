@@ -69,7 +69,7 @@ test_that("make_phi_fn and transpile_to_cpp produce valid output", {
     # Ensure eval_result does not throw an error
     expect_false(inherits(res$eval_result, "error"))
 
-    # Optionally: 
+    # Optionally:
     # check result is numeric (most functions produce numeric output)
     expect_type(res$eval_result, "double")
   }

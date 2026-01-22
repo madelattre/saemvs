@@ -82,10 +82,10 @@
 #' @keywords internal
 #' @noRd
 .format_list_of_vectors <- function(lst,
-                                   max_items = 3,
-                                   max_vec_length = 5,
-                                   digits = 3,
-                                   indent = "  ") {
+                                    max_items = 3,
+                                    max_vec_length = 5,
+                                    digits = 3,
+                                    indent = "  ") {
   if (length(lst) == 0) {
     return("list()")
   }

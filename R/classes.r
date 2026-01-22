@@ -801,13 +801,13 @@ setClass(
 #' g <- function(t, a, b, c) {
 #' b + a / (1 + exp(-(t - c)))
 #' }
-#' 
+#'
 #' # Create saemvsModel object
 #' model <- saemvsModel(
 #' g = g,
 #' phi_to_select = c("a", "c")
 #' )
-#' 
+#'
 #' # Model with forced covariate x1
 #' model2 <- saemvsModel(
 #'   g = g,
@@ -1078,7 +1078,7 @@ saemvsHyperSpikeAndSlab <- function( # nolint:  object_name_linter.
 }
 
 #' @title saemvsInit class
-#' @description 
+#' @description
 #' Stores the initial values of parameters provided by the user for the SAEMVS
 #'  algorithm.
 #'
@@ -1296,7 +1296,7 @@ setClass(
 #'  phi components.
 #' @return An object of class \code{saemvsProcessedInit}.
 #' @keywords internal
-#' @noRd 
+#' @noRd
 
 saemvsProcessedInit <- function( # nolint:  object_name_linter.
     beta_to_select = NULL,
@@ -1491,7 +1491,7 @@ setClass(
 #'
 #' @return An object of class \code{saemvsTuning}.
 #' @export
-saemvsTuning <- function( # nolint:  object_name_linter.    
+saemvsTuning <- function( # nolint:  object_name_linter.
     niter = 500,
     nburnin = 350,
     niter_mh = 5,

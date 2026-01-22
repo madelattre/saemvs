@@ -6,20 +6,6 @@
 
 # --- Prepare useful objects
 
-# y_series_list <- list(1:3, 4:6)
-# t_series_list <- list(1:3, 1:3)
-# x_candidates_ok <- matrix(1:4, nrow = 2)
-# x_candidates_bad <- matrix(1:2, nrow = 1) # mauvaise nrow
-# x_forced_ok <- matrix(c(1, 0), ncol = 1)
-# x_forced_bad <- matrix(letters[1:4], 2, 2)
-
-# data_base <- saemvsData(
-#   y = y_series_list,
-#   t = t_series_list,
-#   x_candidates = x_candidates_ok,
-#   x_forced = x_forced_ok
-# )
-
 data_base <- data.frame(
   id    = rep(1:2, each = 3),
   y     = c(1, 2, 3, 4,  5, 6),

@@ -56,14 +56,6 @@ test_that("saemvsModel: unknown phi_to_select or phi_fixed names raise error", {
     ),
     regexp = "phi_to_select"
   )
-  # expect_error(
-  #   saemvsModel(
-  #     g = g_valid,
-  #     phi_to_select = phi_to_select_ok,
-  #     phi_fixed = phi_fixed_overlap
-  #   ),
-  #   regexp = "Unknown parameter(s) in 'phi_fixed'"
-  # )
 })
 
 test_that("saemvsModel: x_forced_support validation", {

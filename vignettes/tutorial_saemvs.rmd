@@ -104,7 +104,7 @@ g <- function(t, a, b, c) {
   b + a / (1 + exp(-(t - c)))
 }
 
-# Create saemvsModel object  
+# Create saemvsModel object
 model <- saemvsModel(
   g = g,
   phi_to_select = c("a", "c")
@@ -177,7 +177,9 @@ result <- saemvs(
 After running the SAEMVS procedure, you can inspect the selected variables and the estimated parameters.
 
 ```{r load_result, include = FALSE}
-result <- readRDS(system.file("extdata", "result_basic_example.rds", package = "saemvs"))
+result <- readRDS(system.file(
+  "extdata", "result_basic_example.rds", package = "saemvs"
+))
 ```
 
 You can get a summary of the selected variables and parameter estimates using the `summary()` function, which gives an overview of the parameters selected by the procedure and their estimated values in the best model.
@@ -218,13 +220,13 @@ In the example below, parameter `b` is treated as a fixed effect:
 - The intercept is still initialized in `intercept`.
 
 ```{r}
-model_with_fixed_effects <- saemvsModel(
+model_fe <- saemvsModel(
   g = g,
   phi_to_select = c("a", "c"),
   phi_fixed = c("b")
 )
 
-init_values_with_fixed_effects <- saemvsInit(
+init_values_fe <- saemvsInit(
   intercept = c(1300, 350, 250),
   beta_candidates = matrix(
     c(
@@ -240,18 +242,22 @@ init_values_with_fixed_effects <- saemvsInit(
 ```
 
 ```{r run_saemvs_fixed_effects, eval = FALSE}
-# Run the SAEMVS algorithm 
+# Run the SAEMVS algorithm
 result_with_fixed_effects <- saemvs(
   data = saemvs_input,
-  model = model_with_fixed_effects,
-  init = init_values_with_fixed_effects,
+  model = model_fe,
+  init = init_values_fe,
   tuning_algo = tuning,
   hyperparam = hyper_slab
 )
 ```
 
 ```{r load_results_wfe, include = FALSE}
-result_with_fixed_effects <- readRDS(system.file("extdata", "result_with_fixed_effects.rds", package = "saemvs"))
+result_with_fixed_effects <- readRDS(
+  system.file(
+    "extdata", "result_with_fixed_effects.rds", package = "saemvs"
+  )
+)
 ```
 
 ```{r results_saemvs_fixed_effects}
@@ -265,7 +271,7 @@ In some applications, it is necessary to force the inclusion of certain covariat
 With the `saemvsData_from_df()` interface, forced covariates are specified directly in the formula using a `+` sign:
 
 ```{r}
-saemvs_input_with_forced_covariates <- saemvsData_from_df(
+saemvs_input_fc <- saemvsData_from_df(
   formula = as.formula("y ~ + x1  + repeated(time) + group(id)"),
   data = full_data
 )
@@ -280,7 +286,7 @@ Here:
 You still need to specify which model parameters are affected by the forced covariates and provide initial values:
 
 ```{r}
-model_with_forced_covariates <- saemvsModel(
+model_with_fc <- saemvsModel(
   g = g,
   phi_to_select = c("a", "c"),
   x_forced_support = list(
@@ -289,7 +295,7 @@ model_with_forced_covariates <- saemvsModel(
   )
 )
 
-init_values_with_forced_covariates <- saemvsInit(
+init_values_fc <- saemvsInit(
   intercept = c(1300, 350, 250),
   beta_candidates = matrix(
     c(
@@ -314,16 +320,20 @@ init_values_with_forced_covariates <- saemvsInit(
 
 ```{r run_saemvs_forced_covariates, eval= FALSE}
 result_with_forced_covariates <- saemvs(
-  data = saemvs_input_with_forced_covariates,
-  model = model_with_forced_covariates,
-  init = init_values_with_forced_covariates,
+  data = saemvs_input_fc,
+  model = model_with_fc,
+  init = init_values_fc,
   tuning_algo = tuning,
   hyperparam = hyper_slab
 )
 ```
 
 ```{r load_results_wfc, include = FALSE}
-result_with_forced_covariates <- readRDS(system.file("extdata", "result_with_forced_covariates.rds", package = "saemvs"))
+result_with_forced_covariates <- readRDS(
+  system.file(
+    "extdata", "result_with_forced_covariates.rds", package = "saemvs"
+  )
+)
 ```
 
 ```{r result_with_forced_covariates}

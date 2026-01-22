@@ -91,7 +91,7 @@ setMethod(
     )
 
     if (is.null(model@x_forced_support) ||
-        length(model@x_forced_support) == 0) {
+          length(model@x_forced_support) == 0) {
 
       return(
         methods::new(
