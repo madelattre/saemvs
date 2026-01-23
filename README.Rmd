@@ -53,7 +53,7 @@ sudo apt install gfortran build-essential
 
 The package is not yet available on CRAN. The development version of **saemvs** can be installed directly from GitHub.
 
-```{r}
+```{r, eval = FALSE}
 # Install remotes if needed
 install.packages("remotes")
 

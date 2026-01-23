@@ -49,15 +49,9 @@ The package is not yet available on CRAN. The development version of
 ``` r
 # Install remotes if needed
 install.packages("remotes")
-#> 
-#> The downloaded binary packages are in
-#>  /var/folders/8d/s9fv3pks425g_km09b1bkxyh0000gp/T//Rtmprr76qd/downloaded_packages
 
 # Install saemvs from GitHub
 remotes::install_github("madelattre/saemvs")
-#> Using GitHub PAT from the git credential store.
-#> Skipping install of 'saemvs' from a github remote, the SHA1 (4c822d64) has not changed since last install.
-#>   Use `force = TRUE` to force installation
 ```
 
 ## Example
