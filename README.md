@@ -3,11 +3,9 @@
 
 # saemvs
 
-<!-- badges: start -->
-
-<!-- badges: end -->
-
-The goal of saemvs is to …
+`saemvs` implements high-dimensional variable selection for nonlinear
+mixed-effects models by coupling spike-and-slab priors with the
+Stochastic Approximation Expectation-Maximization (SAEM) algorithm.
 
 ## Installation
 
@@ -17,7 +15,7 @@ instructions for your operating system:
 
 ### macOS
 
-- R ≥ 4.5 is required.
+- R ≥ 4.1 is required.
 - gfortran ≥ 14.x must be installed for compiling C++ code.  
   Download the official gfortran 14.x installer here:  
   <https://mac.r-project.org/tools/>  
@@ -43,23 +41,99 @@ sudo apt update
 sudo apt install gfortran build-essential
 ```
 
-### Installing the package
+### Installation from GitHub
 
-After ensuring your system meets the requirements:
+The package is not yet available on CRAN. The development version of
+**saemvs** can be installed directly from GitHub.
 
 ``` r
-# Install dependencies first
-install.packages(c("Rcpp", "RcppArmadillo"), dependencies = TRUE)
+# Install remotes if needed
+install.packages("remotes")
+#> 
+#> The downloaded binary packages are in
+#>  /var/folders/8d/s9fv3pks425g_km09b1bkxyh0000gp/T//Rtmprr76qd/downloaded_packages
 
-# Then install the package (from a local .tar.gz or source)
-remotes::install_local("path/to/your_package.tar.gz", dependencies = TRUE)
+# Install saemvs from GitHub
+remotes::install_github("madelattre/saemvs")
+#> Using GitHub PAT from the git credential store.
+#> Skipping install of 'saemvs' from a github remote, the SHA1 (4c822d64) has not changed since last install.
+#>   Use `force = TRUE` to force installation
+```
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
-
+Below is a minimal example illustrating the main workflow of the
+package. For a complete and reproducible analysis, please refer to the
+package vignettes.
 
 ``` r
 library(saemvs)
-## basic example code
+data(df_long)
+data(df_cov)
+
+
+## Join the two dataframes and declaring the saemvsData object
+
+full_data <- merge(df_long, df_cov, by = "id")
+
+saemvs_input <- saemvsData_from_df(
+  formula = as.formula("y ~ . + repeated(time) + group(id)"),
+  data = full_data
+)
+
+# Define the model function
+g <- function(t, a, b, c) {
+  b + a / (1 + exp(-(t - c)))
+}
+
+# Create saemvsModel object
+model <- saemvsModel(
+  g = g,
+  phi_to_select = c("a", "c")
+)
+
+
+# Define hyperparameters for the slab
+hyper_slab <- saemvsHyperSlab(
+  cov_re_prior_scale = diag(rep(0.2, 2)),
+  cov_re_prior_df = 4
+)
+
+
+# Define tuning parameters
+tuning <- saemvsTuning(
+  niter = 1000,
+  nburnin = 800,
+  spike_values_grid = exp(-3 + seq(3, 10) * 3 / 4) 
+)
+
+# Define initial values
+init_values <- saemvsInit(
+  intercept = c(1300, 350, 400),
+  beta_candidates = matrix(
+    c(
+      80, 20, 20, rep(0, 47), 
+      rep(0, 50), 
+      15, 0, 5, rep(0, 47)
+    ),
+    ncol = 3
+  ),
+  cov_re = diag(c(400, 200, 200)), 
+  sigma2 = 100
+)
+
+# Run the SAEMVS algorithm
+result <- saemvs(
+  data = saemvs_input,
+  model = model,
+  init = init_values,
+  tuning_algo = tuning,
+  hyperparam = hyper_slab
+)
+
+summary(result)
+
+plot(result, type = "criterion")
+plot(result, type = "coefficients")[[1]]
+plot(result, type = "coefficients")[[2]]
 ```

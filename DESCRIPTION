@@ -7,16 +7,16 @@ Authors@R: person(
     family = "Delattre",
     role = c("aut", "cre"),
     email = "maud.delattre@inrae.fr")
-Description: Implements variable selection for nonlinear mixed-effects models using the Stochastic Approximation Expectation-Maximization (SAEM) algorithm. The package supports forced covariates, fixed-effects, and provides S4 classes for model specification, data handling, and results visualization. It also includes plotting and diagnostic tools for convergence and selection criteria. For macOS, compilation of the C++ code requires gfortran >= 14.x (<https://mac.r-project.org/tools/>).
+Description: Implements variable selection for nonlinear mixed-effects models using the Stochastic Approximation Expectation-Maximization (SAEM) algorithm. The package supports forced covariates, fixed-effects, and provides S4 classes for model specification, data handling, and results visualization. It also includes plotting and diagnostic tools for convergence and selection criteria. 
 License: MIT + file LICENSE
 Encoding: UTF-8
-Depends: R (>= 4.5)
+Depends: R (>= 4.1)
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 LinkingTo: 
     Rcpp,
     RcppArmadillo
-SystemRequirements: LAPACK
+SystemRequirements: BLAS, LAPACK, Fortran
 Imports: 
     Rcpp,
     mvnfast,
@@ -37,3 +37,5 @@ Suggests:
     survival
 Config/testthat/edition: 3
 VignetteBuilder: knitr
+URL: https://github.com/madelattre/saemvs
+BugReports: https://github.com/madelattre/saemvs/issues
