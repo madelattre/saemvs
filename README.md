@@ -51,14 +51,14 @@ The package is not yet available on CRAN. The development version of
 install.packages("remotes")
 
 # Install saemvs from GitHub
-remotes::install_github("madelattre/saemvs")
+remotes::install_github("madelattre/saemvs", build_vignettes = TRUE)
 ```
 
 ## Example
 
 Below is a minimal example illustrating the main workflow of the
 package. For a complete and reproducible analysis, please refer to the
-package vignettes.
+package vignettes (`browseVignettes("saemvs")`).
 
 ``` r
 library(saemvs)
