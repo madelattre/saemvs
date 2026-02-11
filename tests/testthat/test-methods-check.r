@@ -7,11 +7,11 @@
 # --- Prepare useful objects
 
 data_base <- data.frame(
-  id    = rep(1:2, each = 3),
-  y     = c(1, 2, 3, 4,  5, 6),
-  t     = rep(1:3, 2),
-  cov1  = c(10, 10, 10, 20, 20, 20),
-  cov2  = c(5, 5, 5, 7, 7, 7),
+  id = rep(1:2, each = 3),
+  y = c(1, 2, 3, 4, 5, 6),
+  t = rep(1:3, 2),
+  cov1 = c(10, 10, 10, 20, 20, 20),
+  cov2 = c(5, 5, 5, 7, 7, 7),
   forced_cov = c(0, 0, 0, 1, 1, 1)
 )
 
@@ -65,7 +65,6 @@ tuning_base <- saemvsTuning(
   mh_proposal_scale = 1.0,
   spike_values_grid = c(0.05, 0.08),
   n_is_samples = 1000,
-  seed = 123,
   nb_workers = 1
 )
 

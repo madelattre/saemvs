@@ -37,10 +37,6 @@ mh_scale_invalid <- 0
 n_is_samples_valid <- 10000
 n_is_samples_invalid <- 3.5
 
-# seed
-seed_valid <- 123
-seed_invalid <- 2.5
-
 # nb_workers
 nb_workers_valid <- 2
 nb_workers_invalid <- 0
@@ -56,7 +52,6 @@ test_that("Valid creation", {
     mh_proposal_scale = mh_scale_valid,
     spike_values_grid = spike_grid_valid,
     n_is_samples = n_is_samples_valid,
-    seed = seed_valid,
     nb_workers = nb_workers_valid
   )
   expect_s4_class(obj, "saemvsTuning")
@@ -111,13 +106,6 @@ test_that("spike_values_grid validation", {
 test_that("n_is_samples validation", {
   expect_error(saemvsTuning(
     n_is_samples = n_is_samples_invalid,
-    spike_values_grid = spike_grid_valid
-  ))
-})
-
-test_that("seed validation", {
-  expect_error(saemvsTuning(
-    seed = seed_invalid,
     spike_values_grid = spike_grid_valid
   ))
 })

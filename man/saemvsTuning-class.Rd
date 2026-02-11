@@ -40,8 +40,6 @@ non-empty).}
 \item{\code{n_is_samples}}{Number of importance sampling iterations for
 log-likelihood estimation.}
 
-\item{\code{seed}}{Integer random seed for reproducibility.}
-
 \item{\code{nb_workers}}{Number of parallel workers for SAEMVS.}
 }}
 

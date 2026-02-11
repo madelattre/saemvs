@@ -69,20 +69,20 @@ setClassUnion("characterORNULL", c("character", "NULL"))
 setClass(
   "saemvsData",
   slots = list(
-    y_series     = "list",
-    t_series     = "list",
+    y_series = "list",
+    t_series = "list",
     x_candidates = "matrixORNULL",
-    x_forced     = "matrixORNULL",
+    x_forced = "matrixORNULL",
     x_candidates_names = "characterORNULL",
-    x_forced_names     = "characterORNULL"
+    x_forced_names = "characterORNULL"
   ),
   prototype = list(
-    y_series     = list(),
-    t_series     = list(),
+    y_series = list(),
+    t_series = list(),
     x_candidates = NULL,
-    x_forced     = NULL,
+    x_forced = NULL,
     x_candidates_names = NULL,
-    x_forced_names     = NULL
+    x_forced_names = NULL
   ),
   validity = function(object) {
     n <- length(object@y_series)
@@ -170,7 +170,6 @@ setClass(
           ))
         }
       }
-
     }
 
     TRUE
@@ -189,13 +188,12 @@ setClass(
 #' @return An object of class \code{saemvsData}.
 #' @keywords internal
 #' @noRd
-saemvsData <- function( # nolint:  object_name_linter.
-  y,
-  t,
-  x_candidates = NULL,
-  x_forced = NULL
-) {
-
+saemvsData <- function(
+    # nolint:  object_name_linter.
+    y,
+    t,
+    x_candidates = NULL,
+    x_forced = NULL) {
   if (!is.null(x_candidates) && !is.matrix(x_candidates)) {
     stop("'x_candidates' must be a matrix or NULL.")
   }
@@ -221,7 +219,7 @@ saemvsData <- function( # nolint:  object_name_linter.
   }
 
   colnames(x_candidates) <- x_candidates_names
-  colnames(x_forced)     <- x_forced_names
+  colnames(x_forced) <- x_forced_names
 
   methods::new(
     "saemvsData",
@@ -296,7 +294,6 @@ saemvsData <- function( # nolint:  object_name_linter.
 #' @export
 saemvsData_from_df <- function(formula, # nolint:  object_name_linter.
                                data) {
-
   if (anyNA(data)) {
     stop("Data contains missing values. Please remove all NA values from the dataframe before proceeding.") # nolint: line_length_linter.
   }
@@ -335,7 +332,6 @@ saemvsData_from_df <- function(formula, # nolint:  object_name_linter.
   covar_df <- covar_df[!duplicated(covar_df[[id_col]]), ]
 
   if (!is.null(x_forced_cols)) {
-
     missing_forced <- setdiff(x_forced_cols, names(covar_df))
     if (length(missing_forced) > 0) {
       stop(sprintf(
@@ -481,7 +477,8 @@ setClass(
 #' Internal constructor for saemvsProcessedData
 #' @keywords internal
 #' @noRd
-saemvsProcessedData <- function( # nolint:  object_name_linter.
+saemvsProcessedData <- function(
+    # nolint:  object_name_linter.
     x_phi_to_select = NULL,
     x_phi_not_to_select = NULL,
     tx_x_phi_to_select = NULL,
@@ -562,8 +559,8 @@ setClass(
     # Check indices
     if (!(
       (is.null(object@phi_to_select_idx) ||
-         all(object@phi_to_select_idx >= 1 &
-               object@phi_to_select_idx <= object@phi_dim))
+        all(object@phi_to_select_idx >= 1 &
+          object@phi_to_select_idx <= object@phi_dim))
     )
     ) {
       return("
@@ -573,7 +570,7 @@ setClass(
       if (!(
         (is.null(object@phi_fixed_idx)) ||
           all(object@phi_fixed_idx >= 1 &
-                object@phi_fixed_idx <= object@phi_dim)
+            object@phi_fixed_idx <= object@phi_dim)
       )
       ) {
         return("
@@ -699,11 +696,13 @@ setClass(
       silent = TRUE
     )
 
-    if (inherits(res, "try-error"))
+    if (inherits(res, "try-error")) {
       return("model_func cannot be evaluated on simple numeric inputs")
+    }
 
-    if (!is.numeric(res) || length(res) != 1L)
+    if (!is.numeric(res) || length(res) != 1L) {
       return("model_func must return a numeric scalar")
+    }
 
     ## ---- phi_to_select ----
     if (!is.null(object@phi_to_select) && !is.null(phi_names)) {
@@ -799,13 +798,13 @@ setClass(
 #' @examples
 #' # Define the model function
 #' g <- function(t, a, b, c) {
-#' b + a / (1 + exp(-(t - c)))
+#'   b + a / (1 + exp(-(t - c)))
 #' }
 #'
 #' # Create saemvsModel object
 #' model <- saemvsModel(
-#' g = g,
-#' phi_to_select = c("a", "c")
+#'   g = g,
+#'   phi_to_select = c("a", "c")
 #' )
 #'
 #' # Model with forced covariate x1
@@ -813,11 +812,12 @@ setClass(
 #'   g = g,
 #'   phi_to_select = c("a", "c"),
 #'   x_forced_support = list(
-#'    a = c("x1")
-#'  )
+#'     a = c("x1")
+#'   )
 #' )
 #' @export
-saemvsModel <- function( # nolint:  object_name_linter.
+saemvsModel <- function(
+    # nolint:  object_name_linter.
     g,
     phi_to_select = NULL,
     phi_fixed = NULL,
@@ -998,7 +998,8 @@ setClass(
 #' }
 #'
 #' @export
-saemvsHyperSlab <- function( # nolint:  object_name_linter.
+saemvsHyperSlab <- function(
+    # nolint:  object_name_linter.
     slab_parameter = 12000,
     cov_re_prior_scale,
     cov_re_prior_df = 1) {
@@ -1061,7 +1062,8 @@ setClass(
 #' @noRd
 #' @return An object of class \code{saemvsHyperSpikeAndSlab}
 #' @name saemvsHyperSpikeAndSlab
-saemvsHyperSpikeAndSlab <- function( # nolint:  object_name_linter.
+saemvsHyperSpikeAndSlab <- function(
+    # nolint:  object_name_linter.
     spike_parameter,
     hyper_slab) {
   methods::new("saemvsHyperSpikeAndSlab",
@@ -1220,7 +1222,8 @@ setClass(
 #' @param default Logical. If TRUE, ignore all slots except intercept.
 #' @return An object of class \code{saemvsInit}.
 #' @export
-saemvsInit <- function( # nolint:  object_name_linter.
+saemvsInit <- function(
+    # nolint:  object_name_linter.
     intercept,
     beta_forced = NULL,
     beta_candidates = NULL,
@@ -1298,7 +1301,8 @@ setClass(
 #' @keywords internal
 #' @noRd
 
-saemvsProcessedInit <- function( # nolint:  object_name_linter.
+saemvsProcessedInit <- function(
+    # nolint:  object_name_linter.
     beta_to_select = NULL,
     beta_not_to_select = NULL,
     gamma_to_select = NULL,
@@ -1349,7 +1353,6 @@ saemvsProcessedInit <- function( # nolint:  object_name_linter.
 #'  non-empty).
 #' @slot n_is_samples Number of importance sampling iterations for
 #'  log-likelihood estimation.
-#' @slot seed Integer random seed for reproducibility.
 #' @slot nb_workers Number of parallel workers for SAEMVS.
 #'
 #' @exportClass saemvsTuning
@@ -1366,7 +1369,6 @@ setClass(
     mh_proposal_scale = "numeric",
     spike_values_grid = "numericORNULL",
     n_is_samples = "numeric",
-    seed = "numeric",
     nb_workers = "numeric"
   ),
   prototype = list(
@@ -1379,7 +1381,6 @@ setClass(
     mh_proposal_scale = 1.5,
     spike_values_grid = NULL,
     n_is_samples = 10000,
-    seed = 220916,
     nb_workers = 4
   ),
   validity = function(object) {
@@ -1409,9 +1410,6 @@ setClass(
     }
     if (!is_integerish(object@n_is_samples)) {
       return("'n_is_samples' must be a positive integer.")
-    }
-    if (!is_integerish(object@seed, allow_zero = TRUE)) {
-      return("'seed' must be an integer.")
     }
     if (!is_integerish(object@nb_workers)) {
       return("'nb_workers' must be a positive integer.")
@@ -1486,12 +1484,12 @@ setClass(
 #' @param spike_values_grid Numeric vector, strictly positive and non-empty.
 #' @param n_is_samples Integer. Number of importance sampling iterations
 #'  (positive).
-#' @param seed Integer. Random seed for reproducibility.
 #' @param nb_workers Integer. Number of parallel workers (positive).
 #'
 #' @return An object of class \code{saemvsTuning}.
 #' @export
-saemvsTuning <- function( # nolint:  object_name_linter.
+saemvsTuning <- function(
+    # nolint:  object_name_linter.
     niter = 500,
     nburnin = 350,
     niter_mh = 5,
@@ -1500,7 +1498,6 @@ saemvsTuning <- function( # nolint:  object_name_linter.
     mh_proposal_scale = 1.0,
     spike_values_grid,
     n_is_samples = 10000,
-    seed = 220916,
     nb_workers = 4) {
   step <- c(
     rep(1, nburnin - 1),
@@ -1517,7 +1514,6 @@ saemvsTuning <- function( # nolint:  object_name_linter.
     mh_proposal_scale = mh_proposal_scale,
     spike_values_grid = sort(spike_values_grid),
     n_is_samples = n_is_samples,
-    seed = seed,
     nb_workers = nb_workers
   )
 }
@@ -1724,7 +1720,7 @@ setClass(
     # Check beta_to_select
     if (!is.null(object@beta_to_select)) {
       if (!is.list(object@beta_to_select) ||
-            !all(vapply(object@beta_to_select, is.matrix, logical(1)))) {
+        !all(vapply(object@beta_to_select, is.matrix, logical(1)))) {
         return("'beta_to_select' must be a list of matrices.")
       }
     }
@@ -1732,7 +1728,7 @@ setClass(
     # Check beta_not_to_select
     if (!is.null(object@beta_not_to_select)) {
       if (!is.list(object@beta_not_to_select) ||
-            !all(vapply(object@beta_not_to_select, is.matrix, logical(1)))) {
+        !all(vapply(object@beta_not_to_select, is.matrix, logical(1)))) {
         return("'beta_not_to_select' must be a list of matrices.")
       }
     }
@@ -1740,7 +1736,7 @@ setClass(
     # Check gamma_to_select
     if (!is.null(object@gamma_to_select)) {
       if (!is.list(object@gamma_to_select) ||
-            !all(vapply(object@gamma_to_select, is.matrix, logical(1)))) {
+        !all(vapply(object@gamma_to_select, is.matrix, logical(1)))) {
         return("'gamma_to_select' must be a list of matrices.")
       }
     }
@@ -1748,7 +1744,7 @@ setClass(
     # Check gamma_not_to_select
     if (!is.null(object@gamma_not_to_select)) {
       if (!is.list(object@gamma_not_to_select) ||
-            !all(vapply(object@gamma_not_to_select, is.matrix, logical(1)))) {
+        !all(vapply(object@gamma_not_to_select, is.matrix, logical(1)))) {
         return("'gamma_not_to_select' must be a list of matrices.")
       }
     }

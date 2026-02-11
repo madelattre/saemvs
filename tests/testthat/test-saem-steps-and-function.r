@@ -74,7 +74,6 @@ tuning_base <- saemvsTuning(
   mh_proposal_scale = 1.0,
   spike_values_grid = c(0.05, 0.08),
   n_is_samples = 1000,
-  seed = 123,
   nb_workers = 1
 )
 
@@ -196,7 +195,7 @@ initprep_data_processed_no_select <- prepare_data( # nolint : object_length_lint
   initprep_data_simple, initprep_model_no_select_processed
 )
 
-initprep_init_no_select_processed <- prepare_init( # nolint : object_length_linter  
+initprep_init_no_select_processed <- prepare_init( # nolint : object_length_linter
   initprep_init_no_select,
   initprep_model_no_select_processed,
   initprep_data_processed_no_select
@@ -234,8 +233,7 @@ test_that("metropolis_s_step updates phi correctly", {
   expect_equal(dim(state_new$phi[[2]]), dim(test_state$phi[[1]]))
   expect_true(all(state_new$phi[[2]] == matrix(
     c(1, 2, 3, 4, 5, 6, 7, 8, 9),
-    3, 3
-    ,
+    3, 3,
     byrow = TRUE
   )))
 })
@@ -316,7 +314,6 @@ test_that("sa_step_not_to_select updates sufficient statistics correctly", {
 
 
 test_that("sa_step_all updates sufficient statistics correctly", {
-
   state_new <- sa_step_all(test_config, 1, test_state, fake_backend)
 
   expect_type(state_new$s1, "double")
@@ -453,7 +450,6 @@ test_that("perform_saem_iteration runs one iteration end-to-end", {
 # ---------------------------------------------
 
 test_that("run_saem_full executes multiple iterations without error", {
-
   result <- run_saem_full(
     test_config_no_select, test_state_no_select,
     sa_func = sa_step_not_to_select,

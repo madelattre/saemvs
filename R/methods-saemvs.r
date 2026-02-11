@@ -18,8 +18,7 @@
 #'   providing the initialization for the SAEM algorithm.
 #' @param tuning_algo An object of class
 #' \code{saemvsTuning} containing algorithmic tuning
-#' parameters such as the spike grid (`spike_values_grid`), number of workers,
-#' and random seed.
+#' parameters such as the spike grid (`spike_values_grid`) and number of workers.
 #' @param hyperparam An object of class
 #' \code{saemvsHyperSlab} containing the
 #' hyperparameters for the slab prior.
@@ -96,8 +95,7 @@
 setGeneric(
   "saemvs",
   function(
-    data, model, init, tuning_algo, hyperparam, pen = "e-BIC", use_cpp = TRUE
-  ) {
+      data, model, init, tuning_algo, hyperparam, pen = "e-BIC", use_cpp = TRUE) {
     standardGeneric("saemvs")
   }
 )
@@ -112,8 +110,7 @@ setMethod(
     tuning_algo = "saemvsTuning", hyperparam = "saemvsHyperSlab"
   ),
   function(
-    data, model, init, tuning_algo, hyperparam, pen = "e-BIC", use_cpp = TRUE
-  ) {
+      data, model, init, tuning_algo, hyperparam, pen = "e-BIC", use_cpp = TRUE) {
     # --- Step 1: Argument checks ---
     if (!pen %in% c("e-BIC", "BIC")) {
       stop(
@@ -125,7 +122,7 @@ setMethod(
     }
 
     if (is.null(model@phi_to_select) ||
-          (length(model@phi_to_select) == 0)) {
+      (length(model@phi_to_select) == 0)) {
       stop(
         paste0(
           "'phi_to_select' must contain at least one parameter",
@@ -164,8 +161,7 @@ setMethod(
           p()
           res
         },
-        workers = tuning_algo@nb_workers,
-        seed = tuning_algo@seed
+        workers = tuning_algo@nb_workers
       )
     })
 
@@ -202,8 +198,7 @@ setMethod(
             tuning_algo, pen, backend
           )
         },
-        workers = tuning_algo@nb_workers,
-        seed = tuning_algo@seed
+        workers = tuning_algo@nb_workers
       )
     })
 
@@ -254,23 +249,20 @@ setMethod(
 #' This function provides a safe and reproducible way to map a function over
 #' a list or vector in parallel using `furrr::future_map`. It restores the
 #' previous `future` plan on exit and captures errors to provide a clean,
-#' informative message. Optionally, a random seed can be set for
-#' reproducibility.
+#' informative message.
 #'
 #' @param .x A vector or list to iterate over.
 #' @param .f A function to apply to each element of `.x`.
 #' @param ... Additional arguments passed to `.f`.
 #' @param workers Integer. Number of parallel workers. Default is 1
 #' (sequential).
-#' @param seed Optional integer. Seed for reproducibility of parallel
-#' operations.
 #'
 #' @return A list of results returned by applying `.f` over `.x`.
 #'
 #' @keywords internal
 #' @noRd
 
-safe_future_map <- function(.x, .f, ..., workers = 1, seed = NULL) {
+safe_future_map <- function(.x, .f, ..., workers = 1) {
   old_plan <- future::plan()
   on.exit(future::plan(old_plan), add = TRUE)
 
@@ -286,7 +278,7 @@ safe_future_map <- function(.x, .f, ..., workers = 1, seed = NULL) {
         .x,
         .f,
         ...,
-        .options = furrr::furrr_options(seed = seed)
+        .options = furrr::furrr_options(seed = TRUE)
       )
     },
     error = function(e) {
@@ -550,6 +542,8 @@ setMethod(
       new_data_processed, new_model, new_processed_init, tuning_algo,
       new_full_hyperparam, backend
     )
+
+    print("MLE run completed for support index: ", k)
 
     mle_param <- list(
       beta   = mle$beta_not_to_select[[tuning_algo@niter + 1]],

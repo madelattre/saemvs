@@ -38,8 +38,7 @@ providing the initialization for the SAEM algorithm.}
 
 \item{tuning_algo}{An object of class
 \code{saemvsTuning} containing algorithmic tuning
-parameters such as the spike grid (\code{spike_values_grid}), number of workers,
-and random seed.}
+parameters such as the spike grid (\code{spike_values_grid}) and number of workers.}
 
 \item{hyperparam}{An object of class
 \code{saemvsHyperSlab} containing the

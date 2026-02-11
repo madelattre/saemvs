@@ -13,7 +13,6 @@ saemvsTuning(
   mh_proposal_scale = 1,
   spike_values_grid,
   n_is_samples = 10000,
-  seed = 220916,
   nb_workers = 4
 )
 }
@@ -38,8 +37,6 @@ variance.}
 
 \item{n_is_samples}{Integer. Number of importance sampling iterations
 (positive).}
-
-\item{seed}{Integer. Random seed for reproducibility.}
 
 \item{nb_workers}{Integer. Number of parallel workers (positive).}
 }
