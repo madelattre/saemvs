@@ -27,8 +27,7 @@
 #' @keywords internal
 #' @noRd
 .convergence_plot_backend <- function(
-  res_saem, component, sel_components, phi = NULL
-) {
+    res_saem, component, sel_components, phi = NULL) {
   max_ticks <- 4
 
   phi_to_select_idx <- res_saem@phi_to_select_idx
@@ -62,7 +61,7 @@
       }
     } else if (component %in% c("coef_phi_non_sel", "variance_phi_non_sel")) {
       if (is.null(phi_not_to_select_idx) ||
-            !(phi_idx %in% phi_not_to_select_idx)) {
+        !(phi_idx %in% phi_not_to_select_idx)) {
         stop(
           sprintf(
             paste0(
@@ -89,7 +88,6 @@
 
     g <- ggplot2::ggplot(df, ggplot2::aes(x = iteration, y = value)) +
       ggplot2::geom_line() +
-      ggplot2::geom_point() +
       ggplot2::theme_bw() +
       ggplot2::labs(
         x = "Iteration", y = "Estimated value",
@@ -342,7 +340,7 @@
       ggplot2::geom_line() +
       ggplot2::scale_color_manual(values = c("red", rep("black", p), "red")) +
       ggplot2::theme_bw() +
-      ggplot2::xlab(expression(paste("log(", nu[0], " ) "))) +
+      ggplot2::xlab(expression(paste("log(", nu[0], ")"))) +
       ggplot2::ylab(expression(hat(beta))) +
       ggplot2::theme(legend.position = "none") +
       ggplot2::ggtitle(paste("Parameter ", phi_names[m])) +
@@ -399,10 +397,10 @@
 setMethod(
   "plot",
   signature(x = "saemResults", y = "missing"),
-  function(x, type = "coef_phi_sel", ...) {
+  function(x, component = "coef_phi_sel", ...) {
     .convergence_plot_backend(
       res_saem = x,
-      component = type,
+      component = component,
       ...
     )
   }
