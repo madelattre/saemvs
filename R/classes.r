@@ -1376,7 +1376,7 @@ setClass(
     nburnin = 350,
     step = numeric(0), # computed automatically in constructor
     niter_mh = 5,
-    kernel_mh = "random_walk",
+    kernel_mh = "pop",
     covariance_decay = 0.98,
     mh_proposal_scale = 1.5,
     spike_values_grid = NULL,
@@ -1493,7 +1493,7 @@ saemvsTuning <- function(
     niter = 500,
     nburnin = 350,
     niter_mh = 5,
-    kernel_mh = "random_walk",
+    kernel_mh = "pop",
     covariance_decay = 0.98,
     mh_proposal_scale = 1.0,
     spike_values_grid,
