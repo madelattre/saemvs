@@ -110,7 +110,7 @@ setMethod(
 
     cat("- Support for forced included covariates (x_forced_support):\n")
     if (is.null(object@x_forced_support) ||
-          length(object@x_forced_support) == 0) {
+      length(object@x_forced_support) == 0) {
       cat("  NULL\n")
     } else {
       cat("  ", paste(names(object@x_forced_support), collapse = " "), "\n")
@@ -168,10 +168,10 @@ setMethod(
     )
     cat("  - Scale matrix (cov_re_prior_scale):\n")
     cat("    ", .format_matrix(object@cov_re_prior_scale,
-        rownames = FALSE, colnames = FALSE
-      ),
-      "\n\n",
-      sep = ""
+      rownames = FALSE, colnames = FALSE
+    ),
+    "\n\n",
+    sep = ""
     )
     shape_param <- res_shape / 2
     rate_param <- res_shape * res_rate / 2
@@ -307,8 +307,7 @@ setMethod(
     cat("- Importance sampling (log-likelihood comutation):\n")
     cat("  - Number of IS samples (n_is_samples):", object@n_is_samples, "\n\n")
 
-    cat("- Reproducibility and parallelisation:\n")
-    cat("  - Seed:", object@seed, "\n")
+    cat("- Parallelisation:\n")
     cat("  - Number of workers (nb_workers):", object@nb_workers, "\n\n")
 
     invisible(object)
