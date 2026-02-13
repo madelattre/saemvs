@@ -134,6 +134,18 @@
       )
     }))
 
+    # ---- Filter according to phi if provided ----
+    if (!is.null(phi)) {
+      if (component %in% c("coef_phi_sel", "coef_phi_non_sel")) {
+        # coefficients -> phi correspond aux colonnes
+        df <- base::subset(df, j == phi_idx)
+      } else if (component %in% c("variance_phi_sel", "variance_phi_non_sel")) {
+        # covariance -> garder lignes ou colonnes liées à phi
+        df <- base::subset(df, i == phi_idx | j == phi_idx)
+      }
+    }
+
+
     n_iter <- length(unique(df$iteration))
     step <- max(1, floor(n_iter / max_ticks))
     breaks <- seq(1, n_iter, by = step)
