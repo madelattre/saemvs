@@ -106,10 +106,10 @@ setMethod(
 
     biclike <- switch(pen,
       "e-BIC" = -2 * loglike + (nb_selected_beta) * log(n) +
-        2 * log(choose(
+        2 * lchoose(
           p * length(phi_to_select_idx),
           (nb_selected_beta - nb_forced_beta)
-        )),
+        ),
       "BIC" = -2 * loglike + nb_selected_beta * log(n),
       -2 * loglike
     )
