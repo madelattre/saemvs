@@ -543,8 +543,6 @@ setMethod(
       new_full_hyperparam, backend
     )
 
-    print("MLE run completed for support index: ", k)
-
     mle_param <- list(
       beta   = mle$beta_not_to_select[[tuning_algo@niter + 1]],
       gamma  = mle$gamma_not_to_select[[tuning_algo@niter + 1]],
@@ -585,7 +583,8 @@ setMethod(
 #'   defining the slab prior.
 #' @param use_cpp Logical. If TRUE (default), the model function is compiled
 #'   to C++ for faster execution. If FALSE, a pure R backend is used.
-#'
+#' @param spike_index Integer. Index of the spike value in the grid to use for
+#' this test run. Default is 1 (the first spike value).
 #' @return A \code{saemResults} object containing estimated
 #'   parameters for the single spike value tested.
 #'
@@ -610,7 +609,13 @@ setMethod(
 #' @export
 setGeneric(
   "test_saemvs",
-  function(data, model, init, tuning_algo, hyperparam, use_cpp = TRUE) {
+  function(data,
+           model,
+           init,
+           tuning_algo,
+           hyperparam,
+           use_cpp = TRUE,
+           spike_index = 1) {
     standardGeneric("test_saemvs")
   }
 )
@@ -626,7 +631,18 @@ setMethod(
     tuning_algo = "saemvsTuning",
     hyperparam = "saemvsHyperSlab"
   ),
-  function(data, model, init, tuning_algo, hyperparam, use_cpp = TRUE) {
+  function(data,
+           model,
+           init,
+           tuning_algo,
+           hyperparam,
+           use_cpp = TRUE,
+           spike_index = 1) {
+    if (spike_index < 1 ||
+      spike_index > length(tuning_algo@spike_values_grid)) {
+      stop("spike_index is outside spike_values_grid")
+    }
+
     check_data_and_model(data, model)
     model_processed <- prepare_model(data, model)
     backend <- compile_model(
@@ -635,7 +651,7 @@ setMethod(
     )
 
     full_hyperparam <- saemvsHyperSpikeAndSlab(
-      tuning_algo@spike_values_grid[1],
+      tuning_algo@spike_values_grid[spike_index],
       hyperparam
     )
 
