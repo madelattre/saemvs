@@ -129,12 +129,68 @@ transpile_to_cpp <- function(
     "|" = "||"
   )
 
+  ## DEBUT MODIF
+  # Operator precedence (higher = stronger binding)
+  op_precedence <- function(op) {
+    if (op %in% c("|")) {
+      return(1)
+    }
+    if (op %in% c("&")) {
+      return(2)
+    }
+    if (op %in% c("==", "!=", "<", "<=", ">", ">=")) {
+      return(3)
+    }
+    if (op %in% c("+", "-")) {
+      return(4)
+    }
+    if (op %in% c("*", "/")) {
+      return(5)
+    }
+    if (op %in% c("^")) {
+      return(6)
+    }
+    return(10)
+  }
+  ## FIN MODIF
+
+
   # Unary operators
   unary_ops <- list(
     "-" = "-",
     "+" = "+",
     "!" = "!"
   )
+
+  ## DEBUT MODIF
+  needs_parens_ast <- function(child_expr, parent_op) {
+    if (!is.call(child_expr)) {
+      return(FALSE)
+    }
+
+    child_op <- as.character(child_expr[[1]])
+
+    if (!(child_op %in% names(binary_ops))) {
+      return(FALSE)
+    }
+
+    child_prec <- op_precedence(child_op)
+    parent_prec <- op_precedence(parent_op)
+
+    if (child_prec < parent_prec) {
+      return(TRUE)
+    }
+
+    # Non-associative operators
+    if (child_prec == parent_prec &&
+      parent_op %in% c("-", "/")) {
+      return(TRUE)
+    }
+
+    return(FALSE)
+  }
+
+  ## FIN MODIF
 
   # Generate a temporary variable name
   get_temp_var <- function() {
@@ -144,7 +200,7 @@ transpile_to_cpp <- function(
 
   declare_variable <- function(var_name, init_value = NULL) {
     if (!var_name %in% context$variables &&
-          !var_name %in% context$param_names) {
+      !var_name %in% context$param_names) {
       context$variables <- c(context$variables, var_name)
 
       # Determiner type et declaration selon init_value
@@ -163,8 +219,10 @@ transpile_to_cpp <- function(
         } else {
           type <- "double"
           decl <- paste0("double ", var_name, ";")
-          add_warning(paste("Unknown type for variable",
-                            var_name, "- defaulting to double"))
+          add_warning(paste(
+            "Unknown type for variable",
+            var_name, "- defaulting to double"
+          ))
         }
       } else {
         # Pas d'init_value : fallback double
@@ -196,8 +254,8 @@ transpile_to_cpp <- function(
     # Match: variable name, number, function call (name(...)),
     # or indexing (name[...])
     if (grepl("^[a-zA-Z_][a-zA-Z0-9_]*(\\[|\\()", expr_str) ||
-          grepl("^[0-9]+\\.?[0-9]*([eE][+-]?[0-9]+)?$", expr_str) ||
-          grepl("^[a-zA-Z_][a-zA-Z0-9_]*$", expr_str)) {
+      grepl("^[0-9]+\\.?[0-9]*([eE][+-]?[0-9]+)?$", expr_str) ||
+      grepl("^[a-zA-Z_][a-zA-Z0-9_]*$", expr_str)) {
       return(FALSE)
     }
     # Otherwise, it's a complex expression that needs parentheses
@@ -215,7 +273,7 @@ transpile_to_cpp <- function(
     # Only check for NA on atomic values,
     # not on symbols (variable names) or calls
     if (length(expr) == 1 && !is.name(expr) &&
-          !is.call(expr) && is.atomic(expr)) {
+      !is.call(expr) && is.atomic(expr)) {
       # Check if it's NA (but not NaN) -
       # use suppressWarnings to avoid errors on symbols
       if (!is.nan(expr)) {
@@ -420,14 +478,30 @@ transpile_to_cpp <- function(
       }
 
       # Explicit parentheses - just return the inner expression
+
+      ## DEBUT MODIF
+      # if (operator == "(") {
+      #   if (length(args) >= 1) {
+      #     return(translate_expr(args[[1]]))
+      #   } else {
+      #     add_warning("Empty parentheses")
+      #     return("")
+      #   }
+      # }
+
+      # Explicit parentheses MUST be preserved
       if (operator == "(") {
         if (length(args) >= 1) {
-          return(translate_expr(args[[1]]))
+          inner <- translate_expr(args[[1]])
+          return(paste0("(", inner, ")"))
         } else {
           add_warning("Empty parentheses")
           return("")
         }
       }
+
+      ## FIN MODIF
+
 
 
       # Indexing [
@@ -484,9 +558,29 @@ transpile_to_cpp <- function(
           return(paste0(op_cpp, "(", left, " / ", right, ")"))
         } else {
           # Add parentheses only if needed
-          left_paren <- if (needs_parens(left)) paste0("(", left, ")") else left
-          right_paren <- if (needs_parens(right)) paste0("(", right, ")") else right # nolint: line_length_linter
-          return(paste0(left_paren, " ", op_cpp, " ", right_paren))
+          ## DEBUT MODIF
+          # left_paren <- if (needs_parens(left)) paste0("(", left, ")") else left
+          # right_paren <- if (needs_parens(right)) paste0("(", right, ")") else right # nolint: line_length_linter
+          # return(paste0(left_paren, " ", op_cpp, " ", right_paren))
+
+          left_expr <- args[[1]]
+          right_expr <- args[[2]]
+
+          left_code <- translate_expr(left_expr)
+          right_code <- translate_expr(right_expr)
+
+          if (needs_parens_ast(left_expr, operator)) {
+            left_code <- paste0("(", left_code, ")")
+          }
+
+          if (needs_parens_ast(right_expr, operator)) {
+            right_code <- paste0("(", right_code, ")")
+          }
+
+          return(paste0(left_code, " ", op_cpp, " ", right_code))
+
+
+          ## FIN MODIF
         }
       }
 
@@ -656,7 +750,7 @@ transpile_to_cpp <- function(
 
   # If the last element is not a return, add the return
   if (length(context$code_lines) == 0 ||
-        !grepl("^return", context$code_lines[length(context$code_lines)])) {
+    !grepl("^return", context$code_lines[length(context$code_lines)])) {
     if (result != "") {
       context$code_lines <- c(
         context$code_lines,
@@ -812,8 +906,10 @@ build_backend_r <- function(g_fun) {
       for (s in seq_len(n_samples)) {
         phi_i <- phi_samples[s, ]
         sumsq <- sum((yi -
-                        vapply(ti, function(tj) g_scalar(tj, phi_i),
-                               numeric(1)))^2)
+          vapply(
+            ti, function(tj) g_scalar(tj, phi_i),
+            numeric(1)
+          ))^2)
         contribution <- contribution + exp(-sumsq / (2 * sigma2))
       }
       loglike <- loglike +
@@ -997,8 +1093,8 @@ arma::vec rmvnorm_cpp(const arma::vec& mean, const arma::mat& sigma) {
 }
 
 // [[Rcpp::export]]
-arma::mat rmvnorm_mat_cpp(const arma::vec& mean, 
-                          const arma::mat& sigma, 
+arma::mat rmvnorm_mat_cpp(const arma::vec& mean,
+                          const arma::mat& sigma,
                           int n) {
   // Verifier que sigma est finie
   if (!sigma.is_finite()) {
@@ -1026,9 +1122,9 @@ arma::mat rmvnorm_mat_cpp(const arma::vec& mean,
 }
 
 // [[Rcpp::export]]
-double loglik_cpp(List yi_list, 
-                  List ti_list, 
-                  List phi_samples_list, 
+double loglik_cpp(List yi_list,
+                  List ti_list,
+                  List phi_samples_list,
                   double sigma2) {
   int n = yi_list.size();
   double loglike = 0.0;
@@ -1045,7 +1141,7 @@ double loglik_cpp(List yi_list,
           arma::vec phi_i = phi_samples.row(s).t().eval();
           double g = g_scalar_cpp(ti[j], phi_i);
           sumsq += pow(yi[j] - g, 2);
-        } 
+        }
       contribution += exp(-sumsq / (2.0 * sigma2));
     }
     loglike += log(
