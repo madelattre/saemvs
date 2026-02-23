@@ -70,6 +70,7 @@ m_step_not_to_select <- function(config, k, state, backend) {
 
   beta_vector <- solve_linear_syst(sum_xgx, sum_xgs3)
   beta_outer <- beta_vector %*% t(beta_vector)
+
   state$beta_mat_0[config$forced_covariates_indices] <- beta_vector
 
   state$beta_not_to_select[[k + 1]] <- matrix(
@@ -89,15 +90,14 @@ m_step_not_to_select <- function(config, k, state, backend) {
 
   gamma_proposed <- (s2 + sum_bx - sum_xbs3 - t(sum_xbs3)) / config$num_series
   gamma_proposed <- (gamma_proposed + t(gamma_proposed)) / 2 # enforce symmetry
-  gamma_scaled <- config$covariance_decay * old_gamma
 
-  use_scaled <- sum(gamma_scaled^2) > sum(gamma_proposed^2)
+  gamma_new <- config$covariance_decay * old_gamma +
+    (1 - config$covariance_decay) * gamma_proposed
 
-  state$gamma_not_to_select[[k + 1]] <- if (use_scaled) {
-    gamma_scaled
-  } else {
-    gamma_proposed
-  }
+  gamma_new <- make_spd(gamma_new)
+
+  state$gamma_not_to_select[[k + 1]] <- gamma_new
+
 
   return(state) # nolint : return-linter
 }
@@ -197,7 +197,7 @@ m_step_to_select <- function(config, k, state, backend) {
 
   state$alpha[[k + 1]] <- (sum_pstar_k + config$inclusion_prob_prior_a - 1) /
     (config$num_covariates_to_select + config$inclusion_prob_prior_b +
-       config$inclusion_prob_prior_a - 2)
+      config$inclusion_prob_prior_a - 2)
 
   s_xgx <- config$kron_tx_x_phi_to_select +
     kronecker_gamma_diag_mult(
@@ -221,19 +221,18 @@ m_step_to_select <- function(config, k, state, backend) {
   sum_xbs3 <- t(config$x_phi_to_select %*% state$beta_to_select[[k + 1]]) %*% s3
 
   gamma_proposed <- (config$cov_re_prior_scale + s2 + sum_bx - sum_xbs3 -
-                       t(sum_xbs3)) /
+    t(sum_xbs3)) /
     (config$num_series + config$cov_re_prior_df +
-       config$num_parameters_to_select + 1)
+      config$num_parameters_to_select + 1)
   gamma_proposed <- (gamma_proposed + t(gamma_proposed)) / 2 # enforce symmetry
-  gamma_scaled <- config$covariance_decay * old_gamma
 
-  use_scaled <- sum(gamma_scaled^2) > sum(gamma_proposed^2)
+  gamma_new <- config$covariance_decay * old_gamma +
+    (1 - config$covariance_decay) * gamma_proposed
 
-  state$gamma_to_select[[k + 1]] <- if (use_scaled) {
-    gamma_scaled
-  } else {
-    gamma_proposed
-  }
+  gamma_new <- make_spd(gamma_new)
+
+  state$gamma_to_select[[k + 1]] <- gamma_new
+
   return(state) # nolint: return-linter
 }
 
@@ -346,8 +345,8 @@ m_step_map_to_select <- function(config, k, state, backend) {
   state$sigma2[k + 1] <- max(
     config$covariance_decay * old_sigma2,
     (config$residual_variance_prior_shape *
-       config$residual_variance_prior_rate +
-       state$s1[k + 1]) /
+      config$residual_variance_prior_rate +
+      state$s1[k + 1]) /
       (config$total_observations + config$residual_variance_prior_shape + 2)
   )
   return(state) # nolint: return-linter
@@ -413,8 +412,8 @@ m_step_map_all <- function(config, k, state, backend) {
   state$sigma2[k + 1] <- max(
     config$covariance_decay * old_sigma2,
     (config$residual_variance_prior_shape *
-       config$residual_variance_prior_rate +
-       state$s1[k + 1]) /
+      config$residual_variance_prior_rate +
+      state$s1[k + 1]) /
       (config$total_observations + config$residual_variance_prior_shape + 2)
   )
   return(state) # nolint: return-linter

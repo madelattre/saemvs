@@ -133,8 +133,6 @@ get_case <- function(config) {
 #' )
 #' }
 #'
-
-
 estimate_phi_individuals <- function(data, model, init, maxit = 1000) {
   g <- model@model_func
   n_phi <- model@phi_dim
@@ -318,4 +316,25 @@ build_init_from_phi_lasso <- function(est_indiv,
     cov_re = init@cov_re,
     sigma2 = init@sigma2
   )
+}
+
+
+# #' @keywords internal
+# #' @noRd
+# add_jitter <- function(sigma, eps = 1e-8) {
+#   p <- nrow(sigma)
+#   sigma + diag(eps, p)
+# }
+
+#' @keywords internal
+#' @noRd
+make_spd <- function(mat, eps = 1e-8, max_iter = 5) {
+  for (i in 1:max_iter) {
+    chol_mat <- tryCatch(chol(mat), error = function(e) NULL)
+    if (!is.null(chol_mat)) {
+      return(mat)
+    }
+    mat <- mat + diag(eps * 10^i, nrow(mat))
+  }
+  return(mat)
 }
