@@ -321,7 +321,7 @@
   g2 <- ggplot2::ggplot(data2, ggplot2::aes(x = log(nu0_grid), y = crit)) +
     ggplot2::geom_point() +
     ggplot2::theme_bw() +
-    ggplot2::xlab(expression(paste("log(", nu[0], " ) "))) +
+    ggplot2::xlab(expression(paste("log(", nu[0], ")"))) +
     ggplot2::ylab(paste(pen)) +
     ggplot2::ggtitle(paste(pen)) +
     ggplot2::geom_vline(
