@@ -315,36 +315,41 @@
 #'
 #' @keywords internal
 #' @noRd
-.prepare_grid_plot_backend <- function(res_saemvs, type, param = NULL) {
-  type <- match.arg(type, c("criterion", "coefficients"))
+.prepare_grid_plot_backend <- function(
+    res_saemvs, type = c("criterion", "coefficients"), param = NULL) {
+  type <- base::match.arg(type, c("criterion", "coefficients"))
 
-  # --- Shared extraction ---
   ebic <- res_saemvs@criterion_values
   map_to_unique_support <- res_saemvs@support_mapping
   nu0_grid <- res_saemvs@spike_values_grid
   pen <- res_saemvs@criterion
-
-  data_crit <- data.frame(
-    nu0 = nu0_grid,
-    crit = ebic[map_to_unique_support]
+  phi_names <- res_saemvs@phi_names[res_saemvs@phi_to_select_idx]
+  support <- res_saemvs@support
+  p <- base::dim(support[[1]])[1] - 1
+  threshold <- base::matrix(base::simplify2array(res_saemvs@thresholds),
+    nrow = length(phi_names)
   )
+  beta <- base::simplify2array(res_saemvs@beta_map)
+  n_forced <- base::length(res_saemvs@x_forced_names)
 
-  x_min <- log(data_crit$nu0[which.min(data_crit$crit)])
+  x_min <- base::log(nu0_grid[base::which.min(ebic[map_to_unique_support])])
 
   # ============================================================
   # 1. CRITERION
   # ============================================================
   if (type == "criterion") {
     return(
-      ggplot2::ggplot(data_crit, ggplot2::aes(x = log(nu0), y = crit)) +
+      ggplot2::ggplot(
+        data = data.frame(nu0 = nu0_grid, crit = ebic[map_to_unique_support]),
+        ggplot2::aes(x = base::log(nu0), y = crit)
+      ) +
         ggplot2::geom_point() +
         ggplot2::theme_bw() +
-        ggplot2::xlab(expression(paste("log(", nu[0], ")"))) +
+        ggplot2::xlab(base::expression(paste("log(", nu[0], ")"))) +
         ggplot2::ylab(pen) +
         ggplot2::ggtitle(pen) +
         ggplot2::geom_vline(
-          xintercept = x_min,
-          color = "red",
+          xintercept = x_min, color = "red",
           linetype = "dashed"
         )
     )
@@ -353,113 +358,75 @@
   # ============================================================
   # 2. COEFFICIENTS
   # ============================================================
-
-  if (is.null(param)) {
+  if (base::is.null(param)) {
     stop("Argument 'param' must be provided when type = 'coefficients'")
   }
 
-  phi_names <- res_saemvs@phi_names[res_saemvs@phi_to_select_idx]
-
-  m <- if (is.character(param)) match(param, phi_names) else param
-
-  if (is.na(m) || m < 1 || m > length(phi_names)) {
-    stop(sprintf("Parameter '%s' not found.", param))
+  m <- if (base::is.character(param)) base::match(param, phi_names) else param
+  if (!identical(param, "all") && (base::is.na(m) ||
+    m < 1 || m > base::length(phi_names))) {
+    stop("Parameter not found.")
   }
 
-  support <- res_saemvs@support
-  p <- dim(support[[1]])[1] - 1
-  q <- dim(support[[1]])[2]
+  plot_one <- function(m) {
+    df_low <- data.frame(
+      nu0 = nu0_grid,
+      value = -threshold[m, ],
+      var = "threshold_low",
+      type = "threshold",
+      stringsAsFactors = FALSE
+    )
 
-  threshold <- matrix(simplify2array(res_saemvs@thresholds), nrow = q)
-  beta <- simplify2array(res_saemvs@beta_map)
+    df_beta <- base::as.data.frame(base::t(beta[, m, ]))
+    base::colnames(df_beta) <- paste0("beta_", seq_len(p))
+    df_beta$nu0 <- nu0_grid
+    df_beta <- tidyr::pivot_longer(df_beta,
+      cols = tidyr::starts_with("beta_"), names_to = "var",
+      values_to = "value"
+    )
+    df_beta$idx <- base::as.integer(base::sub("beta_", "", df_beta$var))
+    df_beta$type <- ifelse(df_beta$idx <= n_forced, "forced", "candidate")
 
-  # nombre de covariables forcées
-  n_forced <- length(res_saemvs@x_forced_names)
+    df_high <- data.frame(
+      nu0 = nu0_grid,
+      value = threshold[m, ],
+      var = "threshold_high",
+      type = "threshold",
+      stringsAsFactors = FALSE
+    )
 
-  # ============================================================
-  # Construction tidy des données
-  # ============================================================
+    df <- dplyr::bind_rows(df_low, df_beta, df_high)
 
-  # --- seuil bas
-  df_low <- data.frame(
-    nu0 = nu0_grid,
-    value = -threshold[m, ],
-    var = "threshold_low",
-    type = "threshold"
-  )
-
-  # --- coefficients beta
-  df_beta <- as.data.frame(t(beta[, m, ])) # nb_nu0 x p
-  colnames(df_beta) <- paste0("beta_", seq_len(p))
-  df_beta$nu0 <- nu0_grid
-
-  df_beta <- tidyr::pivot_longer(
-    df_beta,
-    cols = starts_with("beta_"),
-    names_to = "var",
-    values_to = "value"
-  )
-
-  # index numérique des beta
-  df_beta$idx <- as.integer(sub("beta_", "", df_beta$var))
-
-  # type des coefficients
-  df_beta$type <- ifelse(
-    df_beta$idx <= n_forced,
-    "forced",
-    "selected"
-  )
-
-  # --- seuil haut
-  df_high <- data.frame(
-    nu0 = nu0_grid,
-    value = threshold[m, ],
-    var = "threshold_high",
-    type = "threshold"
-  )
-
-  # --- concat
-  df <- dplyr::bind_rows(df_low, df_beta, df_high)
-
-  # ordre des facteurs pour une légende propre
-  df$type <- factor(df$type, levels = c("threshold", "forced", "selected"))
-
-  # ============================================================
-  # Plot
-  # ============================================================
-
-  return(
     ggplot2::ggplot(df, ggplot2::aes(
-      x = log(nu0),
-      y = value,
-      group = var,
-      color = type
+      x = base::log(nu0),
+      y = value, group = var, color = type
     )) +
       ggplot2::geom_point() +
       ggplot2::geom_line() +
-      ggplot2::scale_color_manual(
-        values = c(
-          threshold = "red",
-          forced = "grey60",
-          selected = "black"
-        ),
-        labels = c(
-          threshold = "threshold",
-          forced = "forced covariates",
-          selected = "candidate covariates"
-        )
-      ) +
+      ggplot2::scale_color_manual(values = c(
+        threshold = "red",
+        forced = "#CCCCCC20", candidate = "black"
+      )) +
       ggplot2::theme_bw() +
-      ggplot2::labs(color = NULL) +
-      ggplot2::xlab(expression(paste("log(", nu[0], ")"))) +
-      ggplot2::ylab(expression(hat(beta))) +
+      ggplot2::theme(legend.position = "none") +
+      ggplot2::xlab(base::expression(paste("log(", nu[0], ")"))) +
+      ggplot2::ylab(base::expression(hat(beta))) +
       ggplot2::ggtitle(paste("Parameter", phi_names[m])) +
       ggplot2::geom_vline(
-        xintercept = x_min,
-        color = "red",
+        xintercept = x_min, color = "red",
         linetype = "dashed"
       )
-  )
+  }
+
+  # ============================================================
+  # Param = "all"
+  # ============================================================
+  if (identical(param, "all")) {
+    plots <- base::lapply(seq_along(phi_names), plot_one)
+    return(plots)
+  } else {
+    return(plot_one(m))
+  }
 }
 
 #' Plot SAEM convergence diagnostics
