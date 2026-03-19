@@ -284,87 +284,183 @@
   print(g)
 }
 
-# Internal helper: prepare grid plots for SAEMVS
+#' Internal helper to generate SAEMVS diagnostic plots
+#'
+#' Generates either the selection criterion plot or the coefficient path
+#' plot for a given parameter from a \code{saemvsResults} object.
 #'
 #' @param res_saemvs A \code{saemvsResults} object.
+#' @param type Character string specifying which plot to generate.
+#'   Must be one of \code{"criterion"} or \code{"coefficients"}.
+#' @param param Parameter for which to display the coefficient path when
+#'   \code{type = "coefficients"}. Can be either:
+#'   \itemize{
+#'     \item an integer index,
+#'     \item a character string matching a name in
+#'       \code{res_saemvs@phi_names}.
+#'   }
+#'   Must not be \code{NULL} when \code{type = "coefficients"}.
 #'
-#' @return A list with two elements:
+#' @return A single \pkg{ggplot2} object:
 #' \itemize{
-#'   \item \code{reg_plot}: list of \pkg{ggplot2} objects, one per parameter
-#'  block
-#'   \item \code{ebic_plot}: \pkg{ggplot2} object showing the selection
-#'  criterion across the grid
+#'   \item the selection criterion plot if \code{type = "criterion"},
+#'   \item the coefficient path plot for the selected parameter if
+#'     \code{type = "coefficients"}.
 #' }
+#'
+#' @details
+#' This function is an internal backend used by the \code{plot} method for
+#' \code{saemvsResults}. It does not handle multiple parameters; looping and
+#' layout (e.g., for \code{param = "all"}) are managed at a higher level.
 #'
 #' @keywords internal
 #' @noRd
-.prepare_grid_plot_backend <- function(res_saemvs) {
-  # --- Extract key results from saemvsResults ---
+.prepare_grid_plot_backend <- function(res_saemvs, type, param = NULL) {
+  type <- match.arg(type, c("criterion", "coefficients"))
+
+  # --- Shared extraction ---
   ebic <- res_saemvs@criterion_values
-  support <- res_saemvs@support
   map_to_unique_support <- res_saemvs@support_mapping
   nu0_grid <- res_saemvs@spike_values_grid
-  nb_nu0 <- length(nu0_grid)
   pen <- res_saemvs@criterion
+
+  data_crit <- data.frame(
+    nu0 = nu0_grid,
+    crit = ebic[map_to_unique_support]
+  )
+
+  x_min <- log(data_crit$nu0[which.min(data_crit$crit)])
+
+  # ============================================================
+  # 1. CRITERION
+  # ============================================================
+  if (type == "criterion") {
+    return(
+      ggplot2::ggplot(data_crit, ggplot2::aes(x = log(nu0), y = crit)) +
+        ggplot2::geom_point() +
+        ggplot2::theme_bw() +
+        ggplot2::xlab(expression(paste("log(", nu[0], ")"))) +
+        ggplot2::ylab(pen) +
+        ggplot2::ggtitle(pen) +
+        ggplot2::geom_vline(
+          xintercept = x_min,
+          color = "red",
+          linetype = "dashed"
+        )
+    )
+  }
+
+  # ============================================================
+  # 2. COEFFICIENTS
+  # ============================================================
+
+  if (is.null(param)) {
+    stop("Argument 'param' must be provided when type = 'coefficients'")
+  }
+
   phi_names <- res_saemvs@phi_names[res_saemvs@phi_to_select_idx]
 
+  m <- if (is.character(param)) match(param, phi_names) else param
+
+  if (is.na(m) || m < 1 || m > length(phi_names)) {
+    stop(sprintf("Parameter '%s' not found.", param))
+  }
+
+  support <- res_saemvs@support
   p <- dim(support[[1]])[1] - 1
   q <- dim(support[[1]])[2]
 
   threshold <- matrix(simplify2array(res_saemvs@thresholds), nrow = q)
   beta <- simplify2array(res_saemvs@beta_map)
 
-  # --- Plot criterion values vs log(nu0) ---
-  data2 <- data.frame(nu0_grid = nu0_grid, crit = ebic[map_to_unique_support])
-  x_min <- log(data2$nu0_grid[which.min(data2$crit)])
+  # nombre de covariables forcées
+  n_forced <- length(res_saemvs@x_forced_names)
 
-  g2 <- ggplot2::ggplot(data2, ggplot2::aes(x = log(nu0_grid), y = crit)) +
-    ggplot2::geom_point() +
-    ggplot2::theme_bw() +
-    ggplot2::xlab(expression(paste("log(", nu[0], ")"))) +
-    ggplot2::ylab(paste(pen)) +
-    ggplot2::ggtitle(paste(pen)) +
-    ggplot2::geom_vline(
-      xintercept = x_min, color = "red",
-      linetype = "dashed"
-    )
+  # ============================================================
+  # Construction tidy des données
+  # ============================================================
 
-  # --- Plot regression coefficients and thresholds ---
-  id_var <- rep(c(1:(p + 2)), nb_nu0)
-  g <- list()
+  # --- seuil bas
+  df_low <- data.frame(
+    nu0 = nu0_grid,
+    value = -threshold[m, ],
+    var = "threshold_low",
+    type = "threshold"
+  )
 
-  for (m in 1:q) {
-    y <- rbind(-threshold[m, ], beta[, m, ], threshold[m, ])
-    y <- c(y)
+  # --- coefficients beta
+  df_beta <- as.data.frame(t(beta[, m, ])) # nb_nu0 x p
+  colnames(df_beta) <- paste0("beta_", seq_len(p))
+  df_beta$nu0 <- nu0_grid
 
-    x <- rep(nu0_grid, each = p + 2)
+  df_beta <- tidyr::pivot_longer(
+    df_beta,
+    cols = starts_with("beta_"),
+    names_to = "var",
+    values_to = "value"
+  )
 
-    data <- data.frame(id_var, y, x)
+  # index numérique des beta
+  df_beta$idx <- as.integer(sub("beta_", "", df_beta$var))
 
-    g[[m]] <- ggplot2::ggplot(
-      data,
-      ggplot2::aes(
-        x = log(x), y = y, group = id_var,
-        color = as.factor(id_var)
-      )
-    ) +
+  # type des coefficients
+  df_beta$type <- ifelse(
+    df_beta$idx <= n_forced,
+    "forced",
+    "selected"
+  )
+
+  # --- seuil haut
+  df_high <- data.frame(
+    nu0 = nu0_grid,
+    value = threshold[m, ],
+    var = "threshold_high",
+    type = "threshold"
+  )
+
+  # --- concat
+  df <- dplyr::bind_rows(df_low, df_beta, df_high)
+
+  # ordre des facteurs pour une légende propre
+  df$type <- factor(df$type, levels = c("threshold", "forced", "selected"))
+
+  # ============================================================
+  # Plot
+  # ============================================================
+
+  return(
+    ggplot2::ggplot(df, ggplot2::aes(
+      x = log(nu0),
+      y = value,
+      group = var,
+      color = type
+    )) +
       ggplot2::geom_point() +
       ggplot2::geom_line() +
-      ggplot2::scale_color_manual(values = c("red", rep("black", p), "red")) +
+      ggplot2::scale_color_manual(
+        values = c(
+          threshold = "red",
+          forced = "grey60",
+          selected = "black"
+        ),
+        labels = c(
+          threshold = "threshold",
+          forced = "forced covariates",
+          selected = "candidate covariates"
+        )
+      ) +
       ggplot2::theme_bw() +
+      ggplot2::labs(color = NULL) +
       ggplot2::xlab(expression(paste("log(", nu[0], ")"))) +
       ggplot2::ylab(expression(hat(beta))) +
-      ggplot2::theme(legend.position = "none") +
-      ggplot2::ggtitle(paste("Parameter ", phi_names[m])) +
+      ggplot2::ggtitle(paste("Parameter", phi_names[m])) +
       ggplot2::geom_vline(
-        xintercept = x_min, color = "red",
+        xintercept = x_min,
+        color = "red",
         linetype = "dashed"
       )
-  }
-
-  return(list(reg_plot = g, ebic_plot = g2)) # nolint: return_linter
+  )
 }
-
 
 #' Plot SAEM convergence diagnostics
 #'
@@ -422,36 +518,57 @@ setMethod(
 #'
 #' Generates diagnostic plots for a SAEMVS fit, showing either the selection
 #' criterion or the evolution of regression coefficients across the spike
-#'  variance grid.
+#' variance grid.
 #'
 #' @param x A \code{saemvsResults} object, typically returned by
-#'  \code{\link{saemvs}}.
+#'   \code{\link{saemvs}}.
+#'
 #' @param type Character string specifying which plot to generate.
-#' Must be one of:
+#'   Must be one of:
 #'   \itemize{
 #'     \item \code{"criterion"}: plots the selection criterion (BIC or e-BIC)
-#'           along the spike variance grid. The plot highlights the grid value
-#'           corresponding to the best model (minimum criterion value).
-#'     \item \code{"coefficients"}: plots the regression coefficients for each
-#'           parameter along the spike variance grid, allowing visualization
-#'           of how coefficients change with the spike parameter.
+#'       along the spike variance grid. The plot highlights the grid value
+#'       corresponding to the best model (minimum criterion value).
+#'     \item \code{"coefficients"}: plots the regression coefficients for a
+#'       given parameter along the spike variance grid, allowing visualization
+#'       of how coefficients change with the spike parameter.
 #'   }
 #'
-#' @return Either a \pkg{ggplot2} object (\code{"criterion"}) or a list of
-#'   \pkg{ggplot2} objects (\code{"coefficients"}), depending on the
-#'  \code{type}.
+#' @param param Parameter for which to display the coefficient path when
+#'   \code{type = "coefficients"}. Can be either:
+#'   \itemize{
+#'     \item an integer index,
+#'     \item a character string matching a name in \code{x@phi_names},
+#'     \item \code{"all"} to display all parameters in a grid of plots.
+#'   }
+#'   Ignored when \code{type = "criterion"}.
+#'
+#' @return
+#' \itemize{
+#'   \item If \code{type = "criterion"}: a single \pkg{ggplot2} object.
+#'   \item If \code{type = "coefficients"} and \code{param} is a single
+#'     parameter: a single \pkg{ggplot2} object.
+#'   \item If \code{type = "coefficients"} and \code{param = "all"}:
+#'     the plots are displayed in a grid layout, and an (invisible) list
+#'     of \pkg{ggplot2} objects is returned.
+#' }
 #'
 #' @examples
 #' \dontrun{
 #' # Fit a SAEMVS model
 #' res <- saemvs(...)
-#' # Plot the selection criterion along the spike variance grid
+#'
+#' # Plot the selection criterion
 #' plot(res, type = "criterion")
-#' # Plot regression coefficients along the grid for first model parameter
-#' plot(res, type = "coefficients")[[1]]
-#' # Plot regression coefficients along the grid for second model parameter
-#' plot(res, type = "coefficients")[[2]]
-#' ...
+#'
+#' # Plot coefficients for a specific parameter (by index)
+#' plot(res, type = "coefficients", param = 1)
+#'
+#' # Plot coefficients for a specific parameter (by name)
+#' plot(res, type = "coefficients", param = "CL")
+#'
+#' # Plot coefficients for all parameters
+#' plot(res, type = "coefficients", param = "all")
 #' }
 #'
 #' @name plot-saemvsResults
@@ -461,14 +578,25 @@ setMethod(
 setMethod(
   "plot",
   signature(x = "saemvsResults", y = "missing"),
-  function(x, type = c("criterion", "coefficients")) {
+  function(x, type = c("criterion", "coefficients"), param = NULL) {
     type <- match.arg(type)
-    plots <- .prepare_grid_plot_backend(x)
+    phi_names <- x@phi_names[x@phi_to_select_idx]
 
-    if (type == "criterion") {
-      plots$ebic_plot
-    } else {
-      plots$reg_plot
+    if (type == "coefficients" && identical(param, "all")) {
+      plots <- lapply(seq_along(phi_names), function(m) {
+        .prepare_grid_plot_backend(x, type = "coefficients", param = m)
+      })
+
+      n <- length(plots)
+
+      ncol <- ceiling(sqrt(n))
+      nrow <- ceiling(n / ncol)
+
+      gridExtra::grid.arrange(grobs = plots, ncol = ncol, nrow = nrow)
+
+      return(invisible(plots))
     }
+
+    .prepare_grid_plot_backend(x, type = type, param = param)
   }
 )
