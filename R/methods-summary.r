@@ -3,10 +3,9 @@
 #' @noRd
 
 .summary_one_support <- function(
-  object,
-  support_idx,
-  digits = 3
-) {
+    object,
+    support_idx,
+    digits = 3) {
   fixed_param_idx <- object@phi_fixed_idx
   phi_to_select_idx <- object@phi_to_select_idx
 
@@ -44,10 +43,11 @@
     cat(sprintf(
       "  - %s : %s\n",
       phi_names[phi_to_select_idx[j]],
-      if (length(selected_names) > 0)
+      if (length(selected_names) > 0) {
         paste(selected_names, collapse = ", ")
-      else
+      } else {
         "(none)"
+      }
     ))
   }
 
@@ -57,7 +57,7 @@
   colnames(beta_est) <- phi_names
 
   row_labels <- character(nrow(beta_est))
-  row_labels[1] <- "\u03BC"
+  row_labels[1] <- "Intercept"
 
   if (length(forced_variables_idx) > 0) {
     forced_rows <- 1 + seq_along(forced_variables_idx)
@@ -140,10 +140,14 @@ setMethod(
     best_idx <- which.min(object@criterion_values)
 
     cat("\n==== Best model (",
-        object@criterion,
-        ") ====\n", sep = "")
-    cat("Criterion value:",
-        object@criterion_values[best_idx], "\n")
+      object@criterion,
+      ") ====\n",
+      sep = ""
+    )
+    cat(
+      "Criterion value:",
+      object@criterion_values[best_idx], "\n"
+    )
 
     .summary_one_support(object, best_idx, digits)
   }
@@ -177,8 +181,10 @@ summary_support <- function(object, support_idx, digits = 3) {
   }
 
   cat("\n==== Support", support_idx, "====\n")
-  cat("Criterion value:",
-      object@criterion_values[support_idx], "\n")
+  cat(
+    "Criterion value:",
+    object@criterion_values[support_idx], "\n"
+  )
 
   .summary_one_support(object, support_idx, digits)
 }
