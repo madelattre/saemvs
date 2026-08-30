@@ -5,13 +5,13 @@
 \alias{plot,saemResults,missing-method}
 \title{Plot SAEM convergence diagnostics}
 \usage{
-\S4method{plot}{saemResults,missing}(x, type = "coef_phi_sel", ...)
+\S4method{plot}{saemResults,missing}(x, component = "coef_phi_sel", ...)
 }
 \arguments{
 \item{x}{A \code{saemResults} object, typically obtained from
 \code{\link{test_saemvs}}.}
 
-\item{type}{Character string specifying which element to plot. One of:
+\item{component}{Character string specifying which element to plot. One of:
 \itemize{
 \item \code{"sigma2"}: residual variance
 \item \code{"coef_phi_sel"}: regression coefficients for parameters subject

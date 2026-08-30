@@ -111,7 +111,7 @@ model <- saemvsModel(
 )
 ```
 
-`g` is the user-defined model function. The first argument must always represent time (or more generally the repeated measurement factor), while the subsequent arguments correspond to the model parameters, on which variable selection can optionally be performed. `phi_to_select` lists the names of the parameters on which variable selection will be performed (here `a` and `c`). 
+`g` is the user-defined model function. The first argument must always represent time (or more generally the repeated measurement factor), while the subsequent arguments correspond to the model parameters, on which variable selection can optionally be performed. `phi_to_select` lists the names of the parameters on which variable selection will be performed (here `a` and `c`).
 
 The minimum hyperparameters to be declared in the object are those of the inverse Wishart distribution on the covariance matrix of random effects (*i.e* its scale matrix `cov_re_prior_scale` and degrees of freedom `cov_re_prior_df`.).
 
@@ -203,7 +203,7 @@ Visual diagnostics can help evaluate the algorithm's variable selection process.
 
 ```{r saemvs_plot}
 plot(result, type = "criterion")
-plot(result, type = "coefficients")[[1]]
+plot(result, type = "coefficients", param = "all")
 ```
 
 # Advanced statistical options
@@ -272,7 +272,7 @@ With the `saemvsData_from_df()` interface, forced covariates are specified direc
 
 ```{r}
 saemvs_input_fc <- saemvsData_from_df(
-  formula = as.formula("y ~ + x1  + repeated(time) + group(id)"),
+  formula = as.formula("y ~ . + x1  + repeated(time) + group(id)"),
   data = full_data
 )
 ```

@@ -28,7 +28,8 @@ Imports:
     progressr,
     methods, 
     stats,
-    glmnet
+    glmnet,
+    rlang
 Suggests: 
     testthat (>= 3.0.0),
     mockery,

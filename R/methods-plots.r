@@ -138,10 +138,10 @@
     if (!is.null(phi)) {
       if (component %in% c("coef_phi_sel", "coef_phi_non_sel")) {
         # coefficients -> phi correspond aux colonnes
-        df <- base::subset(df, j == phi_idx)
+        df <- df[df$j == phi_idx, , drop = FALSE]
       } else if (component %in% c("variance_phi_sel", "variance_phi_non_sel")) {
         # covariance -> garder lignes ou colonnes liées à phi
-        df <- base::subset(df, i == phi_idx | j == phi_idx)
+        df <- df[df$i == phi_idx | df$j == phi_idx, , drop = FALSE]
       }
     }
 
@@ -216,7 +216,7 @@
       n <- as.numeric(sub("top:", "", sel_components))
 
       if (!is.null(phi)) {
-        df_col <- base::subset(df, j == phi_idx)
+        df_col <- df[df$j == phi_idx, , drop = FALSE]
       } else {
         df_col <- df
       }
@@ -244,7 +244,7 @@
       )
     }
 
-    df <- base::subset(df, facet_label %in% sel_components)
+    df <- df[df$facet_label %in% sel_components, , drop = FALSE]
 
     # --- Build plot ---
     g <- ggplot2::ggplot(df, ggplot2::aes(
@@ -308,6 +308,8 @@
 #'     \code{type = "coefficients"}.
 #' }
 #'
+#' @importFrom rlang .data
+# NULL
 #' @details
 #' This function is an internal backend used by the \code{plot} method for
 #' \code{saemvsResults}. It does not handle multiple parameters; looping and
@@ -341,7 +343,7 @@
     return(
       ggplot2::ggplot(
         data = data.frame(nu0 = nu0_grid, crit = ebic[map_to_unique_support]),
-        ggplot2::aes(x = base::log(nu0), y = crit)
+        ggplot2::aes(x = base::log(.data$nu0), y = .data$crit)
       ) +
         ggplot2::geom_point() +
         ggplot2::theme_bw() +
@@ -378,14 +380,21 @@
     )
 
     df_beta <- base::as.data.frame(base::t(beta[, m, ]))
-    base::colnames(df_beta) <- paste0("beta_", seq_len(p))
+
+    beta_names <- paste0("beta_", seq_len(p))
+    base::colnames(df_beta) <- beta_names
     df_beta$nu0 <- nu0_grid
-    df_beta <- tidyr::pivot_longer(df_beta,
-      cols = tidyr::starts_with("beta_"), names_to = "var",
-      values_to = "value"
+
+    df_beta <- data.frame(
+      nu0 = rep(nu0_grid, each = p),
+      var = rep(beta_names, times = length(nu0_grid)),
+      value = as.vector(base::t(base::as.matrix(df_beta[beta_names]))),
+      stringsAsFactors = FALSE
     )
-    df_beta$idx <- base::as.integer(base::sub("beta_", "", df_beta$var))
-    df_beta$type <- ifelse(df_beta$idx <= n_forced, "forced", "candidate")
+
+    idx <- base::as.integer(base::sub("beta_", "", df_beta$var))
+    df_beta$type <- ifelse(idx <= n_forced, "forced", "candidate")
+    df_beta <- df_beta[, c("nu0", "value", "var", "type")]
 
     df_high <- data.frame(
       nu0 = nu0_grid,
@@ -395,11 +404,15 @@
       stringsAsFactors = FALSE
     )
 
-    df <- dplyr::bind_rows(df_low, df_beta, df_high)
+    df <- base::rbind(df_low, df_beta, df_high)
+
+
 
     ggplot2::ggplot(df, ggplot2::aes(
-      x = base::log(nu0),
-      y = value, group = var, color = type
+      x = base::log(.data$nu0),
+      y = .data$value,
+      group = .data$var,
+      color = .data$type
     )) +
       ggplot2::geom_point() +
       ggplot2::geom_line() +
@@ -441,7 +454,7 @@
 #'
 #' @param x A \code{saemResults} object, typically obtained from
 #'   \code{\link{test_saemvs}}.
-#' @param type Character string specifying which element to plot. One of:
+#' @param component Character string specifying which element to plot. One of:
 #'   \itemize{
 #'     \item `"sigma2"`: residual variance
 #'     \item `"coef_phi_sel"`: regression coefficients for parameters subject
@@ -567,3 +580,7 @@ setMethod(
     .prepare_grid_plot_backend(x, type = type, param = param)
   }
 )
+
+
+
+utils::globalVariables(c("nu", "hat"))

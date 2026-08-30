@@ -5,7 +5,7 @@
 \alias{plot,saemvsResults,missing-method}
 \title{Plot SAEMVS selection path}
 \usage{
-\S4method{plot}{saemvsResults,missing}(x, type = c("criterion", "coefficients"))
+\S4method{plot}{saemvsResults,missing}(x, type = c("criterion", "coefficients"), param = NULL)
 }
 \arguments{
 \item{x}{A \code{saemvsResults} object, typically returned by
@@ -17,15 +17,29 @@ Must be one of:
 \item \code{"criterion"}: plots the selection criterion (BIC or e-BIC)
 along the spike variance grid. The plot highlights the grid value
 corresponding to the best model (minimum criterion value).
-\item \code{"coefficients"}: plots the regression coefficients for each
-parameter along the spike variance grid, allowing visualization
+\item \code{"coefficients"}: plots the regression coefficients for a
+given parameter along the spike variance grid, allowing visualization
 of how coefficients change with the spike parameter.
 }}
+
+\item{param}{Parameter for which to display the coefficient path when
+\code{type = "coefficients"}. Can be either:
+\itemize{
+\item an integer index,
+\item a character string matching a name in \code{x@phi_names},
+\item \code{"all"} to display all parameters in a grid of plots.
+}
+Ignored when \code{type = "criterion"}.}
 }
 \value{
-Either a \pkg{ggplot2} object (\code{"criterion"}) or a list of
-\pkg{ggplot2} objects (\code{"coefficients"}), depending on the
-\code{type}.
+\itemize{
+\item If \code{type = "criterion"}: a single \pkg{ggplot2} object.
+\item If \code{type = "coefficients"} and \code{param} is a single
+parameter: a single \pkg{ggplot2} object.
+\item If \code{type = "coefficients"} and \code{param = "all"}:
+the plots are displayed in a grid layout, and an (invisible) list
+of \pkg{ggplot2} objects is returned.
+}
 }
 \description{
 Generates diagnostic plots for a SAEMVS fit, showing either the selection
@@ -36,13 +50,18 @@ variance grid.
 \dontrun{
 # Fit a SAEMVS model
 res <- saemvs(...)
-# Plot the selection criterion along the spike variance grid
+
+# Plot the selection criterion
 plot(res, type = "criterion")
-# Plot regression coefficients along the grid for first model parameter
-plot(res, type = "coefficients")[[1]]
-# Plot regression coefficients along the grid for second model parameter
-plot(res, type = "coefficients")[[2]]
-...
+
+# Plot coefficients for a specific parameter (by index)
+plot(res, type = "coefficients", param = 1)
+
+# Plot coefficients for a specific parameter (by name)
+plot(res, type = "coefficients", param = "CL")
+
+# Plot coefficients for all parameters
+plot(res, type = "coefficients", param = "all")
 }
 
 }
