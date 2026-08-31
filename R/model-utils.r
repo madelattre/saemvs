@@ -863,35 +863,46 @@ transpile_to_cpp <- function(
 #' @noRd
 build_backend_r <- function(g_fun) {
   g_scalar <- function(t, phi) {
-    if (is.matrix(phi) && nrow(phi) > 1) phi <- as.vector(phi)
+    if (is.matrix(phi) && nrow(phi) > 1) {
+      phi <- as.vector(phi)
+    }
     g_fun(t, phi)
   }
-
 
   g_vector <- function(t, phi) {
     vapply(t, function(ti) g_fun(ti, phi), numeric(1))
   }
 
   rmvnorm <- function(mean, sigma) {
-    if (!requireNamespace("mvnfast", quietly = TRUE)) {
-      stop("Package mvnfast is required.")
-    }
-    as.numeric(mvnfast::rmvn(n = 1, mu = mean, sigma = sigma))
+    L <- t(chol(sigma))
+    z <- stats::rnorm(length(mean))
+    as.numeric(mean + L %*% z)
   }
 
   rmvnorm_mat <- function(mean, sigma, n) {
-    if (!requireNamespace("mvnfast", quietly = TRUE)) {
-      stop("Package mvnfast is required.")
-    }
-    mvnfast::rmvn(n = n, mu = mean, sigma = sigma)
-  }
+    L <- t(chol(sigma))
+    d <- length(mean)
 
+    out <- matrix(NA_real_, nrow = n, ncol = d)
+
+    for (i in seq_len(n)) {
+      z <- stats::rnorm(d)
+      out[i, ] <- as.numeric(mean + L %*% z)
+    }
+
+    out
+  }
 
   logdmvnorm <- function(x, mean, sigma) {
     k <- length(x)
     diff <- x - mean
     quadform <- drop(t(diff) %*% solve(sigma) %*% diff)
-    -0.5 * (k * log(2 * pi) + log(det(sigma)) + quadform)
+
+    -0.5 * (
+      k * log(2 * pi) +
+        log(det(sigma)) +
+        quadform
+    )
   }
 
   loglik <- function(yi_list, ti_list, phi_samples_list, sigma2) {
@@ -905,7 +916,6 @@ build_backend_r <- function(g_fun) {
 
       ni <- length(yi)
       n_samples <- nrow(phi_samples)
-
       contribution <- 0
 
       for (s in seq_len(n_samples)) {
@@ -936,9 +946,15 @@ build_backend_r <- function(g_fun) {
     loglike
   }
 
-
-  metropolis_vector <- function(y, t, phi_current, mean_prop, var_prop_mat,
-                                sigma2, niter_mh, kappa, kernel = "pop") {
+  metropolis_vector <- function(y,
+                                t,
+                                phi_current,
+                                mean_prop,
+                                var_prop_mat,
+                                sigma2,
+                                niter_mh,
+                                kappa,
+                                kernel = "pop") {
     n <- length(y)
     phi_chains <- vector("list", n)
     sd <- sqrt(sigma2)
@@ -946,7 +962,6 @@ build_backend_r <- function(g_fun) {
     for (i in seq_len(n)) {
       y_i <- y[[i]]
       t_i <- t[[i]]
-
       phi0 <- phi_current[[i]]
       mean_i <- mean_prop[[i]]
 
@@ -963,14 +978,24 @@ build_backend_r <- function(g_fun) {
           rmvnorm(phi_old, kappa * var_prop_mat)
         }
 
-        logratio <- 0
-
         mean_new <- g_scalar(t_i, phi_prop)
         mean_old <- g_scalar(t_i, phi_old)
+
         sigma <- diag(sd^2, length(t_i))
-        logratio <- logratio +
-          mvnfast::dmvn(y_i, mu = mean_new, sigma = sigma, log = TRUE) -
-          mvnfast::dmvn(y_i, mu = mean_old, sigma = sigma, log = TRUE)
+
+        logratio <-
+          mvnfast::dmvn(
+            y_i,
+            mu = mean_new,
+            sigma = sigma,
+            log = TRUE
+          ) -
+          mvnfast::dmvn(
+            y_i,
+            mu = mean_old,
+            sigma = sigma,
+            log = TRUE
+          )
 
         if (kernel == "random_walk") {
           logratio <- logratio +
@@ -1084,56 +1109,77 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 arma::vec g_vector_cpp(const arma::vec& t, const arma::vec& phi) {
   arma::vec out(t.n_elem);
-  for (int i = 0; i < t.n_elem; i++)
+
+  for (int i = 0; i < t.n_elem; ++i) {
     out[i] = g_scalar_cpp(t[i], phi);
+  }
+
   return out;
 }
 
 // [[Rcpp::export]]
-arma::vec rmvnorm_cpp(const arma::vec& mean, const arma::mat& sigma) {
-  // Verifier que sigma est finie
+arma::vec rmvnorm_cpp(
+    const arma::vec& mean,
+    const arma::mat& sigma) {
+
   if (!sigma.is_finite()) {
-    Rcpp::stop("Error: covariance matrix contains NA, NaN, or Inf.");
-  }
-
-  // Tentative de Cholesky
-  arma::mat L;
-  bool chol_ok = arma::chol(L, sigma, "lower");  // version safe, renvoie bool
-
-  if (!chol_ok) {
     Rcpp::stop(
-    "Error: covariance matrix is not positive definite (Cholesky failed)."
+      "Error: covariance matrix contains NA, NaN, or Inf."
     );
   }
 
-  // Generer la variable normale
-  arma::vec z = arma::randn(mean.n_elem);
+  arma::mat L;
+  bool chol_ok = arma::chol(L, sigma, "lower");
+
+  if (!chol_ok) {
+    Rcpp::stop(
+      "Error: covariance matrix is not positive definite "
+      "(Cholesky failed)."
+    );
+  }
+
+  int d = mean.n_elem;
+  arma::vec z(d);
+
+  for (int j = 0; j < d; ++j) {
+    z[j] = R::rnorm(0.0, 1.0);
+  }
+
   return mean + L * z;
 }
 
 // [[Rcpp::export]]
-arma::mat rmvnorm_mat_cpp(const arma::vec& mean,
-                          const arma::mat& sigma,
-                          int n) {
-  // Verifier que sigma est finie
+arma::mat rmvnorm_mat_cpp(
+    const arma::vec& mean,
+    const arma::mat& sigma,
+    int n) {
+
   if (!sigma.is_finite()) {
-    Rcpp::stop("Error: covariance matrix contains NA, NaN, or Inf.");
+    Rcpp::stop(
+      "Error: covariance matrix contains NA, NaN, or Inf."
+    );
   }
 
-  // Cholesky securisee
   arma::mat L;
   bool chol_ok = arma::chol(L, sigma, "lower");
+
   if (!chol_ok) {
     Rcpp::stop(
-    "Error: covariance matrix is not positive definite (Cholesky failed)."
+      "Error: covariance matrix is not positive definite "
+      "(Cholesky failed)."
     );
   }
 
   int d = mean.n_elem;
   arma::mat out(n, d);
 
-  for (int i = 0; i < n; i++) {
-    arma::vec z = arma::randn(d);
+  for (int i = 0; i < n; ++i) {
+    arma::vec z(d);
+
+    for (int j = 0; j < d; ++j) {
+      z[j] = R::rnorm(0.0, 1.0);
+    }
+
     out.row(i) = (mean + L * z).t();
   }
 
@@ -1141,69 +1187,102 @@ arma::mat rmvnorm_mat_cpp(const arma::vec& mean,
 }
 
 // [[Rcpp::export]]
-double loglik_cpp(List yi_list,
-                  List ti_list,
-                  List phi_samples_list,
-                  double sigma2) {
+double loglik_cpp(
+    List yi_list,
+    List ti_list,
+    List phi_samples_list,
+    double sigma2) {
+
   int n = yi_list.size();
   double loglike = 0.0;
-  for(int i = 0; i < n; i++) {
+
+  for (int i = 0; i < n; ++i) {
     NumericVector yi = yi_list[i];
     NumericVector ti = ti_list[i];
+
     int ni = yi.size();
+
     arma::mat phi_samples = phi_samples_list[i];
     int n_samples = phi_samples.n_rows;
+
     double contribution = 0.0;
-    for(int s = 0; s < n_samples; s++) {
+
+    for (int s = 0; s < n_samples; ++s) {
       double sumsq = 0.0;
-        for(int j = 0; j < ni; j++) {
-          arma::vec phi_i = phi_samples.row(s).t().eval();
-          double g = g_scalar_cpp(ti[j], phi_i);
-          sumsq += pow(yi[j] - g, 2);
-        }
-      contribution += exp(-sumsq / (2.0 * sigma2));
+
+      arma::vec phi_i =
+        phi_samples.row(s).t().eval();
+
+      for (int j = 0; j < ni; ++j) {
+        double g =
+          g_scalar_cpp(ti[j], phi_i);
+
+        sumsq += std::pow(yi[j] - g, 2);
+      }
+
+      contribution +=
+        std::exp(-sumsq / (2.0 * sigma2));
     }
-    loglike += log(
-    pow(2.0 * M_PI * sigma2, -ni/2.0) * contribution / n_samples
+
+    loglike += std::log(
+      std::pow(
+        2.0 * M_PI * sigma2,
+        -ni / 2.0
+      ) *
+      contribution /
+      n_samples
     );
   }
+
   return loglike;
 }
 
 // [[Rcpp::export]]
-double logdmvnorm_cpp(const arma::vec& x,
-                      const arma::vec& mean,
-                      const arma::mat& sigma) {
+double logdmvnorm_cpp(
+    const arma::vec& x,
+    const arma::vec& mean,
+    const arma::mat& sigma) {
+
   arma::vec d = x - mean;
-  return -0.5 * (x.n_elem * log(2 * M_PI) +
-                 log(arma::det(sigma)) +
-                 arma::as_scalar(d.t() * arma::inv(sigma) * d));
+
+  return -0.5 * (
+    x.n_elem * std::log(2.0 * M_PI) +
+    std::log(arma::det(sigma)) +
+    arma::as_scalar(
+      d.t() * arma::inv(sigma) * d
+    )
+  );
 }
 
 // [[Rcpp::export]]
 List metropolis_vector_cpp(
-  const List& y,
-  const List& t,
-  const List& phi_current,
-  const List& mean_prop,
-  const arma::mat& var_prop_mat,
-  const double& sigma2,
-  int niter_mh,
-  const double& kappa,
-  const std::string& kernel = "pop"
-) {
+    const List& y,
+    const List& t,
+    const List& phi_current,
+    const List& mean_prop,
+    const arma::mat& var_prop_mat,
+    const double& sigma2,
+    int niter_mh,
+    const double& kappa,
+    const std::string& kernel = "pop") {
+
   int n = y.size();
   List phi_chains(n);
 
   for (int i = 0; i < n; ++i) {
     NumericVector y_i = y[i];
     NumericVector t_i = t[i];
+
     int ni = y_i.size();
 
-    arma::vec phi0 = as<arma::vec>(phi_current[i]);
-    arma::vec mean_i = as<arma::vec>(mean_prop[i]);
+    arma::vec phi0 =
+      as<arma::vec>(phi_current[i]);
+
+    arma::vec mean_i =
+      as<arma::vec>(mean_prop[i]);
 
     int d = phi0.n_elem;
+
     arma::mat chain(d, niter_mh + 1);
     chain.col(0) = phi0;
 
@@ -1212,52 +1291,86 @@ List metropolis_vector_cpp(
       arma::vec phi_prop;
 
       if (kernel == "pop") {
-        phi_prop = rmvnorm_cpp(mean_i, var_prop_mat);
+        phi_prop =
+          rmvnorm_cpp(mean_i, var_prop_mat);
       } else {
-        phi_prop = rmvnorm_cpp(phi_old, kappa * var_prop_mat);
+        phi_prop =
+          rmvnorm_cpp(
+            phi_old,
+            kappa * var_prop_mat
+          );
       }
 
       double logratio = 0.0;
       double sd = std::sqrt(sigma2);
 
       for (int j = 0; j < ni; ++j) {
-        double mean_new = g_scalar_cpp(t_i[j], phi_prop);
-        double mean_old = g_scalar_cpp(t_i[j], phi_old);
-        logratio += R::dnorm(y_i[j], mean_new, sd, true)
-                  - R::dnorm(y_i[j], mean_old, sd, true);
+        double mean_new =
+          g_scalar_cpp(t_i[j], phi_prop);
+
+        double mean_old =
+          g_scalar_cpp(t_i[j], phi_old);
+
+        logratio +=
+          R::dnorm(
+            y_i[j],
+            mean_new,
+            sd,
+            true
+          ) -
+          R::dnorm(
+            y_i[j],
+            mean_old,
+            sd,
+            true
+          );
       }
 
       if (kernel == "random_walk") {
-        logratio += logdmvnorm_cpp(phi_prop, mean_i, var_prop_mat)
-                  - logdmvnorm_cpp(phi_old, mean_i, var_prop_mat);
+        logratio +=
+          logdmvnorm_cpp(
+            phi_prop,
+            mean_i,
+            var_prop_mat
+          ) -
+          logdmvnorm_cpp(
+            phi_old,
+            mean_i,
+            var_prop_mat
+          );
       }
 
-      if (std::log(R::runif(0.0, 1.0)) <= logratio) {
+      if (
+        std::log(R::runif(0.0, 1.0)) <=
+        logratio
+      ) {
         chain.col(r + 1) = phi_prop;
       } else {
         chain.col(r + 1) = phi_old;
       }
     }
 
-    phi_chains[i] = chain.col(niter_mh);
+    phi_chains[i] =
+      chain.col(niter_mh);
   }
 
   return phi_chains;
 }
+
 ', cpp_g_function)
 
   if (debug) {
     return(cpp_code)
   }
 
-  # Create temporary file for C++ code
   tmp_cpp <- tempfile(fileext = ".cpp")
   writeLines(cpp_code, tmp_cpp)
 
-  # Compile from C++ file and force globalenv
-  Rcpp::sourceCpp(tmp_cpp, env = .GlobalEnv)
+  Rcpp::sourceCpp(
+    tmp_cpp,
+    env = .GlobalEnv
+  )
 
-  # retourner la liste backend
   list(
     g_scalar = g_scalar_cpp,
     g_vector = g_vector_cpp,
