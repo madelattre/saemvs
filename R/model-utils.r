@@ -894,29 +894,48 @@ build_backend_r <- function(g_fun) {
     -0.5 * (k * log(2 * pi) + log(det(sigma)) + quadform)
   }
 
-  loglik <- function(yi_list, ti_list, phi_samples, sigma2) {
+  loglik <- function(yi_list, ti_list, phi_samples_list, sigma2) {
     n <- length(yi_list)
     loglike <- 0
+
     for (i in seq_len(n)) {
       yi <- yi_list[[i]]
       ti <- ti_list[[i]]
+      phi_samples <- phi_samples_list[[i]]
+
       ni <- length(yi)
       n_samples <- nrow(phi_samples)
+
       contribution <- 0
+
       for (s in seq_len(n_samples)) {
         phi_i <- phi_samples[s, ]
-        sumsq <- sum((yi -
-          vapply(
-            ti, function(tj) g_scalar(tj, phi_i),
-            numeric(1)
-          ))^2)
-        contribution <- contribution + exp(-sumsq / (2 * sigma2))
+
+        sumsq <- sum(
+          (
+            yi -
+              vapply(
+                ti,
+                function(tj) g_scalar(tj, phi_i),
+                numeric(1)
+              )
+          )^2
+        )
+
+        contribution <- contribution +
+          exp(-sumsq / (2 * sigma2))
       }
+
       loglike <- loglike +
-        log((2 * pi * sigma2)^(-ni / 2) * contribution / n_samples)
+        log(
+          (2 * pi * sigma2)^(-ni / 2) *
+            contribution / n_samples
+        )
     }
+
     loglike
   }
+
 
   metropolis_vector <- function(y, t, phi_current, mean_prop, var_prop_mat,
                                 sigma2, niter_mh, kappa, kernel = "pop") {
