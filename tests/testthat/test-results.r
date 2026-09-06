@@ -57,12 +57,18 @@ test_that("summary_saemvs runs without error and produces output", {
 # ---------------------------------------------
 # Fake phi draws: 3 iterations, 2 individus, 2 paramètres
 phi_iter <- list(
-  matrix(c(1, 2, 3, 4), nrow = 2,
-         dimnames = list(c("id1", "id2"), c("phi1", "phi2"))),
-  matrix(c(2, 3, 4, 5), nrow = 2,
-         dimnames = list(c("id1", "id2"), c("phi1", "phi2"))),
-  matrix(c(3, 4, 5, 6), nrow = 2,
-         dimnames = list(c("id1", "id2"), c("phi1", "phi2")))
+  matrix(c(1, 2, 3, 4),
+    nrow = 2,
+    dimnames = list(c("id1", "id2"), c("phi1", "phi2"))
+  ),
+  matrix(c(2, 3, 4, 5),
+    nrow = 2,
+    dimnames = list(c("id1", "id2"), c("phi1", "phi2"))
+  ),
+  matrix(c(3, 4, 5, 6),
+    nrow = 2,
+    dimnames = list(c("id1", "id2"), c("phi1", "phi2"))
+  )
 )
 
 saemvs_res@phi <- list(phi_iter)
@@ -160,6 +166,29 @@ mock_saemvsResults <- function() { # nolint: object_name_linter
   )
 }
 
+test_that("saemvsResults accepts zero covariance for phi_fixed", {
+  res <- mock_saemvsResults()
+
+  res@phi_fixed_idx <- 1
+  res@mle_estimates[[1]]$gamma <- matrix(0, nrow = 1, ncol = 1)
+
+  expect_true(validObject(res))
+})
+
+
+test_that("saemvsResults rejects non-zero covariance for phi_fixed", {
+  res <- mock_saemvsResults()
+
+  res@phi_fixed_idx <- 1
+  res@mle_estimates[[1]]$gamma <- matrix(0.01, nrow = 1, ncol = 1)
+
+  expect_error(
+    validObject(res),
+    "corresponding to 'phi_fixed_idx' must be zero",
+    fixed = TRUE
+  )
+})
+
 
 test_that("summary(saemvsResults) runs without error", {
   saemvs_res <- mock_saemvsResults()
@@ -206,8 +235,10 @@ test_that("summary_all() runs without error", {
 # ---------------------------------------------
 
 beta_est <- matrix(
-  c(0.1, 0.2,   # mu
-    0.3, 0.4),  # x1
+  c(
+    0.1, 0.2, # mu
+    0.3, 0.4
+  ), # x1
   nrow = 2,
   ncol = 2,
   byrow = TRUE

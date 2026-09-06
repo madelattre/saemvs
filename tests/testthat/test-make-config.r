@@ -75,5 +75,18 @@ test_that(
       length(model_proc@phi_to_select_idx)
     )
     expect_equal(cfg$method_type, "map")
+
+    expect_true("fixed_parameters_indices" %in% names(cfg))
+    expect_false("fixed_parameter_indices" %in% names(cfg))
+
+    expect_identical(
+      cfg$fixed_parameters_indices,
+      model_proc@phi_fixed_idx
+    )
+
+    expect_identical(
+      get_case(cfg),
+      "map_part_select_fixed"
+    )
   }
 )

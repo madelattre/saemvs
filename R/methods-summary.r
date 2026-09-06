@@ -6,7 +6,6 @@
     object,
     support_idx,
     digits = 3) {
-  fixed_param_idx <- object@phi_fixed_idx
   phi_to_select_idx <- object@phi_to_select_idx
 
   x_candidates_names <- object@x_candidates_names %||% character(0)
@@ -90,11 +89,7 @@
   print(round(beta_est, digits))
 
   cat("\n---- Covariance Matrix ----\n\n")
-  if (length(fixed_param_idx) == 0) {
-    print(round(gamma_est, digits))
-  } else {
-    print(round(zero_out_shrinked(gamma_est, fixed_param_idx), digits))
-  }
+  print(round(gamma_est, digits))
 
   invisible(NULL)
 }

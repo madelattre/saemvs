@@ -1541,6 +1541,8 @@ saemvsTuning <- function(
 #'
 #' @slot mle_estimates List. Maximum likelihood estimates of model parameters
 #'   (beta and gamma) computed on each unique support.
+#' In the reported covariance matrices,
+#'   rows and columns corresponding to \code{phi_fixed_idx} are zero.
 #'
 #' @slot support List. Raw supports selected across the spike grid
 #'   (may contain duplicates).
@@ -1555,9 +1557,10 @@ saemvsTuning <- function(
 #' @slot spike_values_grid Numeric vector. The grid of spike parameter values
 #'   explored during the SAEMVS run.
 #'
-#' @slot phi_fixed_idx Numeric vector or \code{NULL}. Indices of fixed
-#'   \eqn{\phi} components (non-estimated parameters), used for display in
-#'   summaries.
+#' @slot phi_fixed_idx Numeric vector or \code{NULL}. Indices of non-random
+#'   \eqn{\phi} components. Their population values are estimated, but their
+#'   rows and columns in the reported random-effects covariance matrix are
+#'   set to zero.
 #'
 #' @slot forced_variables_idx List. For each unique support, indices of
 #'   covariates that were forced into the model (always included).
@@ -1644,6 +1647,35 @@ setClass(
 
     if (length(object@support_mapping) != length(object@support)) {
       return("Slot 'support_mapping' must map each support to a unique index.")
+    }
+
+    if (length(object@phi_fixed_idx) > 0) {
+      for (estimate in object@mle_estimates) {
+        gamma <- estimate$gamma
+
+        if (is.null(gamma) || !is.matrix(gamma)) {
+          return(
+            "Each entry of 'mle_estimates' must contain a matrix named 'gamma'."
+          )
+        }
+
+        if (any(object@phi_fixed_idx > nrow(gamma)) ||
+          any(object@phi_fixed_idx > ncol(gamma))) {
+          return(
+            "'phi_fixed_idx' contains indices outside the dimensions of gamma."
+          )
+        }
+
+        if (any(gamma[object@phi_fixed_idx, , drop = FALSE] != 0) ||
+          any(gamma[, object@phi_fixed_idx, drop = FALSE] != 0)) {
+          return(
+            paste0(
+              "Rows and columns of 'mle_estimates[[k]]$gamma' corresponding ",
+              "to 'phi_fixed_idx' must be zero."
+            )
+          )
+        }
+      }
     }
 
     TRUE

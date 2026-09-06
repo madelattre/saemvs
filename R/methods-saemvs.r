@@ -94,8 +94,7 @@
 #' @export
 setGeneric(
   "saemvs",
-  function(
-      data, model, init, tuning_algo, hyperparam, pen = "e-BIC", use_cpp = TRUE) {
+  function(data, model, init, tuning_algo, hyperparam, pen = "e-BIC", use_cpp = TRUE) {
     standardGeneric("saemvs")
   }
 )
@@ -109,8 +108,7 @@ setMethod(
     data = "saemvsData", model = "saemvsModel", init = "saemvsInit",
     tuning_algo = "saemvsTuning", hyperparam = "saemvsHyperSlab"
   ),
-  function(
-      data, model, init, tuning_algo, hyperparam, pen = "e-BIC", use_cpp = TRUE) {
+  function(data, model, init, tuning_algo, hyperparam, pen = "e-BIC", use_cpp = TRUE) {
     # --- Step 1: Argument checks ---
     if (!pen %in% c("e-BIC", "BIC")) {
       stop(
@@ -393,7 +391,7 @@ setMethod(
     )
     support <- rbind(
       rep(TRUE, n_phi_select),
-      abs(beta_map) >= threshold_matrix
+      (abs(beta_map) >= threshold_matrix)
     )
 
     if (!is_empty_support(forced_support)) {
@@ -460,7 +458,10 @@ setMethod(
 #'   model:
 #'     \itemize{
 #'       \item \code{beta} Estimated regression coefficients.
-#'       \item \code{gamma} Estimated variances for the random effects.
+#'       \item \code{gamma} Estimated covariance matrix
+#'       of the random effects.
+#'       Rows and columns corresponding to parameters declared in
+#'       \code{phi_fixed} are set to zero in the returned estimates.
 #'       \item \code{sigma2} Estimated residual variance.
 #'   \item \code{forced_variables_idx} Integer vector giving the row indices
 #'   (within the support matrix) of covariates that were forced into the model.
@@ -549,10 +550,23 @@ setMethod(
       sigma2 = mle$sigma2[tuning_algo@niter + 1]
     )
 
+    ## The likelihood must be evaluated with the strictly positive auxiliary
+    ## covariance used by the SAEM algorithm.
     ll <- loglik(
       new_data, new_model, tuning_algo, mle_param, pen, p,
       model@phi_to_select_idx, nb_forced_beta, backend
     )
+
+    ## In the statistical model, phi_fixed parameters have no inter-individual
+    ## variability. Remove their auxiliary variances and covariances from the
+    ## estimates exposed to users.
+    if (length(new_model@phi_fixed_idx) > 0) {
+      mle_param$gamma <- zero_out_shrinked(
+        mle_param$gamma,
+        new_model@phi_fixed_idx
+      )
+    }
+
 
     return(list( # nolint : return_linter
       ll = ll,

@@ -43,20 +43,24 @@ setMethod(
   "prepare_model",
   signature(data = "saemvsData", model = "saemvsModel"),
   function(data, model) {
-
     phi_names <- model@phi_names
     n_phi <- length(phi_names)
 
     phi_to_select_idx <-
-      if (length(model@phi_to_select) == 0) NULL
-      else match(model@phi_to_select, phi_names)
+      if (length(model@phi_to_select) == 0) {
+        NULL
+      } else {
+        match(model@phi_to_select, phi_names)
+      }
 
     phi_fixed_idx <-
-      if (length(model@phi_fixed) == 0) NULL
-      else match(model@phi_fixed, phi_names)
+      if (length(model@phi_fixed) == 0) {
+        NULL
+      } else {
+        match(model@phi_fixed, phi_names)
+      }
 
     if (is.null(data@x_forced)) {
-
       forced_support_matrix <- matrix(
         0L,
         nrow = 0,
@@ -91,8 +95,7 @@ setMethod(
     )
 
     if (is.null(model@x_forced_support) ||
-          length(model@x_forced_support) == 0) {
-
+      length(model@x_forced_support) == 0) {
       return(
         methods::new(
           "saemvsProcessedModel",
@@ -106,7 +109,6 @@ setMethod(
     }
 
     for (phi in intersect(names(model@x_forced_support), phi_names)) {
-
       covs_phi <- model@x_forced_support[[phi]]
 
       forced_support_matrix[covs_phi, phi] <- 1L
@@ -249,7 +251,7 @@ setMethod(
     if (is_empty_support(forced_support)) {
       x_not_to_select_design <- matrix(1, nrow = n_obs)
     } else if (length(phi_not_to_select_indices) == 0 ||
-        is_empty_support(forced_support[, phi_not_to_select_indices])
+      is_empty_support(forced_support[, phi_not_to_select_indices])
     ) {
       ## No unselected parameters or no forced covariates among them
       x_not_to_select_design <- matrix(1, nrow = n_obs)
@@ -675,7 +677,7 @@ setMethod(
       total_parameters = total_phi,
       parameters_to_select_indices = phi_to_select_idx,
       parameters_not_to_select_indices = phi_not_to_select_idx,
-      fixed_parameter_indices = model@phi_fixed_idx,
+      fixed_parameters_indices = model@phi_fixed_idx,
       model_function = model@model_func,
       x_support_phi_not_to_select = x_support_phi_not_to_select,
       forced_covariates_indices = if (!is.null(x_support_phi_not_to_select)) {
