@@ -97,7 +97,6 @@ setMethod(
     )
     state <- init_state(config)
     case <- get_case(config)
-
     switch(case,
       map_full_select = {
         state <- run_saem_full(
